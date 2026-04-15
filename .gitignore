@@ -1,0 +1,26 @@
+# Dependências
+node_modules/
+
+# Sessão WhatsApp (não subir para o GitHub!)
+sessions/
+
+# Banco de dados local
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+
+# Variáveis de ambiente (NUNCA subir!)
+.env
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Temporários
+tmp/
+*.tmp

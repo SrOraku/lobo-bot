@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  lobo-bot:
+    build: .
+    container_name: lobo-bot
+    restart: unless-stopped
+    volumes:
+      - ./sessions:/app/sessions
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./plugins:/app/plugins
+      - ./.env:/app/.env:ro
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: lobo-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
