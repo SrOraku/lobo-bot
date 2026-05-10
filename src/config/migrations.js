@@ -1,0 +1,152 @@
+'use strict';
+// ============================================================
+// 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — MIGRATIONS DO BANCO
+// ============================================================
+
+const migrations = [
+  {
+    version: 1,
+    name: 'initial_schema',
+    up: `
+      CREATE TABLE IF NOT EXISTS users (
+        jid TEXT PRIMARY KEY,
+        name TEXT,
+        gold INTEGER DEFAULT 500,
+        xp INTEGER DEFAULT 0,
+        level INTEGER DEFAULT 1,
+        rank TEXT DEFAULT '🐾 Filhote de Lobo',
+        wins INTEGER DEFAULT 0,
+        losses INTEGER DEFAULT 0,
+        battles INTEGER DEFAULT 0,
+        premium INTEGER DEFAULT 0,
+        premium_until TEXT,
+        banned INTEGER DEFAULT 0,
+        muted INTEGER DEFAULT 0,
+        shield_until TEXT,
+        last_seen TEXT DEFAULT (datetime('now')),
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS wolf_strategy (
+        jid TEXT PRIMARY KEY,
+        attack INTEGER DEFAULT 34,
+        defense INTEGER DEFAULT 33,
+        counter INTEGER DEFAULT 33,
+        total_attacks INTEGER DEFAULT 0,
+        total_victories INTEGER DEFAULT 0,
+        wolves_alive INTEGER DEFAULT 100,
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS battle_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        attacker TEXT, defender TEXT,
+        attacker_wolves_before INTEGER, defender_wolves_before INTEGER,
+        attacker_wolves_after INTEGER, defender_wolves_after INTEGER,
+        result TEXT, group_id TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS groups (
+        jid TEXT PRIMARY KEY, name TEXT,
+        antilink INTEGER DEFAULT 0, antilink_mode TEXT DEFAULT 'delete',
+        antifake INTEGER DEFAULT 0, anticontact INTEGER DEFAULT 0,
+        antitag INTEGER DEFAULT 0, antiinactivity INTEGER DEFAULT 0,
+        inactivity_days INTEGER DEFAULT 7, open INTEGER DEFAULT 1,
+        welcome INTEGER DEFAULT 1, goodbye INTEGER DEFAULT 1,
+        auto_reply INTEGER DEFAULT 1, level_up_msg INTEGER DEFAULT 1,
+        nsfw INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS auto_replies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id TEXT, trigger TEXT, response TEXT,
+        type TEXT DEFAULT 'text',
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS scheduled_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id TEXT, message TEXT, cron_expr TEXT,
+        active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS activity_log (
+        jid TEXT, group_id TEXT,
+        message_count INTEGER DEFAULT 0,
+        last_message TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (jid, group_id)
+      );
+      CREATE TABLE IF NOT EXISTS admins (
+        jid TEXT PRIMARY KEY,
+        level INTEGER DEFAULT 1,
+        added_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS gold_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_jid TEXT, to_jid TEXT,
+        amount INTEGER, reason TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS error_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        context TEXT, message TEXT, stack TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `
+  },
+  {
+    version: 2,
+    name: 'indexes',
+    up: `
+      CREATE INDEX IF NOT EXISTS idx_users_gold   ON users(gold DESC);
+      CREATE INDEX IF NOT EXISTS idx_users_level  ON users(level DESC, xp DESC);
+      CREATE INDEX IF NOT EXISTS idx_wolf_vic     ON wolf_strategy(total_victories DESC);
+      CREATE INDEX IF NOT EXISTS idx_activity_grp ON activity_log(group_id, last_message DESC);
+      CREATE INDEX IF NOT EXISTS idx_battle_date  ON battle_log(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_gold_tx_date ON gold_transactions(created_at DESC);
+    `
+  },
+  {
+    version: 3,
+    name: 'plugin_support',
+    up: `
+      CREATE TABLE IF NOT EXISTS plugins (
+        name TEXT PRIMARY KEY,
+        enabled INTEGER DEFAULT 1,
+        config TEXT DEFAULT '{}',
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS events_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type TEXT, payload TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `
+  },
+];
+
+function runMigrations(db) {
+  // Tabela de controle de versão
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version INTEGER PRIMARY KEY,
+      name TEXT,
+      applied_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
+  const applied = new Set(
+    db.prepare(`SELECT version FROM schema_migrations`).all().map(r => r.version)
+  );
+
+  let ran = 0;
+  for (const m of migrations) {
+    if (applied.has(m.version)) continue;
+    db.exec(m.up);
+    db.prepare(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`).run(m.version, m.name);
+    ran++;
+    console.log(`  🌹 Migration v${m.version} "${m.name}" aplicada`);
+  }
+
+  if (ran === 0) console.log(`  ✅ Banco atualizado (v${migrations.at(-1).version})`);
+  return ran;
+}
+
+module.exports = { runMigrations, migrations };
