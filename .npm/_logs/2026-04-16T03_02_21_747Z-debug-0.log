@@ -1,0 +1,18 @@
+0 verbose cli /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/bin/npm
+1 info using npm@11.12.1
+2 info using node@v25.8.2
+3 silly config load:file:/data/data/com.termux/files/usr/lib/node_modules/npm/npmrc
+4 silly config load:file:/data/data/com.termux/files/home/.npm/_cacache/tmp/git-clone3WnpmK/.npmrc
+5 silly config load:file:/data/data/com.termux/files/home/.npmrc
+6 silly config load:file:/data/data/com.termux/files/usr/etc/npmrc
+7 verbose title npm run build
+8 verbose argv "run" "build"
+9 verbose logfile logs-max:10 dir:/data/data/com.termux/files/home/.npm/_logs/2026-04-16T03_02_21_747Z-
+10 verbose logfile /data/data/com.termux/files/home/.npm/_logs/2026-04-16T03_02_21_747Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose cwd /data/data/com.termux/files/home/.npm/_cacache/tmp/git-clone3WnpmK
+13 verbose os Linux 5.4.289-qgki-g4e27a72000be
+14 verbose node v25.8.2
+15 verbose npm  v11.12.1
+16 verbose exit 0
+17 info ok

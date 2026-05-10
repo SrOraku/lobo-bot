@@ -1,0 +1,12 @@
+[safe]
+	directory = /storage/emulated/0/Download/lobo-bot
+	directory = /storage/emulated/0/Download/lobo-bot-v3-final
+[credential "https://github.com"]
+	helper = 
+	helper = !/data/data/com.termux/files/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/data/data/com.termux/files/usr/bin/gh auth git-credential
+[user]
+	name = SrOraku
+	email = nathanork9@gmail.com
