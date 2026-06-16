@@ -1,4 +1,4 @@
-# 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — LOBO-BOT v3.0
+# 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — LOBO-BOT v1
 
 > Bot WhatsApp multifuncional com **100 Lobisomens** + **LOBO-BOT V3**  
 > Construído com Node.js + Baileys Multi-Device
