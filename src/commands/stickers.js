@@ -4,6 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+let baileysModulePromise = null;
+function loadBaileys() {
+  if (!baileysModulePromise) {
+    baileysModulePromise = import('@whiskeysockets/baileys');
+  }
+  return baileysModulePromise;
+}
+
 async function getQuotedMedia(sock, msg) {
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   if (!quoted) return null;
@@ -12,7 +20,7 @@ async function getQuotedMedia(sock, msg) {
   if (!['imageMessage', 'videoMessage', 'stickerMessage'].includes(msgType)) return null;
 
   try {
-    const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+    const { downloadContentFromMessage } = await loadBaileys();
     const stream = await downloadContentFromMessage(quoted[msgType], msgType.replace('Message', ''));
     const chunks = [];
     for await (const chunk of stream) chunks.push(chunk);
@@ -25,7 +33,7 @@ async function getDirectMedia(sock, msg) {
   if (!['imageMessage', 'videoMessage'].includes(msgType)) return null;
 
   try {
-    const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+    const { downloadContentFromMessage } = await loadBaileys();
     const stream = await downloadContentFromMessage(msg.message[msgType], msgType.replace('Message', ''));
     const chunks = [];
     for await (const chunk of stream) chunks.push(chunk);
@@ -162,7 +170,7 @@ async function stickerParaImagem(sock, ctx) {
   }
 
   try {
-    const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+    const { downloadContentFromMessage } = await loadBaileys();
     const stream = await downloadContentFromMessage(quoted.stickerMessage, 'sticker');
     const chunks = [];
     for await (const chunk of stream) chunks.push(chunk);
