@@ -45,7 +45,7 @@ const cases = [
   {
     name: 'principal', args: [],
     categories: ['MECÂNICAS 100 LOBISOMENS', 'PROTEÇÃO DA MATILHA', 'DIVERSÃO & INTERAÇÃO', 'MÍDIA & DOWNLOADS', 'FIGURINHAS MÍSTICAS', 'ESTATÍSTICAS & GOLD', 'Comandos Principais da Matilha:'],
-    commands: ['mudar estrategia ataque:X defesa:Y contra:Z', 'atacar @numero', 'menu gold', 'menu mod', 'menu midia', 'menu diversao', 'mudar estrategia ataque:X defesa:Y contra:Z', 'atacar @membro', 'gold', 'level', 'play', 'tiktok', 'sticker', 'ban'],
+    commands: ['mudar estrategia ataque:X defesa:Y contra:Z', 'atacar @numero', 'menu gold', 'menu mod', 'menu midia', 'menu diversao', 'mudar estrategia ataque:X defesa:Y contra:Z', 'atacar @membro', 'gold', 'level', 'play', 'tiktok', 'sticker', 'ban', 'atualizar status', 'atualizar bot', 'atualizar baileys'],
     details: ['Cada membro possui exatamente *100 Lobisomens*', 'Ataque • Defesa • Contra-ataque', 'Anti Link • Anti Fake • Anti Contato • Anti Marcação • Anti Inatividade', 'Mensagens programadas'],
   },
   {

@@ -2,7 +2,13 @@
 
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
-## RP e WOK Coin — atualização 3.1
+## Atualização por comando — versão 3.3
+
+Somente o dono configurado pode usar `!atualizar status`, `!atualizar bot` e `!atualizar baileys` (respeitando o prefixo configurado). O primeiro mostra versões; o segundo busca este repositório em `main`; o terceiro verifica a versão mais recente publicada pelo projeto oficial WhiskeySockets/Baileys. A versão atual é `7.0.0-rc14`.
+
+A atualização prepara e verifica os arquivos antes de substituir o código, mantém backup em `updates/` e preserva `.env`, sessões e dados dos jogos. Funciona também em instalações por ZIP. Após concluir, **reinicie pelo painel** para carregar a atualização. O Node é atualizado pelo painel do servidor, com mínimo **22.12**. Para receber estes comandos pela primeira vez, instale esta versão via GitHub ou ZIP.
+
+## RP e WOK Coin
 
 O bot existente continua com seus comandos, sessão e banco de dados. O plugin adiciona **64 profissões, família, 19 itens e uma carteira WOK Coin compartilhada entre o novo RP e o novo 100 Lobisomens Estratégia**. Os duelos foram retirados; o ataque direto continua.
 

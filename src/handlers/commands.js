@@ -10,6 +10,7 @@ const stick = require('../commands/stickers');
 const fun   = require('../commands/fun');
 const admin = require('../commands/admin');
 const menu  = require('../commands/menu');
+const updater = require('../commands/update');
 
 function loadAllCommands() {
   const r = (def) => register(def);
@@ -87,6 +88,8 @@ function loadAllCommands() {
   r({name:'akinator',                           description:'Akinator dos lobos',  category:'fun',    usage:'!akinator',                             example:'!akinator',                   handler:fun.akinator});
 
   // Admin do bot
+  // O handler confirma PN/LID do dono pelo Baileys; nunca usa senderNumber como autorização.
+  r({name:'atualizar', description:'Atualizar bot e Baileys (dono)', category:'admin', usage:'!atualizar [status|bot|baileys]', example:'!atualizar status', handler:updater.update});
   r({name:'addadmin',   aliases:['botadmin'],   description:'Add admin do bot',    category:'admin',  usage:'!addadmin @usuário',                    example:'!addadmin @pessoa',           handler:admin.addAdmin,    minLevel:LEVELS.OWNER});
   r({name:'removeadmin',                        description:'Remover admin do bot',category:'admin',  usage:'!removeadmin @usuário',                 example:'!removeadmin @pessoa',        handler:admin.removeAdmin, minLevel:LEVELS.OWNER});
   r({name:'broadcast',   aliases:['bc'],        description:'Broadcast para todos',category:'admin',  usage:'!broadcast [msg]',                      example:'!broadcast Olá matilha!',     handler:admin.broadcast,   minLevel:LEVELS.OWNER});

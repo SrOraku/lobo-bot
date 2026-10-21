@@ -66,6 +66,11 @@ A matilha mais feroz e bela do WhatsApp: estratégia lupina + todas as poderosas
 • *${PREFIX}gold* • *${PREFIX}level* • *${PREFIX}play*
 • *${PREFIX}tiktok* • *${PREFIX}sticker* • *${PREFIX}ban*
 
+╭─⚙️🌹 *ATUALIZAÇÕES DO DONO* 🐺─╮
+• *${PREFIX}atualizar status* → Versões do bot e do Node
+• *${PREFIX}atualizar bot* → Atualizar o código
+• *${PREFIX}atualizar baileys* → Última versão oficial compatível
+
 ┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈ ❀ 🌹 ❀ ┈┈
 
 _Fiel como o lobo • Bela como a rosa • Estratégico como o alfa_ 🌹🐺

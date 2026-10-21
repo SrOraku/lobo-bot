@@ -28,3 +28,6 @@ tmp/
 # Estado e backups do addon Alcateia (não incluem a sessão do bot)
 storage/alcateia/
 addons/alcateia/node_modules/
+
+# Área local do atualizador: staging, backups de código e controle de operações
+updates/

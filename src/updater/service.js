@@ -1,0 +1,217 @@
+'use strict';
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const { randomUUID } = require('node:crypto');
+const { execFile } = require('node:child_process');
+const { promisify } = require('node:util');
+const semver = require('semver');
+const { githubSnapshot, managedPath, ROOT_FILES, ROOT_DIRS } = require('./source');
+const execute = promisify(execFile);
+
+class UpdateError extends Error {
+  constructor(message, code = 'UPDATE_FAILED') { super(message); this.code = code; }
+}
+
+async function exists(file) { try { await fs.lstat(file); return true; } catch (e) { if (e.code === 'ENOENT') return false; throw e; } }
+async function readJSON(file, fallback = null) {
+  try { return JSON.parse(await fs.readFile(file, 'utf8')); } catch (e) { if (e.code === 'ENOENT') return fallback; throw e; }
+}
+async function safeTarget(root, name) {
+  const parts = name.split('/');
+  if (path.isAbsolute(name) || parts.some(p => !p || p === '.' || p === '..' || p.includes('\\'))) throw new UpdateError('Caminho de atualização inválido.');
+  let cursor = root;
+  for (const part of parts) {
+    cursor = path.join(cursor, part);
+    try { if ((await fs.lstat(cursor)).isSymbolicLink()) throw new UpdateError('A atualização não pode substituir atalhos de pastas ou arquivos.'); }
+    catch (e) { if (e.code === 'ENOENT') break; throw e; }
+  }
+  return path.join(root, ...parts);
+}
+async function atomicWrite(file, data, mode = 0o644) {
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const temporary = `${file}.${randomUUID()}.tmp`;
+  try { await fs.writeFile(temporary, data, { flag: 'wx', mode }); await fs.rename(temporary, file); }
+  finally { await fs.rm(temporary, { force: true }); }
+}
+function githubRepository(value) {
+  try {
+    const url = new URL(String(value || '').replace(/^git\+/, '').replace(/^git@github.com:/, 'https://github.com/'));
+    return url.hostname === 'github.com' && /^\/WhiskeySockets\/Baileys(?:\.git)?$/i.test(url.pathname);
+  } catch { return false; }
+}
+function childEnvironment() {
+  const env = { ...process.env };
+  const count = Number(env.GIT_CONFIG_COUNT || 0);
+  if (!Number.isInteger(count) || count < 0 || count > 100) throw new UpdateError('Configuração do Git inválida no servidor.');
+  for (const [i, value] of ['ssh://git@github.com/', 'git@github.com:'].entries()) {
+    env[`GIT_CONFIG_KEY_${count + i}`] = 'url.https://github.com/.insteadOf';
+    env[`GIT_CONFIG_VALUE_${count + i}`] = value;
+  }
+  env.GIT_CONFIG_COUNT = String(count + 2);
+  return env;
+}
+
+class UpdateService {
+  constructor({ root = path.resolve(__dirname, '../..'), snapshot = githubSnapshot, run = execute,
+    nodeVersion = process.versions.node, logger = console } = {}) {
+    this.root = path.resolve(root); this.snapshot = snapshot; this.run = run;
+    this.nodeVersion = nodeVersion; this.logger = logger; this.running = false; this.needsRestart = false;
+    this.directory = path.join(this.root, 'updates');
+  }
+  async status() {
+    const pkg = await readJSON(path.join(this.root, 'package.json'));
+    const installed = await readJSON(path.join(this.root, 'node_modules/@whiskeysockets/baileys/package.json'));
+    const last = await readJSON(path.join(this.directory, 'state.json'));
+    return { version: pkg.version, node: this.nodeVersion,
+      baileys: installed?.version || pkg.dependencies?.['@whiskeysockets/baileys'] || 'não identificado',
+      active: this.running, needsRestart: this.needsRestart, last };
+  }
+  async update(action) {
+    if (!['bot', 'baileys'].includes(action)) throw new UpdateError('Use atualizar bot ou atualizar baileys.');
+    if (this.running) throw new UpdateError('Já existe uma atualização em andamento.', 'BUSY');
+    if (this.needsRestart) throw new UpdateError('Reinicie o bot pelo painel antes de outra atualização.', 'RESTART_REQUIRED');
+    this.running = true;
+    let lock, stage;
+    const lockPath = path.join(this.directory, 'update.lock');
+    try {
+      if (!semver.satisfies(this.nodeVersion, '>=22.12.0')) throw new UpdateError('Configure Node.js 22.12 ou superior no painel do servidor.');
+      await safeTarget(this.root, 'updates'); await fs.mkdir(this.directory, { recursive: true });
+      try { lock = await fs.open(lockPath, 'wx'); }
+      catch (e) {
+        if (e.code !== 'EEXIST') throw e;
+        const previous = await readJSON(lockPath);
+        let alive = true;
+        if (Number.isInteger(previous?.pid) && previous.pid > 0) {
+          try { process.kill(previous.pid, 0); } catch (error) { if (error.code === 'ESRCH') alive = false; }
+        }
+        if (alive) throw new UpdateError('Outra instância está atualizando o bot.', 'BUSY');
+        throw new UpdateError('Uma atualização anterior foi interrompida. Confira o backup e remova updates/update.lock pelo painel antes de tentar novamente.', 'STALE_LOCK');
+      }
+      await lock.writeFile(JSON.stringify({ pid: process.pid, at: Date.now() }));
+      stage = await fs.mkdtemp(path.join(this.directory, 'stage-'));
+      let files, sha = null, targetVersion;
+      if (action === 'bot') {
+        const source = await this.snapshot(); sha = source.sha;
+        const previous = await readJSON(path.join(this.directory, 'state.json'));
+        if (previous?.sha === sha) return { already: true, action, version: (await this.status()).version };
+        files = source.files;
+        let bytes = 0, cursor = 0;
+        const downloads = await Promise.allSettled(Array.from({ length: 4 }, async () => {
+          while (cursor < files.length) {
+            const item = files[cursor++];
+            if (!managedPath(item.path)) throw new UpdateError('Arquivo protegido no manifesto.');
+            const data = await source.download(item); bytes += data.length;
+            if (bytes > 15 * 1024 * 1024) throw new UpdateError('A atualização excede o limite de tamanho.');
+            await atomicWrite(path.join(stage, item.path), data, item.mode === '100755' ? 0o755 : 0o644);
+          }
+        }));
+        const failed = downloads.find(result => result.status === 'rejected');
+        if (failed) throw failed.reason;
+      } else {
+        const result = await this._run('npm', ['view', 'baileys@latest', 'version', 'engines', 'repository', 'deprecated', '--json'], this.root);
+        const latest = JSON.parse(result.stdout);
+        if (!semver.valid(latest.version) || !githubRepository(latest.repository?.url) || latest.deprecated) throw new UpdateError('Não consegui validar a versão oficial do Baileys.');
+        if (!semver.satisfies(this.nodeVersion, latest.engines?.node || '*')) throw new UpdateError('O Baileys mais recente exige outra versão do Node. Atualize o Node pelo painel primeiro.');
+        const current = await this.status();
+        if (semver.valid(current.baileys) && semver.gte(current.baileys, latest.version)) return { already: true, action, version: current.baileys };
+        await this._copyCode(stage);
+        const pkg = await readJSON(path.join(stage, 'package.json'));
+        pkg.dependencies['@whiskeysockets/baileys'] = `npm:baileys@${latest.version}`;
+        await atomicWrite(path.join(stage, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
+        await this._run('npm', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], stage);
+        targetVersion = latest.version;
+        files = [{ path: 'package.json' }, { path: 'package-lock.json' }];
+      }
+      const pkg = await readJSON(path.join(stage, 'package.json'));
+      if (pkg?.name !== 'lobo-bot' || !semver.valid(pkg.version) || !semver.satisfies(this.nodeVersion, pkg.engines?.node || '>=22.12.0')) {
+        throw new UpdateError('Esta atualização do bot não é compatível com o Node do servidor.');
+      }
+      // Prefer HTTPS for the public libsignal repository on restricted hosting.
+      const lockfile = await readJSON(path.join(stage, 'package-lock.json'));
+      if (!lockfile?.packages?.['']) throw new UpdateError('A atualização não contém um lockfile válido.');
+      for (const value of Object.values(lockfile.packages)) if (value.resolved?.startsWith('git+ssh://git@github.com/')) value.resolved = value.resolved.replace('git+ssh://git@github.com/', 'git+https://github.com/');
+      await atomicWrite(path.join(stage, 'package-lock.json'), JSON.stringify(lockfile, null, 2) + '\n');
+      await this._run('npm', ['ci', '--omit=dev', '--no-audit', '--no-fund'], stage);
+      await this._run(process.execPath, ['scripts/check-startup.js'], stage);
+      const result = await this._apply(stage, files, { action, sha, version: targetVersion || pkg.version });
+      this.needsRestart = true;
+      return result;
+    } catch (error) {
+      if (error instanceof UpdateError) throw error;
+      this.logger.error?.({ error: error.message }, 'Falha na atualização do bot.');
+      throw new UpdateError('A atualização falhou. Consulte o log do servidor; os arquivos anteriores foram preservados.');
+    } finally {
+      if (stage) await fs.rm(stage, { recursive: true, force: true }).catch(() => {});
+      if (lock) { await lock.close().catch(() => {}); await fs.rm(lockPath, { force: true }).catch(() => {}); }
+      this.running = false;
+    }
+  }
+  async _run(command, args, cwd) {
+    return this.run(command === 'npm' && process.platform === 'win32' ? 'npm.cmd' : command, args,
+      { cwd, env: childEnvironment(), shell: false, encoding: 'utf8', timeout: 10 * 60_000, maxBuffer: 8 * 1024 * 1024 });
+  }
+  async _copyCode(stage) {
+    const copy = async name => {
+      const from = await safeTarget(this.root, name);
+      if (!await exists(from)) return;
+      const info = await fs.lstat(from);
+      if (info.isDirectory()) {
+        for (const child of await fs.readdir(from)) if (!['node_modules', 'data', 'sessions', 'auth', 'storage', 'logs', 'backups', 'updates', '.git'].includes(child)) await copy(`${name}/${child}`);
+      } else if (info.isFile() && managedPath(name)) {
+        await atomicWrite(path.join(stage, name), await fs.readFile(from));
+      }
+    };
+    for (const name of [...ROOT_FILES, ...ROOT_DIRS]) await copy(name);
+  }
+  async _apply(stage, files, result) {
+    const previous = await readJSON(path.join(this.directory, 'state.json'));
+    const incoming = new Set(files.map(f => f.path));
+    const removed = result.action === 'bot' ? (previous?.files || []).filter(name => managedPath(name) && !incoming.has(name)) : [];
+    const names = [...incoming, ...removed];
+    const backup = path.join(this.directory, `backup-${Date.now()}-${randomUUID()}`);
+    await fs.mkdir(backup);
+    const saved = [];
+    let oldModules = false, newModules = false;
+    const modules = await safeTarget(this.root, 'node_modules');
+    try {
+      for (const name of names) {
+        if (!managedPath(name)) throw new UpdateError('Arquivo protegido na atualização.');
+        const target = await safeTarget(this.root, name);
+        const present = await exists(target);
+        if (present) {
+          if (!(await fs.lstat(target)).isFile()) throw new UpdateError('O destino da atualização não é um arquivo.');
+          await atomicWrite(path.join(backup, name), await fs.readFile(target));
+        }
+        saved.push({ name, present, mode: present ? (await fs.stat(target)).mode & 0o777 : 0o644 });
+      }
+      if (await exists(modules)) { await fs.rename(modules, path.join(backup, 'node_modules')); oldModules = true; }
+      await fs.rename(path.join(stage, 'node_modules'), modules); newModules = true;
+      for (const file of files) {
+        await atomicWrite(await safeTarget(this.root, file.path), await fs.readFile(path.join(stage, file.path)), file.mode === '100755' ? 0o755 : 0o644);
+      }
+      for (const name of removed) await fs.rm(await safeTarget(this.root, name), { force: true });
+      const state = { ...result, at: new Date().toISOString(), backup: path.basename(backup),
+        sha: result.sha || previous?.sha || null,
+        files: result.action === 'bot' ? [...incoming] : previous?.files || [] };
+      await atomicWrite(path.join(this.directory, 'state.json'), JSON.stringify(state));
+    } catch (error) {
+      try {
+        for (const { name, present, mode } of saved) {
+          const target = await safeTarget(this.root, name);
+          if (present) await atomicWrite(target, await fs.readFile(path.join(backup, name)), mode);
+          else await fs.rm(target, { force: true });
+        }
+        if (newModules) await fs.rm(modules, { recursive: true, force: true });
+        if (oldModules) await fs.rename(path.join(backup, 'node_modules'), modules);
+      } catch (rollback) {
+        this.logger.error?.({ error: rollback.message, backup }, 'Restauração manual necessária.');
+        throw new UpdateError('Não consegui concluir a restauração. Pare o bot e restaure o backup em updates/.', 'ROLLBACK_FAILED');
+      }
+      throw error;
+    }
+    // Code + lock remain backed up; old dependencies can be recreated with npm ci.
+    await fs.rm(path.join(backup, 'node_modules'), { recursive: true, force: true }).catch(() => {});
+    return { ...result, backup: path.basename(backup), needsRestart: true };
+  }
+}
+module.exports = { UpdateService, UpdateError, safeTarget, githubRepository };

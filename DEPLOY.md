@@ -32,6 +32,22 @@ Se já houve `MODULE_NOT_FOUND` na linha que carrega `dotenv`, atualize os arqui
 
 Para verificar apenas as dependências, sem conectar ao WhatsApp nem alterar os dados: `npm run check:startup`.
 
+### Atualizar pelo WhatsApp
+
+Depois de instalar esta versão, o dono configurado pode enviar:
+
+```text
+!atualizar status
+!atualizar bot
+!atualizar baileys
+```
+
+Use o prefixo da sua instalação. O código vem exclusivamente de `SrOraku/lobo-bot`, branch `main`; o Baileys vem do pacote oficial publicado no npm. Não é necessário instalar por Git. O servidor precisa de acesso ao GitHub/npm, npm e Git disponíveis, permissão de escrita e espaço para uma instalação temporária das dependências.
+
+Os arquivos são preparados em `updates/`, as dependências são instaladas e o diagnóstico de inicialização é executado antes da substituição. Há backup do código e lockfile em `updates/backup-*`; falhas durante a substituição acionam restauração automática. `.env`, sessões e bancos de dados são preservados. Depois do sucesso, reinicie pelo painel; novas atualizações ficam bloqueadas até reiniciar. A versão do Node deve ser alterada no painel, nunca pelo comando do bot.
+
+Se o processo for interrompido durante a atualização, pare o servidor e confira o backup e os logs antes de remover `updates/update.lock`. Para restauração manual, recoloque os arquivos do backup e reinstale as dependências com `npm ci --omit=dev`, preservando os dados e a sessão.
+
 ---
 
 ## 🐙 GitHub → Pterodactyl
