@@ -1,6 +1,6 @@
 {
   "name": "lobo-bot",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "description": "🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺",
   "main": "src/index.js",
   "type": "commonjs",
@@ -11,7 +11,7 @@
     "test": "node --test test/*.test.js addons/alcateia/test/*.test.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "npm:baileys@6.7.24",
+    "@whiskeysockets/baileys": "npm:baileys@7.0.0-rc14",
     "better-sqlite3": "^9.4.3",
     "axios": "^1.6.8",
     "chalk": "^4.1.2",
@@ -33,13 +33,13 @@
     "form-data": "^4.0.0",
     "mime-types": "^2.1.35",
     "qrcode-terminal": "^0.12.0",
-    "jimp": "^1.6.0"
+    "jimp": "^1.6.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "keywords": [
     "whatsapp",
