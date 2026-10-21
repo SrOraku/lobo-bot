@@ -1,6 +1,6 @@
 {
   "name": "lobo-bot",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺",
   "main": "src/index.js",
   "type": "commonjs",
@@ -11,7 +11,7 @@
     "test": "node --test test/*.test.js addons/alcateia/test/*.test.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "github:WhiskeySockets/Baileys",
+    "@whiskeysockets/baileys": "npm:baileys@6.7.24",
     "better-sqlite3": "^9.4.3",
     "axios": "^1.6.8",
     "chalk": "^4.1.2",
