@@ -9,9 +9,9 @@
 
 ## 🐦 Pterodactyl
 
-1. Crie um servidor Node.js no painel
+1. Crie um servidor com Node.js 22 atualizado (mínimo 22.12; validado em 22.23.3)
 2. Configure o startup como: `node src/index.js`
-3. Faça upload do ZIP ou conecte via GitHub
+3. Faça upload do projeto completo ou conecte via GitHub. `package.json`, `package-lock.json` e a pasta `src/` precisam estar juntos na raiz do servidor, normalmente `/home/container`.
 4. No painel, adicione as variáveis de ambiente:
 
 ```
@@ -21,12 +21,16 @@ LOG_LEVEL=info
 NODE_ENV=production
 ```
 
-5. No terminal do Pterodactyl, rode:
+5. Inicie o servidor. Caso faltem dependências, o próprio `src/index.js` executa a instalação antes de carregar o bot. Aguarde a primeira instalação terminar. Se tiver acesso a um terminal de sistema, também pode instalar previamente:
 ```bash
-npm install
+npm ci --omit=dev --no-audit --no-fund
 ```
 
-6. Inicie o servidor — o código de pareamento aparecerá no console
+6. Após instalar, o código de pareamento aparecerá no console. Nos próximos inícios os pacotes existentes são reutilizados. Não digite comandos de sistema no console de um processo Node em execução.
+
+Se já houve `MODULE_NOT_FOUND` na linha que carrega `dotenv`, atualize os arquivos pelo GitHub ou ZIP, mantenha o startup `node src/index.js` e reinicie. Preserve `.env`, `sessions/`, `data/` e `storage/alcateia/` da instalação existente.
+
+Para verificar apenas as dependências, sem conectar ao WhatsApp nem alterar os dados: `npm run check:startup`.
 
 ---
 
@@ -42,7 +46,7 @@ git remote add origin https://github.com/SrOraku/lobo-bot.git
 git push -u origin main
 ```
 
-No Pterodactyl, conecte o repositório GitHub e rode `npm install`.
+No Pterodactyl, conecte o repositório GitHub e inicie com `node src/index.js`. A instalação automática resolve os pacotes ausentes.
 
 ---
 
@@ -52,8 +56,8 @@ No Pterodactyl, conecte o repositório GitHub e rode `npm install`.
 pkg update && pkg upgrade -y
 pkg install -y nodejs git python make clang
 
-cd ~ && unzip lobo-bot.zip -d lobo-bot && cd Lobo-bot-v1
-npm install
+cd ~ && unzip Lobo-bot-v1.zip && cd Lobo-bot-v1
+npm ci
 cp .env.example .env && nano .env
 
 # Rodar em background
@@ -70,7 +74,7 @@ npm start
 
 ```bash
 npm install -g pm2
-npm install
+npm ci
 cp .env.example .env && nano .env
 pm2 start ecosystem.config.js
 pm2 save && pm2 startup
@@ -82,8 +86,8 @@ pm2 save && pm2 startup
 
 | Erro | Solução |
 |------|---------|
-| `MODULE_NOT_FOUND` | Execute `npm install` primeiro |
+| `MODULE_NOT_FOUND` | Atualize `src/bootstrap.js`, `src/index.js`, `package.json` e `package-lock.json`, depois reinicie com Node 22 |
 | `better-sqlite3` falha no build | `npm install --build-from-source better-sqlite3` |
-| `sharp` falha | `npm install --ignore-scripts sharp` |
+| `sharp` falha | Reinstale com `npm ci --include=optional` |
 | Código de pareamento expira | Reinicie o bot para gerar novo código |
 | Sessão perdida | Delete `sessions/` e reinicie |

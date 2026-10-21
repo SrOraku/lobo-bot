@@ -24,8 +24,12 @@ Verificação local, sem conectar ao WhatsApp:
 
 ```bash
 npm test
+npm run check:startup
 ```
 
+Use Node.js 22.12 ou superior (validado no Node 22.23.3). Se o painel executar diretamente `node src/index.js` sem dependências instaladas, o bot instala os pacotes de produção antes de iniciar. A primeira instalação usa o `package-lock.json` do projeto e pode levar alguns minutos; os próximos inícios reutilizam os pacotes presentes.
+
+O comando `check:startup` verifica as dependências reais, as APIs do Baileys, SQLite em memória, imagens e FFmpeg, sem conectar ao WhatsApp nem alterar a sessão ou o banco do bot.
 
 > Bot WhatsApp multifuncional com **100 Lobisomens** + **LOBO-BOT V3**
 > Construído com Node.js + Baileys Multi-Device
@@ -43,7 +47,7 @@ npm test
 cd Lobo-bot-v1
 
 # 2. Instalar dependências
-npm install
+npm ci
 
 # 3. Configurar
 cp .env.example .env
@@ -61,8 +65,8 @@ npm start
 pkg update && pkg upgrade -y
 pkg install -y nodejs git python make clang
 
-cd ~ && unzip lobo-bot.zip -d lobo-bot && cd Lobo-bot-v1
-npm install
+cd ~ && unzip Lobo-bot-v1.zip && cd Lobo-bot-v1
+npm ci
 cp .env.example .env && nano .env
 
 # Rodar em background com tmux
@@ -180,9 +184,9 @@ module.exports = {
 | Erro | Solução |
 |------|---------|
 | `better-sqlite3` falha | `npm install --build-from-source better-sqlite3` |
-| `sharp` falha | `npm install --ignore-scripts sharp` |
+| `sharp` falha | Reinstale com `npm ci --include=optional` |
 | Sem permissão `/sdcard` | `termux-setup-storage` |
-| Node < 18 | `pkg install nodejs-lts` |
+| Node anterior a 22.12 | Configure Node.js 22 atualizado no painel |
 | Sessão expirada | Delete `sessions/` e reinicie |
 
 ---

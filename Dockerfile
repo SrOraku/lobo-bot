@@ -3,15 +3,15 @@
 # Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
 # ============================================================
 
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Dependências nativas para better-sqlite3 e sharp
-RUN apk add --no-cache python3 make g++ ffmpeg
+RUN apk add --no-cache git python3 make g++ ffmpeg
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev --no-audit --no-fund
 
 COPY . .
 

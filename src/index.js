@@ -1,51 +1,6 @@
 'use strict';
-
-// ============================================================
-// BOOTSTRAP PTERODACTYL — instala dependências se estiverem ausentes
-// ============================================================
-const { spawnSync } = require('child_process');
-
-function ensureDependencies() {
-  const rootDir = require('path').resolve(__dirname, '..');
-  const required = [
-    'dotenv',
-    '@whiskeysockets/baileys',
-    'pino',
-    'better-sqlite3',
-  ];
-
-  const missing = required.filter((pkg) => {
-    try {
-      require.resolve(pkg, { paths: [rootDir] });
-      return false;
-    } catch {
-      return true;
-    }
-  });
-
-  if (!missing.length) return;
-
-  console.log('\n📦 Dependências ausentes: ' + missing.join(', '));
-  console.log('🔧 Instalando dependências automaticamente...\n');
-
-  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const result = spawnSync(
-    npm,
-    ['install', '--omit=dev', '--no-audit', '--no-fund'],
-    { cwd: rootDir, stdio: 'inherit' }
-  );
-
-  if (result.error || result.status !== 0) {
-    console.error('\n❌ Não foi possível instalar as dependências automaticamente.');
-    console.error('💡 No console do servidor, execute: npm install');
-    if (result.error) console.error(result.error.message);
-    process.exit(result.status || 1);
-  }
-
-  console.log('\n✅ Dependências instaladas. Iniciando o Lobo-bot...\n');
-}
-
-ensureDependencies();
+const { ensureDependencies } = require('./bootstrap');
+if (!ensureDependencies()) process.exit(1);
 require('dotenv').config();
 
 // ============================================================
@@ -58,6 +13,7 @@ const pino      = require('pino');
 const path      = require('path');
 const fs        = require('fs');
 const readline  = require('readline');
+const { CacheMessageStore } = require('./utils/message-store');
 
 // Baileys 7 é ESM. O restante do Lobo-bot continua CommonJS,
 // então carregamos o módulo oficialmente via import() dinâmico.
@@ -93,31 +49,8 @@ if (!validation.ok) {
   process.exit(1);
 }
 
-// ── Cache simples de mensagens para retries do Baileys 7 ───
-const MESSAGE_CACHE_MAX = 1000;
-const messageCache = new Map();
-
-function messageCacheKey(key) {
-  if (!key?.remoteJid || !key?.id) return null;
-  return `${key.remoteJid}:${key.id}`;
-}
-
-function cacheMessage(msg) {
-  const key = messageCacheKey(msg?.key);
-  if (!key || !msg?.message) return;
-
-  messageCache.set(key, msg.message);
-
-  if (messageCache.size > MESSAGE_CACHE_MAX) {
-    const oldest = messageCache.keys().next().value;
-    if (oldest) messageCache.delete(oldest);
-  }
-}
-
-function getCachedMessage(key) {
-  const cacheKey = messageCacheKey(key);
-  return cacheKey ? messageCache.get(cacheKey) : undefined;
-}
+// Cache limitado, independente da versão do Baileys.
+const store = new CacheMessageStore();
 
 const SESSION_DIR = path.join(__dirname, '../sessions', config.get('SESSION_NAME'));
 fs.mkdirSync(SESSION_DIR, { recursive: true });
@@ -186,9 +119,12 @@ async function startBot() {
     keepAliveIntervalMs: 10_000,
     retryRequestDelayMs: 2_000,
     getMessage: async (key) => {
-      return getCachedMessage(key) || { conversation: 'Olá!' };
+      const message = await store.loadMessage(key.remoteJid, key.id);
+      return message?.message;
     },
   });
+
+  store.bind(sock.ev);
 
   // ── Carregar plugins após socket criado ──────────────────
   await loadAllPlugins(sock);
@@ -317,7 +253,6 @@ async function startBot() {
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     for (const msg of messages) {
       if (!msg.message) continue;
-      cacheMessage(msg);
 
       if (type !== 'notify') continue;
       setImmediate(() =>
