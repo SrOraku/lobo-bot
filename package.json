@@ -1,13 +1,14 @@
 {
   "name": "lobo-bot",
-  "version": "3.0.0",
-  "description": "🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ - Bot Multifuncional WhatsApp",
+  "version": "3.1.0",
+  "description": "🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "clean": "rm -rf sessions/*"
+    "clean": "rm -rf sessions/*",
+    "test": "node --test test/*.test.js addons/alcateia/test/*.test.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "github:WhiskeySockets/Baileys",
@@ -40,7 +41,14 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "keywords": ["whatsapp", "bot", "lobisomem", "lobo-bot", "baileys"],
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "lobisomem",
+    "lobo-bot",
+    "baileys"
+  ],
   "author": "🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺 | +55 43 92003-0769 | +55 43 99637-5955",
-  "license": "MIT"
+  "license": "MIT",
+  "displayName": "🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑"
 }

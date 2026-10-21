@@ -6,7 +6,8 @@
 // ============================================================
 
 const DEFAULTS = {
-  BOT_NAME:              '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾',
+  BOT_NAME:              '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
+  BOT_DESCRIPTION:       '🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺',
   DEVELOPER_NAME:        '🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺',
   DEVELOPER_CONTACT:     '+55 43 92003-0769 | +55 43 99637-5955',
   PREFIX:                '!',
@@ -27,6 +28,7 @@ const DEFAULTS = {
 const SCHEMA = {
   BOT_OWNER:             { required: true,  type: 'phone',  desc: 'Número do dono (ex: 5543999999999)' },
   BOT_NAME:              { required: false, type: 'string', desc: 'Nome do bot' },
+  BOT_DESCRIPTION:       { required: false, type: 'string', desc: 'Descrição do bot' },
   DEVELOPER_NAME:        { required: false, type: 'string', desc: 'Nick do desenvolvedor' },
   DEVELOPER_CONTACT:     { required: false, type: 'string', desc: 'Contato do desenvolvedor' },
   PREFIX:                { required: false, type: 'string', desc: 'Prefixo dos comandos' },

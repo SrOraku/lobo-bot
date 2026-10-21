@@ -24,3 +24,7 @@ Thumbs.db
 # Temporários
 tmp/
 *.tmp
+
+# Estado e backups do addon Alcateia (não incluem a sessão do bot)
+storage/alcateia/
+addons/alcateia/node_modules/
