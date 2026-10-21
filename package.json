@@ -1,6 +1,6 @@
 {
   "name": "lobo-bot",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺",
   "main": "src/index.js",
   "type": "commonjs",
@@ -33,7 +33,7 @@
     "form-data": "^4.0.0",
     "mime-types": "^2.1.35",
     "qrcode-terminal": "^0.12.0",
-    "jimp": "^0.22.12"
+    "jimp": "^1.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
