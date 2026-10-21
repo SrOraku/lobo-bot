@@ -1,7 +1,9 @@
-# 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — Guia de Deploy
+# 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ — Guia de Deploy
 
-**Dev:** 🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺  
-**Contato:** +55 43 92003-0769 | +55 43 99637-5955
+🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
+
+**Dev:** 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
+**Contato:** +5543920030769
 
 ---
 
@@ -13,7 +15,7 @@
 4. No painel, adicione as variáveis de ambiente:
 
 ```
-BOT_OWNER=5543999999999
+BOT_OWNER=5543920030769
 PREFIX=!
 LOG_LEVEL=info
 NODE_ENV=production
@@ -36,7 +38,7 @@ git init
 git add .
 git commit -m "🌹 Lobo-Bot v3.0"
 git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/lobo-bot.git
+git remote add origin https://github.com/SrOraku/lobo-bot.git
 git push -u origin main
 ```
 
@@ -50,7 +52,7 @@ No Pterodactyl, conecte o repositório GitHub e rode `npm install`.
 pkg update && pkg upgrade -y
 pkg install -y nodejs git python make clang
 
-cd ~ && unzip lobo-bot.zip -d lobo-bot && cd lobo-bot
+cd ~ && unzip lobo-bot.zip -d lobo-bot && cd Lobo-bot-v1
 npm install
 cp .env.example .env && nano .env
 

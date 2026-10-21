@@ -8,6 +8,7 @@ services:
     volumes:
       - ./sessions:/app/sessions
       - ./data:/app/data
+      - ./storage/alcateia:/app/storage/alcateia
       - ./logs:/app/logs
       - ./plugins:/app/plugins
       - ./.env:/app/.env:ro

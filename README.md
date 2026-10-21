@@ -27,12 +27,12 @@ npm test
 ```
 
 
-> Bot WhatsApp multifuncional com **100 Lobisomens** + **LOBO-BOT V3**  
+> Bot WhatsApp multifuncional com **100 Lobisomens** + **LOBO-BOT V3**
 > Construído com Node.js + Baileys Multi-Device
 
 **Dev:** 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
 
-**Contato:** +55 43 92003-0769 | +55 43 99637-5955
+**Contato:** +5543920030769
 
 ---
 
@@ -40,7 +40,7 @@ npm test
 
 ```bash
 # 1. Entrar na pasta
-cd lobo-bot
+cd Lobo-bot-v1
 
 # 2. Instalar dependências
 npm install
@@ -61,7 +61,7 @@ npm start
 pkg update && pkg upgrade -y
 pkg install -y nodejs git python make clang
 
-cd ~ && unzip lobo-bot.zip -d lobo-bot && cd lobo-bot
+cd ~ && unzip lobo-bot.zip -d lobo-bot && cd Lobo-bot-v1
 npm install
 cp .env.example .env && nano .env
 
@@ -187,5 +187,5 @@ module.exports = {
 
 ---
 
-_Fiel como o lobo • Bela como a rosa • Estratégico como o alfa_ 🌹🐺  
+_Fiel como o lobo • Bela como a rosa • Estratégico como o alfa_ 🌹🐺
 **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ sempre ao seu lado!**
