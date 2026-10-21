@@ -1,4 +1,51 @@
 'use strict';
+
+// ============================================================
+// BOOTSTRAP PTERODACTYL — instala dependências se estiverem ausentes
+// ============================================================
+const { spawnSync } = require('child_process');
+
+function ensureDependencies() {
+  const rootDir = require('path').resolve(__dirname, '..');
+  const required = [
+    'dotenv',
+    '@whiskeysockets/baileys',
+    'pino',
+    'better-sqlite3',
+  ];
+
+  const missing = required.filter((pkg) => {
+    try {
+      require.resolve(pkg, { paths: [rootDir] });
+      return false;
+    } catch {
+      return true;
+    }
+  });
+
+  if (!missing.length) return;
+
+  console.log('\n📦 Dependências ausentes: ' + missing.join(', '));
+  console.log('🔧 Instalando dependências automaticamente...\n');
+
+  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const result = spawnSync(
+    npm,
+    ['install', '--omit=dev', '--no-audit', '--no-fund'],
+    { cwd: rootDir, stdio: 'inherit' }
+  );
+
+  if (result.error || result.status !== 0) {
+    console.error('\n❌ Não foi possível instalar as dependências automaticamente.');
+    console.error('💡 No console do servidor, execute: npm install');
+    if (result.error) console.error(result.error.message);
+    process.exit(result.status || 1);
+  }
+
+  console.log('\n✅ Dependências instaladas. Iniciando o Lobo-bot...\n');
+}
+
+ensureDependencies();
 require('dotenv').config();
 
 // ============================================================
@@ -208,6 +255,14 @@ async function startBot() {
       const user = sock.user;
       logger.info(`✅ Conectado como: ${user?.name || user?.id}`);
       logger.info(`🌹 ${BOT_NAME} online e pronto!`);
+
+      // Aplicar automaticamente a descrição/Sobre configurada do bot
+      const botDescription = config.get('BOT_DESCRIPTION');
+      if (botDescription && typeof sock.updateProfileStatus === 'function') {
+        await sock.updateProfileStatus(botDescription)
+          .then(() => logger.info('📝 Descrição do WhatsApp atualizada.'))
+          .catch((err) => logger.warn(`⚠️ Não foi possível atualizar a descrição: ${err.message}`));
+      }
 
       bus.emit(EVENTS.BOT_READY, { user });
 
