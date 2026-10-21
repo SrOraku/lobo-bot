@@ -1,10 +1,12 @@
 # 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑
 
+🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
+
 **🌹100 LOBISOMENS ESTRATÉGIA🌹**
 
 🐺 Monte sua alcateia, distribua seus lobisomens e dispute batalhas com outros jogadores. O jogo funciona junto dos comandos de administração do bot. As instruções de instalação, conexão e atualização estão no [README](INTEGRACAO.md).
 
-🌹 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄꥓〭🐺
+🌹 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
 
 ## Primeiro acesso
 
@@ -199,6 +201,6 @@ O bot responde com o tempo restante quando esse limite é atingido. Os comandos 
 
 Perfis, clãs, saldos, HP, boosts, horários, limites, dados RP e histórico de batalhas ficam no banco indicado por `DATA_FILE`. O bot grava as ações do jogo em sequência, inclusive quando chegam de conversas diferentes. RP e alcateia usam a mesma cota de comandos e o mesmo saldo.
 
-Há um backup automático a cada 6 horas enquanto o processo estiver em execução. Ele inclui o banco de grupos e jogo e deixa a sessão do WhatsApp e `.env` fora da cópia. A pasta padrão é `./backups`, configurável por `BACKUP_DIR`. Veja os passos de [atualização e restauração no README](INTEGRACAO.md#arquivos-e-atualização).
+Há um backup automático a cada 6 horas enquanto o processo estiver em execução. Ele inclui o banco de grupos e jogo e deixa a sessão do WhatsApp e `.env` fora da cópia. A pasta padrão é `./backups`, configurável por `BACKUP_DIR`. Veja os passos de [atualização e restauração no README](README.md#backups-e-restauração).
 
-🌹 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄꥓〭🐺
+🌹 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺

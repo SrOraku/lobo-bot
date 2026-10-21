@@ -6,6 +6,8 @@
 
 O bot existente continua com seus comandos, sessão e banco de dados. O plugin adiciona **64 profissões, família, 19 itens e uma carteira WOK Coin compartilhada entre o novo RP e o novo 100 Lobisomens Estratégia**. Os duelos foram retirados; o ataque direto continua.
 
+Identidade padrão: **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑**. Desenvolvedor: **🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺**. Dono do bot: **+5543920030769**. Em instalações com `.env` existente, confira `BOT_NAME`, `DEVELOPER_NAME` e `BOT_OWNER` para usar esses valores. Os pacotes de download usam a pasta `Lobo-bot-v1`.
+
 ```text
 !rp iniciar
 !rp perfil
@@ -28,7 +30,8 @@ npm test
 > Bot WhatsApp multifuncional com **100 Lobisomens** + **LOBO-BOT V3**  
 > Construído com Node.js + Baileys Multi-Device
 
-**Dev:** 🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺  
+**Dev:** 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
+
 **Contato:** +55 43 92003-0769 | +55 43 99637-5955
 
 ---
@@ -185,4 +188,4 @@ module.exports = {
 ---
 
 _Fiel como o lobo • Bela como a rosa • Estratégico como o alfa_ 🌹🐺  
-**🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ sempre ao seu lado!**
+**🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ sempre ao seu lado!**

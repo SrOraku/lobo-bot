@@ -59,7 +59,8 @@ function profileText(player, rank, at) {
 
 export function gameMenu(config) {
   const p = config.prefix;
-  const game = formatMenu({ title: 'MENU DA ALCATEIA', subtitle: [
+  const game = formatMenu({ title: 'MENU DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
+    ownerNumber: config.ownerNumber, subtitle: [
     '🌹100 LOBISOMENS ESTRATÉGIA🌹', '⚔️ Treine • lute • conquiste 🐺',
   ], signature: DEV_SIGNATURE, sections: [
     { title: '🐺 JORNADA DO LOBO', lines: [
@@ -78,13 +79,15 @@ export function gameMenu(config) {
   return `${game}\n\n${rpMenu(config)}`;
 }
 
-function shopText(items, prefix) {
-  return formatMenu({ title: 'LOJA DA ALCATEIA', subtitle: '💰 Tesouros e vantagens de batalha', signature: DEV_SIGNATURE,
+function shopText(items, config) {
+  return formatMenu({ title: 'LOJA DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
+    ownerNumber: config.ownerNumber,
+    subtitle: '💰 Tesouros e vantagens de batalha', signature: DEV_SIGNATURE,
     sections: [{ title: '🛍️ ARSENAL LUNAR', lines: items.map(item => {
     const effect = item.type === 'training' ? 'um treino extra imediato' :
       `${BOOST_NAMES[item.type] || line(item.type)} +${Math.round(item.value * 100)}% por 1 hora`;
     return `💎 ${item.id}. ${line(item.name)}\n💰 ${item.price} WOK Coin\n⭐ ${effect}`;
-  }) }, { title: '💳 ORDEM DE COMPRA', lines: [`💰 Compre com ${prefix}comprar 1/2/3/4.`] }] });
+  }) }, { title: '💳 ORDEM DE COMPRA', lines: [`💰 Compre com ${config.prefix}comprar 1/2/3/4.`] }] });
 }
 
 function rankingText(players) {
@@ -181,7 +184,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
           await ctx.reply(rankingText(result.players));
           break;
         case 'shop':
-          await ctx.reply(shopText(result.items, prefix));
+          await ctx.reply(shopText(result.items, ctx.config));
           break;
         case 'purchase':
           await ctx.reply(frame('COMPRA CONCLUÍDA', [

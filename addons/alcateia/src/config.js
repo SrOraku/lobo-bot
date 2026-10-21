@@ -1,10 +1,10 @@
 import path from 'node:path';
+import { BOT_NAME, BOT_DESCRIPTION, OWNER_NUMBER } from './game/constants.js';
 
-export const BOT_NAME = '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑';
-export const BOT_DESCRIPTION = '🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺';
+export { BOT_NAME, BOT_DESCRIPTION };
 
 export function loadConfig(env = process.env) {
-  const ownerNumber = (env.OWNER_NUMBER || '5543920030769').replace(/\D/g, '');
+  const ownerNumber = (env.OWNER_NUMBER || OWNER_NUMBER).replace(/\D/g, '');
   const pairingNumber = (env.PAIRING_NUMBER || '').replace(/\D/g, '');
   if (!/^\d{8,15}$/.test(ownerNumber)) throw new Error('OWNER_NUMBER inválido: use DDI + DDD + número.');
   if (pairingNumber && !/^\d{8,15}$/.test(pairingNumber)) throw new Error('PAIRING_NUMBER inválido.');

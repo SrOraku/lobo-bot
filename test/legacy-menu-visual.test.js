@@ -7,6 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const BOT_NAME = '🌹 Lobo da Matilha 🐺';
+const BOT_DESCRIPTION = '🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺';
 const PREFIX = '!!';
 const source = fs.readFileSync(path.join(__dirname, '../src/commands/menu.js'), 'utf8');
 
@@ -17,7 +18,7 @@ function fixture() {
     exports: loaded.exports,
     require(id) {
       assert.equal(id, '../utils/helpers', 'o menu deve depender apenas dos dados de apresentação');
-      return { BOT_NAME, PREFIX };
+      return { BOT_NAME, BOT_DESCRIPTION, PREFIX };
     },
   }, { filename: 'src/commands/menu.js' });
   const sent = [];
@@ -80,6 +81,7 @@ for (const menuCase of cases) {
     assert.ok(text.startsWith('🌹'));
     assert.ok(text.endsWith('🐺'));
     assert.ok(text.includes(BOT_NAME));
+    assert.ok(text.includes(BOT_DESCRIPTION));
     assert.match(text, /╔.*❖.*♆/u);
     assert.match(text, /╚.*🌹/u);
     for (const category of menuCase.categories) assert.ok(text.includes(category), category);
@@ -87,8 +89,8 @@ for (const menuCase of cases) {
     const commands = [...text.matchAll(/\*!!([^*]+)\*/g)].map(match => match[1]);
     assert.deepEqual(commands, menuCase.commands, 'o prefixo customizado e cada comando devem continuar utilizáveis');
     assert.ok(!text.includes('${PREFIX}'));
-    assert.ok(text.includes('+55 43 99637-5955'));
-    assert.ok(text.includes('+55 43 92003-0769'));
+    assert.ok(text.includes('🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺'));
+    assert.ok(text.includes('+5543920030769'));
     assert.ok(text.length < 4_500, 'a moldura não deve transformar o menu em várias mensagens de decoração');
   });
 }

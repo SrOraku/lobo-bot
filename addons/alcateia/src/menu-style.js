@@ -1,3 +1,5 @@
+import { BOT_NAME, BOT_DESCRIPTION, OWNER_NUMBER } from './game/constants.js';
+
 const RULE = '═══✦════❖════♆════❖════✦═══';
 const CONTENT_WIDTH = 34;
 
@@ -22,8 +24,11 @@ function wrap(value, width = CONTENT_WIDTH) {
 function bodyRows(value) { return linesOf(value).flatMap(line => wrap(line).map(row => row ? `║ ${row}` : '║')); }
 
 /** Shared text-only presentation; this helper never interprets a command. */
-export function formatMenu({ title = 'MENU DA ALCATEIA', subtitle = [], sections = [], signature = '' } = {}) {
-  const output = [`🌹╔${RULE}╗`, ...bodyRows(`👑 ♆ ${title} ♆`), ...bodyRows(subtitle)];
+export function formatMenu({ title = 'MENU DA ALCATEIA', botName = BOT_NAME, botDescription = BOT_DESCRIPTION, ownerNumber = OWNER_NUMBER,
+  subtitle = [], sections = [], signature = '' } = {}) {
+  const description = botDescription || BOT_DESCRIPTION;
+  const output = [`🌹╔${RULE}╗`, ...bodyRows(botName), `║ ${description}`, ...bodyRows(`👑 Dono: +${ownerNumber}`),
+    ...bodyRows(`👑 ♆ ${title} ♆`), ...bodyRows(subtitle)];
   for (const section of sections) {
     if (section.title) {
       const [heading, ...continuation] = wrap(section.title, 26);
@@ -39,7 +44,8 @@ export function formatMenu({ title = 'MENU DA ALCATEIA', subtitle = [], sections
 }
 
 /** Restyle an existing menu template while preserving its command text. */
-export function decorateMenuText(text, { title = 'MENU DA ALCATEIA', signature = '' } = {}) {
+export function decorateMenuText(text, { title = 'MENU DA ALCATEIA', botName = BOT_NAME,
+  botDescription = BOT_DESCRIPTION, ownerNumber = OWNER_NUMBER, signature = '' } = {}) {
   const subtitle = [];
   const sections = [];
   let current = { title: '', lines: [] };
@@ -60,8 +66,10 @@ export function decorateMenuText(text, { title = 'MENU DA ALCATEIA', signature =
       continue;
     }
     if (/^[═━─╣╗╝]+$/u.test(row)) continue;
-    current.lines.push(row.replace(/^║\s?/u, ''));
+    const contents = row.replace(/^║\s?/u, '');
+    if (contents === botName || contents === botDescription || contents === `👑 Dono: +${ownerNumber}`) continue;
+    current.lines.push(contents);
   }
   if (current.lines.length || current.title) sections.push(current);
-  return formatMenu({ title, subtitle, sections, signature });
+  return formatMenu({ title, botName, botDescription, ownerNumber, subtitle, sections, signature });
 }

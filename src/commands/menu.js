@@ -1,12 +1,12 @@
 'use strict';
-const { BOT_NAME, PREFIX } = require('../utils/helpers');
+const { BOT_NAME, BOT_DESCRIPTION, PREFIX } = require('../utils/helpers');
 
-const DEVELOPER = '🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺';
-const DEV_CONTACT = '+55 43 99637-5955 | +55 43 92003-0769';
+const DEVELOPER = '🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺';
+const DEV_CONTACT = '+5543920030769';
 
 function frameMenu(text) {
   return `🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗
-${text.trim()}
+${text.trim().replace(BOT_NAME, `${BOT_NAME}\n${BOT_DESCRIPTION}`)}
 ╚═══❖🌹❖═══♆═══❖🐾❖═══╝
 🌹⚜️ A FORÇA DA ROSA • A ALMA DO LOBO ⚜️🐺`;
 }

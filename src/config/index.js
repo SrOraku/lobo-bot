@@ -1,15 +1,16 @@
 'use strict';
 
 // ============================================================
-// 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — CONFIGURAÇÃO CENTRAL
-// Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺
+// 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ — CONFIGURAÇÃO CENTRAL
+// Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
 // ============================================================
 
 const DEFAULTS = {
+  BOT_OWNER:             '5543920030769',
   BOT_NAME:              '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
   BOT_DESCRIPTION:       '🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺',
-  DEVELOPER_NAME:        '🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺',
-  DEVELOPER_CONTACT:     '+55 43 92003-0769 | +55 43 99637-5955',
+  DEVELOPER_NAME:        '🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺',
+  DEVELOPER_CONTACT:     '+5543920030769',
   PREFIX:                '!',
   SESSION_NAME:          'lobo-bot-session',
   LOG_LEVEL:             'info',

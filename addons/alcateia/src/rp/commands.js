@@ -74,7 +74,8 @@ export function isRPCommand(command, args = []) {
 
 export function rpMenu(config = {}) {
   const p = config.prefix || '!';
-  return formatMenu({ title: 'MENU RP DA ALCATEIA', subtitle: [
+  return formatMenu({ title: 'MENU RP DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
+    ownerNumber: config.ownerNumber, subtitle: [
     '🌹 Viva sua história. Honre sua família.', '💰 A carteira WOK Coin é a mesma dos lobisomens.',
   ], signature: DEV_SIGNATURE, sections: [
     { title: '🐺 SUA NOVA JORNADA', lines: [
@@ -116,7 +117,8 @@ function profileText(result, at) {
   ]);
 }
 
-function jobsText(result, prefix) {
+function jobsText(result, config) {
+  const prefix = config?.prefix || '!';
   const lines = (result.jobs || []).slice(0, PAGE_SIZE).flatMap(job => [
     `⭐ ${clean(job.id)} • ${clean(job.name)} [${clean(job.category)}]`,
     `💰 ${salaryOf(job)} • ⏳ ${duration(job.cooldownMs ?? job.cooldown)}`,
@@ -124,20 +126,25 @@ function jobsText(result, prefix) {
     `🐺 ${clean(job.description, 'Consulte a profissão para conhecer sua função.', 180)}`,
   ]);
   if (!lines.length) lines.push('🐺 Nenhuma profissão encontrada para esse filtro.');
-  return formatMenu({ title: 'PROFISSÕES RP', subtitle: '⭐ Talento, respeito e influência', signature: DEV_SIGNATURE,
+  return formatMenu({ title: 'PROFISSÕES RP', botName: config?.botName, botDescription: config?.botDescription,
+    ownerNumber: config?.ownerNumber,
+    subtitle: '⭐ Talento, respeito e influência', signature: DEV_SIGNATURE,
     sections: [{ title: '📚 CARREIRAS DA CIDADE', lines },
       { title: '🧭 ESCOLHA SEU CAMINHO', lines: [...pageFooter('profissoes', result, prefix),
         `⭐ Escolha: ${prefix}profissao ID ou nome.`, '💰 Pagamentos em WOK Coin.'] }] });
 }
 
-function shopText(result, prefix) {
+function shopText(result, config) {
+  const prefix = config?.prefix || '!';
   const lines = (result.items || []).slice(0, PAGE_SIZE).flatMap(item => [
     `💎 ${clean(item.id)} • ${clean(item.name)}`,
     `💰 ${money(item.price)}`,
     `🐺 ${itemDescription(item)}`,
   ]);
   if (!lines.length) lines.push('🐺 Nenhum item nessa página.');
-  return formatMenu({ title: 'LOJA RP', subtitle: '🌹 Elegância, conforto e prestígio', signature: DEV_SIGNATURE,
+  return formatMenu({ title: 'LOJA RP', botName: config?.botName, botDescription: config?.botDescription,
+    ownerNumber: config?.ownerNumber,
+    subtitle: '🌹 Elegância, conforto e prestígio', signature: DEV_SIGNATURE,
     sections: [{ title: '🛍️ VITRINE DA ALCATEIA', lines },
       { title: '💳 ESCOLHA SEU TESOURO', lines: [...pageFooter('rploja', result, prefix),
         `💰 Comprar: ${prefix}rpcomprar ITEM [quantidade].`] }] });
@@ -176,7 +183,7 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
       ]);
       break;
     case 'rp-profile': text = profileText(response, at); break;
-    case 'rp-jobs': text = jobsText(response, p); break;
+    case 'rp-jobs': text = jobsText(response, ctx.config); break;
     case 'rp-job':
       text = frame('PROFISSÃO RP', [
         `⭐ ${nameOf(response.job)}`, `🐺 ${clean(response.job.description, 'Sua profissão foi atualizada.', 180)}`,
@@ -214,7 +221,7 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
     }
     case 'rp-wallet': text = frame('CARTEIRA WOK', [`🐺 ${nameOf(player)}`, `💰 Saldo: ${money(player.coins)}`, '🌹 Carteira única do RP e dos lobisomens.']); break;
     case 'rp-transfer': text = frame('TRANSFERÊNCIA WOK', [`🐺 Destinatário: ${nameOf(response.target)}`, `💰 Transferido: ${money(response.amount)}`, `💰 Seu saldo: ${money(player.coins)}`]); break;
-    case 'rp-shop': text = shopText(response, p); break;
+    case 'rp-shop': text = shopText(response, ctx.config); break;
     case 'rp-purchase':
       text = frame('COMPRA RP', [`💎 ${nameOf(response.result.item)} × ${response.result.quantity}`, `💰 Total: ${money(response.result.totalCost)}`, `💰 Carteira: ${money(player.coins)}`]);
       break;

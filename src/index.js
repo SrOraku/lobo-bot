@@ -2,9 +2,9 @@
 require('dotenv').config();
 
 // ============================================================
-// 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — PONTO DE ENTRADA PRINCIPAL
-// Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺
-// +55 43 92003-0769 | +55 43 99637-5955
+// 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ — PONTO DE ENTRADA PRINCIPAL
+// Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
+// +5543920030769
 // ============================================================
 
 const {
@@ -123,7 +123,7 @@ async function startBot() {
       numero = await askQuestion(`
 🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
 
-   🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾
+   🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📱 Digite o número do WhatsApp do bot
@@ -142,7 +142,7 @@ async function startBot() {
       console.log(`
 🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
 
-         🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾
+         🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑
 
 ╔═══════════════════════════════════╗
 ║   🔑 CÓDIGO DE PAREAMENTO LOBO-BOT ║
@@ -162,8 +162,8 @@ async function startBot() {
    Reinicie o bot se expirar.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺
-📞 +55 43 92003-0769 | +55 43 99637-5955
+👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
+📞 +5543920030769
 
 🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹
 `);
@@ -215,7 +215,7 @@ async function startBot() {
       const ownerJid = config.get('BOT_OWNER');
       if (ownerJid) {
         await sock.sendMessage(`${ownerJid}@s.whatsapp.net`, {
-          text: `🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹\n\n*${BOT_NAME}*\n\n✅ *Bot conectado com sucesso!*\n🐺 Matilha pronta para batalha!\n\n_Uuuuuuwooooo! 🐺🌕_\n\n👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺\n📞 +55 43 92003-0769\n\n🌹🐺✦❀🌹🐺✦❀🌹`
+          text: `🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹\n\n*${BOT_NAME}*\n\n✅ *Bot conectado com sucesso!*\n🐺 Matilha pronta para batalha!\n\n_Uuuuuuwooooo! 🐺🌕_\n\n👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺\n📞 +5543920030769\n\n🌹🐺✦❀🌹🐺✦❀🌹`
         }).catch(() => {});
       }
     }

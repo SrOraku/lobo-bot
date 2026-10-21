@@ -4,6 +4,8 @@ Esta integração adiciona o novo **100 Lobisomens Estratégia + RP** por um plu
 
 Nome exibido: **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑**. Descrição: 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
+Desenvolvedor: **🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺**. Dono do bot: **+5543920030769**. A pasta de entrega é `Lobo-bot-v1/`; o nome técnico do pacote continua `lobo-bot`.
+
 ## Comandos e compatibilidade
 
 O prefixo acompanha `PREFIX` do bot. Os exemplos abaixo usam `!`:

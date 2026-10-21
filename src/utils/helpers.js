@@ -1,19 +1,20 @@
 'use strict';
 // ============================================================
-// 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — HELPERS
-// Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺
-// +55 43 92003-0769 | +55 43 99637-5955
+// 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ — HELPERS
+// Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
+// +5543920030769
 // ============================================================
 
 require('dotenv').config();
 const chalk = require('chalk');
 const pino  = require('pino');
 
-const BOT_NAME = process.env.BOT_NAME  || '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾';
+const BOT_NAME = process.env.BOT_NAME  || '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑';
+const BOT_DESCRIPTION = process.env.BOT_DESCRIPTION || '🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺';
 const PREFIX   = process.env.PREFIX    || '!';
-const OWNER    = process.env.BOT_OWNER || '';
-const DEV_NAME = process.env.DEVELOPER_NAME    || '🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺';
-const DEV_TEL  = process.env.DEVELOPER_CONTACT || '+55 43 92003-0769 | +55 43 99637-5955';
+const OWNER    = process.env.BOT_OWNER || '5543920030769';
+const DEV_NAME = process.env.DEVELOPER_NAME    || '🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺';
+const DEV_TEL  = process.env.DEVELOPER_CONTACT || '+5543920030769';
 
 // ── Logger simples (sem depender de config/logger para evitar circular) ──
 const logger = pino({
@@ -152,12 +153,12 @@ function printBanner() {
   console.log(chalk.red(`
 🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
 
-         🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾
+         🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑
 
 ╔══════════════════════════════════════════════════╗
 ║   100 LOBISOMENS + LOBO-BOT V3                   ║
-║   Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび♆̶❒᭄꥓〭 🐺                     ║
-║   +55 43 92003-0769 | +55 43 99637-5955          ║
+║   Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺                     ║
+║   +5543920030769          ║
 ╚══════════════════════════════════════════════════╝
 
 🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹
@@ -166,7 +167,7 @@ function printBanner() {
 
 module.exports = {
   logger,
-  BOT_NAME, PREFIX, OWNER, DEV_NAME, DEV_TEL,
+  BOT_NAME, BOT_DESCRIPTION, PREFIX, OWNER, DEV_NAME, DEV_TEL,
   formatNumber, formatTime, formatDate,
   cleanJid, getNumber, toJid, isBrazilianFake,
   sleep, progressBar, wolvesBar, mention,

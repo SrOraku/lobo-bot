@@ -1,6 +1,10 @@
+export const BOT_NAME = '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑';
+export const BOT_DESCRIPTION = '🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺';
+export const DEVELOPER_NAME = '🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺';
+export const OWNER_NUMBER = '5543920030769';
 export const GAME_TITLE = '🌹100 LOBISOMENS ESTRATÉGIA🌹';
-export const DEV_SIGNATURE = '🌹 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄꥓〭🐺';
-export const GAME_OWNERS = Object.freeze(['5543996375955', '5543920030769']);
+export const DEV_SIGNATURE = `🌹 Dev: ${DEVELOPER_NAME}`;
+export const GAME_OWNERS = Object.freeze(['5543996375955', OWNER_NUMBER]);
 export const LIMITS = Object.freeze({ hp: 100, wolves: 100, attack: 40, defense: 40, counter: 20 });
 export const COOLDOWNS = Object.freeze({ training: 3_600_000, battle: 300_000, event: 86_400_000, duel: 120_000 });
 export const header = title => `🌹═══[${title}]═══🌹`;

@@ -104,7 +104,7 @@ function createAdapter({ modules, db, config, logger = console, startedAt = Date
       sock, msg: ctx.msg, chatId, sender, senderPhone: actor.phoneNumber,
       senderKey: actor.phoneNumber, displayName: ctx.msg.pushName || ctx.pushName || actor.phoneNumber.split('@')[0],
       isGroup, metadata, group, isOwner: actor.isOwner, isAdmin: actor.isAdmin,
-      startedAt, config: { prefix, botName: getConfig(config, 'BOT_NAME') || ctx.BOT_NAME || '🐺 Alcateia',
+      startedAt, config: { prefix, ownerNumber, botName: getConfig(config, 'BOT_NAME') || ctx.BOT_NAME || '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
         botDescription: getConfig(config, 'BOT_DESCRIPTION') || '' },
       command: route.command, args: route.args, argText: route.argText,
       reply, runInBackground,
