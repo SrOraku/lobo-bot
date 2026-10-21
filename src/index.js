@@ -54,20 +54,20 @@ require('dotenv').config();
 // +5543920030769
 // ============================================================
 
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore,
-  makeInMemoryStore,
-  Browsers,
-} = require('@whiskeysockets/baileys');
-
 const pino      = require('pino');
 const path      = require('path');
 const fs        = require('fs');
 const readline  = require('readline');
+
+// Baileys 7 é ESM. O restante do Lobo-bot continua CommonJS,
+// então carregamos o módulo oficialmente via import() dinâmico.
+let baileysModulePromise = null;
+function loadBaileys() {
+  if (!baileysModulePromise) {
+    baileysModulePromise = import('@whiskeysockets/baileys');
+  }
+  return baileysModulePromise;
+}
 
 // ── Utils & Config ──────────────────────────────────────────
 const { printBanner, logger, BOT_NAME, OWNER, sleep } = require('./utils/helpers');
@@ -93,15 +93,38 @@ if (!validation.ok) {
   process.exit(1);
 }
 
-// ── Store em memória ─────────────────────────────────────────
-const store = makeInMemoryStore({ logger: pino({ level: 'silent' }) });
+// ── Cache simples de mensagens para retries do Baileys 7 ───
+const MESSAGE_CACHE_MAX = 1000;
+const messageCache = new Map();
+
+function messageCacheKey(key) {
+  if (!key?.remoteJid || !key?.id) return null;
+  return `${key.remoteJid}:${key.id}`;
+}
+
+function cacheMessage(msg) {
+  const key = messageCacheKey(msg?.key);
+  if (!key || !msg?.message) return;
+
+  messageCache.set(key, msg.message);
+
+  if (messageCache.size > MESSAGE_CACHE_MAX) {
+    const oldest = messageCache.keys().next().value;
+    if (oldest) messageCache.delete(oldest);
+  }
+}
+
+function getCachedMessage(key) {
+  const cacheKey = messageCacheKey(key);
+  return cacheKey ? messageCache.get(cacheKey) : undefined;
+}
 
 const SESSION_DIR = path.join(__dirname, '../sessions', config.get('SESSION_NAME'));
 fs.mkdirSync(SESSION_DIR, { recursive: true });
 
-let sock             = null;
+let sock              = null;
 let reconnectAttempts = 0;
-const MAX_RECONNECT  = config.getNumber('MAX_RECONNECT') || 10;
+const MAX_RECONNECT   = config.getNumber('MAX_RECONNECT') || 10;
 
 // ============================================================
 // HELPER: PERGUNTAR NO TERMINAL
@@ -115,6 +138,20 @@ function askQuestion(query) {
 // INICIAR BOT
 // ============================================================
 async function startBot() {
+  const baileys = await loadBaileys();
+  const makeWASocket = baileys.default || baileys.makeWASocket;
+  const {
+    useMultiFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    makeCacheableSignalKeyStore,
+    Browsers,
+  } = baileys;
+
+  if (typeof makeWASocket !== 'function') {
+    throw new Error('Baileys 7 não carregou makeWASocket corretamente.');
+  }
+
   printBanner();
   logger.info(`🐺 Iniciando ${BOT_NAME}...`);
 
@@ -130,31 +167,28 @@ async function startBot() {
   logger.info(`📦 Baileys v${version.join('.')} | Atualizado: ${isLatest}`);
 
   const jaConectado = !!state.creds?.registered;
+  const silentLogger = pino({ level: 'silent' });
 
   sock = makeWASocket({
     version,
-    logger: pino({ level: 'silent' }),
+    logger: silentLogger,
     printQRInTerminal: false,
     auth: {
       creds: state.creds,
-      keys:  makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
+      keys: makeCacheableSignalKeyStore(state.keys, silentLogger),
     },
-    browser:                    Browsers.ubuntu('Chrome'),
-    markOnlineOnConnect:        true,
+    browser: Browsers.ubuntu('Chrome'),
+    markOnlineOnConnect: true,
     generateHighQualityLinkPreview: true,
-    syncFullHistory:            false,
-    fireInitQueries:            true,
-    connectTimeoutMs:           60_000,
-    defaultQueryTimeoutMs:      30_000,
-    keepAliveIntervalMs:        10_000,
-    retryRequestDelayMs:        2_000,
+    syncFullHistory: false,
+    connectTimeoutMs: 60_000,
+    defaultQueryTimeoutMs: 30_000,
+    keepAliveIntervalMs: 10_000,
+    retryRequestDelayMs: 2_000,
     getMessage: async (key) => {
-      const msg = await store.loadMessage(key.remoteJid, key.id).catch(() => null);
-      return msg?.message || { conversation: 'Olá!' };
+      return getCachedMessage(key) || { conversation: 'Olá!' };
     },
   });
-
-  store?.bind(sock.ev);
 
   // ── Carregar plugins após socket criado ──────────────────
   await loadAllPlugins(sock);
@@ -281,9 +315,11 @@ async function startBot() {
 
   // ── Mensagens ────────────────────────────────────────────────
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message) continue;
+      cacheMessage(msg);
+
+      if (type !== 'notify') continue;
       setImmediate(() =>
         handleMessage(sock, msg).catch(err => logger.error({ err }, '❌ handleMessage'))
       );
