@@ -4,7 +4,6 @@
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
-const MENU_WRAPPER = Symbol.for('lobo.alcateia.menuWrapper');
 const DIRECT_COMMANDS = Object.freeze([
   'start', 'treino', 'formacao', 'ataque', 'rank', 'clan', 'evento', 'admin',
   'rp', 'profissoes', 'profissao', 'trabalhar', 'acao', 'carteira', 'transferir',
@@ -173,12 +172,16 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
     const request = { command, args, argText: args.join(' ') };
     const adapted = await state.adapter(sock, ctx, request);
     if (!adapted) return;
-    if (command === 'menu') {
+    if (command === 'menu' || (command === 'rp' && (!args.length || args[0]?.toLowerCase() === 'menu'))) {
       try {
         const jid = state.modules.canonicalPlayerJid(adapted.senderPhone);
         const allowance = await state.store.transactionGame(game => state.modules.consumeCommand(game, jid, now()));
-        if (!allowance.allowed) { await adapted.reply(state.modules.ANTI_SPAM_MESSAGE); return; }
-        await adapted.reply(`${adapted.config.botDescription ? adapted.config.botDescription + '\n\n' : ''}${state.modules.gameMenu(adapted.config)}`);
+        if (!allowance.allowed) return adapted.reply(state.modules.ANTI_SPAM_MESSAGE);
+        const current = state.upstream.registry.get('menu');
+        if (current) return current.handler(sock, {
+          ...ctx, command: 'menu', args: [command === 'rp' ? 'rp' : 'alcateia'],
+        });
+        await adapted.reply(state.modules.gameMenu(adapted.config));
       } catch (error) {
         if (error?.name === 'GameError') await adapted.reply(`🐺 ${error.message}`);
         else throw error;
@@ -211,17 +214,6 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
       plugin.commands = routes();
       for (const command of Object.keys(plugin.commands)) {
         if (state.upstream.registry.has(command)) delete plugin.commands[command];
-      }
-      const menu = state.upstream.registry.get('menu');
-      if (menu && !menu.handler[MENU_WRAPPER]) {
-        const original = menu.handler;
-        const wrapped = async (sock, ctx) => {
-          if (ctx.args?.[0]?.toLowerCase() === 'alcateia') return route(sock, ctx, 'menu', []);
-          await original(sock, ctx);
-          if (!ctx.args?.length) await route(sock, ctx, 'menu', []);
-        };
-        Object.defineProperty(wrapped, MENU_WRAPPER, { value: true });
-        state.upstream.register({ ...menu, handler: wrapped });
       }
       state.backupManager.start();
     },

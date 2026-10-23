@@ -241,7 +241,7 @@ test('quota and deduplication protect the addon across aliases, namespaces and r
   assert.equal(f.data().game.players[MEMBER].coins, 100);
 });
 
-test('legacy commands and aliases retain identity while the menu wrapper is idempotent', async t => {
+test('legacy commands, aliases and menu registration retain identity across loads', async t => {
   const f = await fixture(t);
   await f.plugin.onLoad(f.sock);
   for (const command of ['perfil', 'profile', 'loja', 'shop', 'comprar', 'buy', 'gold', 'atacar', 'ban']) {
@@ -257,14 +257,11 @@ test('legacy commands and aliases retain identity while the menu wrapper is idem
   assert.equal(f.registry.get('menu'), wrapped);
   await wrapped.handler(f.sock, f.ctx('menu'));
   assert.equal(f.sent[0].content.text, 'LEGACY_MENU');
-  assert.match(f.sent[1].content.text, /MENU DA ALCATEIA/);
-  assert.match(f.sent[1].content.text, /!perfilalcateia/);
-  assert.match(f.sent[1].content.text, /!lojaalcateia/);
-  assert.match(f.sent[1].content.text, /!compraralcateia/);
+  assert.equal(f.sent.length, 1, 'plugin não deve despejar jogos no menu principal');
   assert.deepEqual(f.legacyCalls, ['menu']);
 });
 
-test('category menus remain original, while explicit menu alcateia displays only the addon', async t => {
+test('category menus delegate to the central renderer without addon overrides', async t => {
   const f = await fixture(t);
   await f.plugin.onLoad(f.sock);
   await f.registry.get('menu').handler(f.sock, f.ctx('menu', ['gold']));
@@ -272,11 +269,11 @@ test('category menus remain original, while explicit menu alcateia displays only
   f.tick();
   await f.registry.get('menu').handler(f.sock, f.ctx('menu', ['alcateia']));
   assert.equal(f.sent.length, 2);
-  assert.match(f.sent[1].content.text, /MENU DA ALCATEIA/);
-  assert.deepEqual(f.legacyCalls, ['menu']);
+  assert.equal(f.sent[1].content.text, 'LEGACY_MENU');
+  assert.deepEqual(f.legacyCalls, ['menu', 'menu']);
 });
 
-test('reconnect wraps the fresh legacy registry without nesting menus or duplicating backup timers', async t => {
+test('reconnect preserves the fresh registry without nesting menus or duplicating backup timers', async t => {
   const modules = await realModules();
   const managers = [];
   class TrackedBackupManager extends modules.BackupManager {
@@ -292,7 +289,7 @@ test('reconnect wraps the fresh legacy registry without nesting menus or duplica
   assert.equal(f.loads(), 1);
   await f.registry.get('menu').handler(f.sock, f.ctx('menu'));
   assert.equal(f.sent.filter(item => item.content.text === 'LEGACY_MENU').length, 1);
-  assert.equal(f.sent.filter(item => /MENU DA ALCATEIA/.test(item.content.text)).length, 1);
+  assert.equal(f.sent.filter(item => /MENU DA ALCATEIA/.test(item.content.text)).length, 0);
   await f.plugin.onUnload();
   assert.equal(managers[0].timer, null);
 });
@@ -325,10 +322,8 @@ test('a newly registered upstream name wins without removing namespace access', 
 test('custom prefixes and namespace validation messages use usable collision-free commands', async t => {
   const f = await fixture(t, { prefix: '!!' });
   await f.plugin.commands.alcateia(f.sock, f.ctx('alcateia'));
-  assert.match(f.text(), /!!perfilalcateia/);
-  assert.match(f.text(), /!!compraralcateia/);
-  assert.doesNotMatch(f.text(), /!!!/);
-  assert.doesNotMatch(f.text(), /!!perfil\s/);
+  assert.equal(f.text(), 'LEGACY_MENU', 'atalho delega ao menu central sem acrescentar RP');
+  assert.deepEqual(f.legacyCalls, ['menu']);
   f.tick();
   await f.plugin.commands.start(f.sock, f.ctx());
   f.tick();

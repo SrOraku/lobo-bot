@@ -31,6 +31,7 @@ function register(def) {
 
   const cmd = {
     name:        def.name,
+    menuShortcut: def.menuShortcut || false,
     aliases:     def.aliases     || [],
     description: def.description || 'Sem descrição',
     usage:       def.usage       || `!${def.name}`,

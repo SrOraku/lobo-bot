@@ -18,6 +18,12 @@ function loadAllCommands() {
   // Menu
   r({name:'menu',    aliases:['ajuda','help'], description:'Menu principal',     category:'geral',  usage:'!menu [categoria]', example:'!menu gold', handler:menu.menu});
 
+  for (const category of Object.keys(require('../menus/catalog').CATEGORIES)) {
+    if (['rp','alcateia'].includes(category)) continue; // rotas existentes do plugin
+    if (require('../core/commandRegistry').registry.has(category)) continue;
+    r({name:category, menuShortcut:true, category:'geral', description:'Abrir menu '+category, handler:(sock,ctx)=>menu.menu(sock,{...ctx,args:[category]})});
+  }
+
   // 100 Lobisomens
   r({name:'estrategia',aliases:['strategy'],  description:'Ver estratégia',      category:'lobo',   usage:'!estrategia',                            example:'!estrategia',                 handler:wolf.verEstrategia});
   r({name:'mudar',                             description:'Mudar estratégia',   category:'lobo',   usage:'!mudar estrategia ataque:X defesa:Y contra:Z', example:'!mudar estrategia ataque:40 defesa:35 contra:25', handler:wolf.mudarEstrategia});
@@ -64,8 +70,8 @@ function loadAllCommands() {
 
   // Mídia
   r({name:'play',                              description:'Buscar música',       category:'midia',  usage:'!play [nome/url]',                      example:'!play Shape of You',          handler:media.play});
-  r({name:'ytmp3',    aliases:['playmp3'],     description:'Baixar MP3',          category:'midia',  usage:'!ytmp3 [nome/url]',                     example:'!ytmp3 Bohemian Rhapsody',    handler:media.playMp3});
-  r({name:'ytmp4',    aliases:['playmp4'],     description:'Baixar MP4',          category:'midia',  usage:'!ytmp4 [nome/url]',                     example:'!ytmp4 tutorial Node.js',     handler:media.playMp4});
+  r({name:'ytmp3',    aliases:['playmp3','play_audio'],     description:'Baixar MP3',          category:'midia',  usage:'!ytmp3 [nome/url]',                     example:'!ytmp3 Bohemian Rhapsody',    handler:media.playMp3});
+  r({name:'ytmp4',    aliases:['playmp4','play_video'],     description:'Baixar MP4',          category:'midia',  usage:'!ytmp4 [nome/url]',                     example:'!ytmp4 tutorial Node.js',     handler:media.playMp4});
   r({name:'tiktok',   aliases:['tk'],          description:'Baixar TikTok',       category:'midia',  usage:'!tiktok [url]',                         example:'!tiktok https://vm.tiktok.com/...',handler:media.tiktok});
   r({name:'ig',       aliases:['instagram'],   description:'Baixar Instagram',    category:'midia',  usage:'!ig [url]',                             example:'!ig https://www.instagram.com/p/...', handler:media.instagram});
   r({name:'spotify',  aliases:['spot'],        description:'Buscar Spotify',      category:'midia',  usage:'!spotify [nome]',                       example:'!spotify Blinding Lights',    handler:media.spotify});
