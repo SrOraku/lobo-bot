@@ -74,3 +74,19 @@ A atualização por comando cria `updates/backup-*/protected-data/` antes de sub
 Proteção de dono cobre ban, mute, kick, rebaixamento, remoção de inativos e banimento do jogo. LIDs precisam de resolução confiável antes de punições. Novos comandos punitivos devem reutilizar o mesmo verificador.
 
 Esta revisão não anuncia funções ausentes como se existissem: IA, OCR, remoção de fundo, cassino, forca e velha não foram acrescentados. As categorias permanecem disponíveis e indicam ausência de comandos quando aplicável. Essas expansões precisam de implementação própria e, nos recursos externos, de provedor configurado. Não foi feita validação em WhatsApp real nesta revisão.
+
+
+## AntiLink e advertências 3.9.0
+
+- `!antilink on/off`: todos os links (alias `!antilinkgeral`).
+- `!antilinkgrupo on/off`: somente convites de grupos do WhatsApp (aliases `!anticonvite`, `!antilinkwhatsapp`).
+- `!antilink delete` / `!antilinkgrupo delete`: ativam somente a exclusão da mensagem, sem avisos no chat, advertências ou expulsão.
+- `!antilink warn` / `!antilinkgrupo warn`: apagam e somam uma advertência. A quinta remove o participante.
+- `kick` continua disponível por compatibilidade e só é usado quando configurado explicitamente.
+- `!advertir @participante motivo` (`!adv`, `!warn`): advertência administrativa.
+- `!advertencias @participante` (`!avisos`): contador do grupo.
+- `!resetadvertencias @participante` (`!resetadv`): zera somente nesse grupo, mantendo histórico administrativo.
+
+Configurações dos dois AntiLinks são independentes; o modo inicial é delete. As advertências são compartilhadas entre ações manuais e links do mesmo participante no mesmo grupo, persistem no SQLite e não expiram automaticamente. Eventos repetidos não contam duas vezes. Links que acionam mais de uma regra somam somente uma advertência. Donos e administradores ficam isentos; o bot precisa ser administrador. Sem número resolvido, o bot apaga o link sem advertir. Nenhum histórico anterior de cache é inventado durante a migração.
+
+Referência consultada: árvore pública de Salientekill/ESDEATH-RUST. A implementação das ativações/moderação não está exposta como fonte nessa distribuição; nenhuma paridade integral é prometida e nenhum executável da referência é executado. A implementação acima pertence à arquitetura JavaScript do Lobo Bot.

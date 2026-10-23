@@ -24,7 +24,7 @@ function inspect(message) {
   const context = current[type]?.contextInfo || {};
   return { message: current, type, body, viewOnce, mentions: context.mentionedJid || [] };
 }
-const links = /(?:https?:\/\/|www\.|bit\.ly|t\.co|wa\.me|chat\.whatsapp\.com)[^\s]*/i;
+const links = /(?:https?:\/\/|www\.|(?<![\w@.-])(?:[a-z0-9-]+\.)+(?:com|net|org|br|io|gg|me|ly|co|app|dev|tv|xyz|site)\b)[^\s]*/i;
 const invitations = /chat\.whatsapp\.com\/[A-Za-z0-9]+/i;
 function matchingFeatures(data, body, enabled) {
   const matches = [];
@@ -33,7 +33,7 @@ function matchingFeatures(data, body, enabled) {
   };
   add('antilink', links.test(body));
   add('antilinkgrupo', invitations.test(body));
-  add('antilinkexterno', links.test(body) && !invitations.test(body));
+  add('antilinkexterno', links.test(String(body).replace(/(?:https?:\/\/)?chat\.whatsapp\.com\/[A-Za-z0-9]+[^\s]*/gi, '')));
   add('anticontato', ['contactMessage', 'contactsArrayMessage'].includes(data.type));
   add('antimarcacao', data.mentions.length > 5);
   add('antiviewonce', data.viewOnce);

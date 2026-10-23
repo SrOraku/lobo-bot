@@ -5,6 +5,12 @@ const { inspect, matchingFeatures, createMessageTracker } = require('../activati
 const track = createMessageTracker();
 async function handleProtection(sock, msg, { jid, sender, body, isGroup }) {
   if (!isGroup) return false;
+  let deleted = false;
+  async function remove(user) {
+    const response = await sock.groupParticipantsUpdate(jid, [user], 'remove');
+    if (Array.isArray(response) && response.some(item => item.status && !['200', '201'].includes(String(item.status))))
+      throw Error('WhatsApp recusou a remoção.');
+  }
   try {
     const enabled = (id) => manager.isEnabled(jid, id),
       data = inspect(msg.message);
@@ -27,28 +33,42 @@ async function handleProtection(sock, msg, { jid, sender, body, isGroup }) {
     }
     const feature = candidate[0];
     await sock.sendMessage(jid, { delete: msg.key });
-    // AntiFlood/AntiSpam apagam o excesso sem gerar uma resposta para cada mensagem.
-    if (!['antiflood', 'antispam'].includes(feature))
-      await sock.sendMessage(jid, {
-        text: `🌹 🛡️ ${require('../activations/registry').feature(feature).name}: mensagem bloqueada. 🐺`,
-      });
+    deleted = true;
     const policy = require('../activations/store').getStore().get(jid);
-    if (
-      feature === 'antifake' ||
-      (feature === 'antilink' && policy.options.antilink_mode === 'kick')
-    )
-      await sock.groupParticipantsUpdate(jid, [sender], 'remove');
-    else if (feature === 'antilink' && policy.options.antilink_mode === 'warn') {
-      const cache = require('../utils/cache'),
-        key = `warn_${actor.phone || sender}_${jid}`,
-        warnings = ((await cache.get(key)) || 0) + 1;
-      await cache.set(key, warnings, 86400);
-      if (warnings >= 3) await sock.groupParticipantsUpdate(jid, [sender], 'remove');
+    const linkFeatures = candidate.filter(id => ['antilink', 'antilinkgrupo', 'antilinkexterno'].includes(id));
+    // Regras sobrepostas produzem uma única advertência por mensagem.
+    const modes = linkFeatures.map(id => policy.options[id + '_mode'] || 'delete');
+    const mode = modes.includes('kick') ? 'kick' : modes.includes('warn') ? 'warn' : 'delete';
+    if (feature === 'antifake' || (linkFeatures.length && mode === 'kick')) {
+      await remove(actor.jid || sender);
+    } else if (linkFeatures.length && mode === 'warn') {
+      if (!actor.phone) {
+        logger.warn({ group: jid }, 'Link apagado sem advertência: número não resolvido.');
+        return true;
+      }
+      const result = require('../moderation/warnings').getWarningStore().add(
+        jid, actor.phone, 'automatico', linkFeatures.join(','), msg.key.id,
+      );
+      if (!result.duplicate) {
+        let removed = false;
+        if (result.count >= 5) {
+          await remove(actor.jid || sender);
+          removed = true;
+        }
+        await sock.sendMessage(jid, { text: require('../menus/render').frameNotice('⚠️ ADVERTÊNCIA POR LINK', [
+          `Advertências: ${result.count}/5.`,
+          removed ? 'Participante removido ao atingir o limite.' : 'Na quinta advertência, o participante será removido.',
+        ]) });
+      }
+    } else if (!linkFeatures.length && !['antiflood', 'antispam'].includes(feature)) {
+      await sock.sendMessage(jid, { text: require('../menus/render').frameNotice('🛡️ MENSAGEM BLOQUEADA', [
+        require('../activations/registry').feature(feature).name,
+      ]) });
     }
     return true;
   } catch (error) {
     logger.warn({ code: error.code || error.name }, 'Falha ao executar proteção do grupo.');
-    return false;
+    return deleted;
   }
 }
 module.exports = { handleProtection };

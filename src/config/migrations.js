@@ -162,6 +162,10 @@ CREATE TABLE isolation_seed_auto_replies AS SELECT * FROM auto_replies;
 CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messages;
 `},
   { version: 7, name: 'repair_activation_audit', up: ACTIVATION_AUDIT_SCHEMA },
+  { version: 8, name: 'group_warnings', up: `
+    CREATE TABLE IF NOT EXISTS group_warnings(group_jid TEXT NOT NULL,user_jid TEXT NOT NULL,total INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(group_jid,user_jid));
+    CREATE TABLE IF NOT EXISTS group_warning_events(id INTEGER PRIMARY KEY AUTOINCREMENT,group_jid TEXT NOT NULL,user_jid TEXT NOT NULL,actor TEXT NOT NULL,reason TEXT,event_id TEXT NOT NULL,created_at TEXT DEFAULT (datetime('now')),UNIQUE(group_jid,event_id));
+  ` },
 ];
 
 function runMigrations(db) {

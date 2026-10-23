@@ -32,12 +32,12 @@ function createActivationHandler({
         else if (!args.length) value = !manager.isEnabled(ctx.jid, name);
         else if (['on', '1', 'off', '0'].includes(args[0]?.toLowerCase()))
           value = ['on', '1'].includes(args.shift().toLowerCase());
-        else if (name === 'antilink' && ['delete', 'warn', 'kick'].includes(args[0])) value = true;
+        else if (['antilink', 'antilinkgrupo', 'antilinkexterno'].includes(registry.feature(name)?.id) && ['delete', 'warn', 'kick'].includes(args[0])) value = true;
         else if (name === 'antiinatividade' && /^\d+$/.test(args[0])) value = true;
         else throw Error('Use on/off ou 1/0.');
         const options = {};
-        if (name === 'antilink' && ['delete', 'warn', 'kick'].includes(args[0]))
-          options.antilink_mode = args.shift();
+        if (['antilink', 'antilinkgrupo', 'antilinkexterno'].includes(registry.feature(name)?.id) && ['delete', 'warn', 'kick'].includes(args[0]))
+          options[(registry.feature(name)?.id || name) + '_mode'] = args.shift();
         if (name === 'antiinatividade' && /^\d+$/.test(args[0])) {
           options.inactivity_days = Number(args.shift());
           if (options.inactivity_days < 1 || options.inactivity_days > 365)
@@ -49,13 +49,13 @@ function createActivationHandler({
           String(name).toLowerCase() === 'tudo'
             ? await manager.bulk(ctx.jid, value, context)
             : await manager.set(ctx.jid, [name], value, context);
-        if (!result.changed.length)
+        if (!result.changed.length && !Object.keys(options).length)
           return reply(
             `🌹 ⚠️ ${result.unchanged[0]?.name || 'As funções'} já ${value ? 'está ativado' : 'está desativado'} neste grupo. 🐺`,
           );
         return reply(
           frameMenu('🐺 ATIVAÇÃO', [
-            `${value ? '🟢 Função ativada' : '🔴 Função desativada'}\n⚙️ Recurso: ${result.changed.map((f) => f.name).join(', ')}\n👥 Grupo: ${group}\n╰─➤ Configuração salva.`,
+            `${value ? '🟢 Função ativada' : '🔴 Função desativada'}\n⚙️ Recurso: ${[...result.changed, ...result.unchanged].map((f) => f.name).join(', ')}${['antilink', 'antilinkgrupo', 'antilinkexterno'].some(id => registry.feature(name)?.id === id) ? `\n🛡️ Ação: ${result.policy.options[registry.feature(name).id + '_mode'] || 'delete'} (warn: 5 advertências; delete: somente apagar)` : ''}\n👥 Grupo: ${group}\n╰─➤ Configuração salva.`,
           ]),
         );
       }

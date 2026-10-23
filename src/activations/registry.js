@@ -42,7 +42,7 @@ function add(id, name, category, handler, options = {}) {
 }
 const protection = (...args) => require('../handlers/protection').handleProtection(...args);
 for (const [id, name, column, aka] of [
-  ['antilink', 'AntiLink', 'antilink', ['anti-link']],
+  ['antilink', 'AntiLink geral', 'antilink', ['anti-link', 'antilinkgeral']],
   ['antifake', 'AntiFake brasileiro', 'antifake', []],
   ['anticontato', 'AntiContato', 'anticontact', ['anticontact']],
   ['antimarcacao', 'AntiMarcação excessiva', 'antitag', ['antitag']],
@@ -53,7 +53,7 @@ for (const [id, name, column, aka] of [
     botAdminRequired: true,
   });
 for (const [id, name, aka] of [
-  ['antilinkgrupo', 'AntiLink de grupos', ['anticonvite']],
+  ['antilinkgrupo', 'AntiLink de grupos WhatsApp', ['anticonvite', 'antilinkwhatsapp']],
   ['antilinkexterno', 'AntiLink externo', []],
   ['antispam', 'AntiMensagem repetida', ['antirepeticao']],
   ['antiflood', 'AntiFlood de mensagens', []],
