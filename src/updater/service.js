@@ -55,7 +55,7 @@ async function safeTarget(root, name) {
 async function atomicWrite(file, data, mode = 0o644) {
   await fs.mkdir(path.dirname(file), { recursive: true });
   const temporary = `${file}.${randomUUID()}.tmp`;
-  try { await fs.writeFile(temporary, data, { flag: 'wx', mode }); await fs.rename(temporary, file); }
+  try { const handle = await fs.open(temporary, 'wx', mode); try { await handle.writeFile(data); await handle.sync(); } finally { await handle.close(); } await fs.rename(temporary, file); }
   finally { await fs.rm(temporary, { force: true }); }
 }
 function githubRepository(value) {
@@ -180,6 +180,10 @@ class UpdateService {
         phase = 'verificação de inicialização';
         await this._run(process.execPath, ['scripts/check-startup.js'], stage);
       }
+      phase = 'verificação de sintaxe';
+      await this._run('npm', ['run', 'check:syntax'], stage);
+      phase = 'testes críticos';
+      await this._run('npm', ['test'], stage);
       phase = 'backup e aplicação';
       const result = await this._apply(stage, files, { action, sha, version: targetVersion || pkg.version, reuseDependencies });
       this.needsRestart = true;
@@ -235,8 +239,9 @@ class UpdateService {
           if (!(await fs.lstat(target)).isFile()) throw new UpdateError('O destino da atualização não é um arquivo.');
           await atomicWrite(path.join(backup, name), await fs.readFile(target));
         }
-        saved.push({ name, present, mode: present ? (await fs.stat(target)).mode & 0o777 : 0o644 });
+        saved.push({ name, present, sha256: present ? require('node:crypto').createHash('sha256').update(await fs.readFile(target)).digest('hex') : null, mode: present ? (await fs.stat(target)).mode & 0o777 : 0o644 });
       }
+      await atomicWrite(path.join(this.directory, 'apply-journal.json'), JSON.stringify({ backup: path.basename(backup), saved, previous, hadModules: await exists(modules), reuseDependencies: result.reuseDependencies }), 0o600);
       if (!result.reuseDependencies) {
         applyStep = 'troca de dependências';
         if (await exists(modules)) { await fs.rename(modules, path.join(backup, 'node_modules')); oldModules = true; }
@@ -252,6 +257,7 @@ class UpdateService {
         sha: result.sha || previous?.sha || null,
         files: result.action === 'bot' ? [...incoming] : previous?.files || [] };
       await atomicWrite(path.join(this.directory, 'state.json'), JSON.stringify(state));
+      await fs.rm(path.join(this.directory, 'apply-journal.json'), { force: true });
     } catch (error) {
       error.updateStage = applyStep;
       try {
@@ -262,6 +268,7 @@ class UpdateService {
         }
         if (newModules) await fs.rm(modules, { recursive: true, force: true });
         if (oldModules) await fs.rename(path.join(backup, 'node_modules'), modules);
+        await fs.rm(path.join(this.directory, 'apply-journal.json'), { force: true });
       } catch (rollback) {
         this.logger.error?.({ error: rollback.message, backup }, 'Restauração manual necessária.');
         throw new UpdateError('Não consegui concluir a restauração. Pare o bot e restaure o backup em updates/.', 'ROLLBACK_FAILED');

@@ -15,13 +15,16 @@ function registerFeature(feature) {
     adminOnly: true,
     botAdminRequired: false,
     bulkSafe: false,
+    groupOnly: true,
+    dependencies: [],
+    incompatibilities: [],
     ...feature,
   });
-  for (const alias of [item.id, ...item.aliases]) {
-    const key = String(alias).toLowerCase();
-    if (aliases.has(key)) throw Error('Alias duplicado de ativação.');
-    aliases.set(key, item.id);
-  }
+  const keys = [item.id, ...item.aliases].map(alias => String(alias).trim().toLowerCase());
+  if (new Set(keys).size !== keys.length || keys.some(key => !key || aliases.has(key)))
+    throw Error('Alias duplicado de ativação.');
+  // Validate the complete registration before mutating either index.
+  for (const key of keys) aliases.set(key, item.id);
   features.set(item.id, item);
   return item;
 }

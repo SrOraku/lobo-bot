@@ -4,6 +4,7 @@ const path = require('node:path');
 function start({ spawn = fork, exit = code => process.exit(code), ask = question => require('../utils/terminal-input').localAsk(question) } = {}) {
   let child, stopping = false, restart = false, timer;
   function launch() {
+    require('./recovery').recover(path.resolve(__dirname, '../..'));
     restart = false;
     child = spawn(path.join(__dirname, '../runtime.js'), [], {
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],

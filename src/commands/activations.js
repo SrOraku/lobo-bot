@@ -24,6 +24,26 @@ function createActivationHandler({
     const args = (ctx.args || []).map(String),
       group = clean(actor.groupName || ctx.jid);
     try {
+      if (!forcedAction && !featureId && args[0]?.toLowerCase() === 'historico') {
+        if (args.length !== 1) throw Error('Use apenas historico.');
+        const rows = repository.history(ctx.jid);
+        return reply(frameMenu('📜 HISTÓRICO DE ATIVAÇÕES', rows.length ? rows.map(row =>
+          `${row.created_at} • ${clean(row.feature)}: ${clean(row.previous_state)} → ${clean(row.new_state)}`) : ['Nenhuma alteração registrada neste grupo.']));
+      }
+      if (!forcedAction && !featureId && args[0]?.toLowerCase() === 'diagnostico') {
+        if (args.length > 2 || (args[1] && args[1].toLowerCase() !== 'completo')) throw Error('Use diagnostico ou diagnostico completo.');
+        if (args[1] && !actor.owner) throw Error('Diagnóstico completo é exclusivo do dono.');
+        const items = manager.diagnostics(ctx.jid, actor);
+        return reply(frameMenu('🛡️ DIAGNÓSTICO DE ATIVAÇÕES', [
+          `👥 Grupo: ${group}`,
+          ...items.map(item => `${item.issues.length ? '⚠️' : item.enabled ? '✅' : '❌'} ${item.name}${item.issues.length ? ' — ' + item.issues.join(', ') : ''}`),
+          ...(args[1] ? [`Registry: ${items.length} recursos; setores informativos excluídos.`, 'Cache carregado; alterações usam transação SQLite.'] : []),
+        ]));
+      }
+      if (featureId && args.length === 1 && args[0].toLowerCase() === 'status') {
+        const item = manager.diagnostics(ctx.jid, actor).find(f => f.id === registry.feature(featureId)?.id);
+        return reply(frameMenu('🐺 ESTADO DA FUNÇÃO', [`${item.enabled ? '✅ ATIVO' : '❌ DESATIVADO'} • ${item.name}`, ...item.issues.map(issue => '⚠️ ' + issue)]));
+      }
       let result;
       if (forcedAction || featureId) {
         let name = featureId || args.shift(),

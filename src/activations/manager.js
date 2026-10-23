@@ -1,6 +1,5 @@
 'use strict';
 const registry = require('./registry');
-const { change } = require('./policy');
 function groupId(value) {
   if (typeof value !== 'string' || !/^\d+(?:-\d+)?@g\.us$/.test(value))
     throw Error('Grupo inválido.');
@@ -35,6 +34,12 @@ function createManager(store) {
   }
   async function set(jid, names, enabled, { actor, botAdmin = false, options = {} } = {}) {
     groupId(jid);
+    if (typeof enabled !== 'boolean') throw Error('Estado de ativação inválido.');
+    for (const [key, value] of Object.entries(options)) {
+      if (['antilink_mode', 'antilinkgrupo_mode', 'antilinkexterno_mode'].includes(key)) {
+        if (!['delete', 'warn', 'kick'].includes(value)) throw Error('Modo de moderação inválido.');
+      } else if (key !== 'inactivity_days') throw Error('Opção de ativação desconhecida.');
+    }
     if (Object.hasOwn(options, 'inactivity_days') && (!Number.isInteger(options.inactivity_days) || options.inactivity_days < 1 || options.inactivity_days > 90))
       throw Error('Informe um número inteiro de 1 a 90 dias.');
     if (!actor?.owner && !actor?.admin)
@@ -53,28 +58,23 @@ function createManager(store) {
           throw Error('Esta função exige que o bot seja administrador do grupo.');
         const previous =
           f.source === 'sector' ? current.sectors[f.id] !== 'off' : !!current.features[f.id];
-        if (f.source === 'sector') {
-          const oldMode = current.sectors[f.id] || 'membros';
-          const remembered = current.options?.sector_modes?.[f.id] || 'membros';
-          const next = change(current, {
-            action: 'set',
-            target: f.id,
-            value: enabled ? (previous ? oldMode : remembered) : 'off',
-            ...actor,
-          });
-          if (previous !== enabled) {
-            if (!enabled)
-              next.options = {
-                ...next.options,
-                sector_modes: { ...next.options?.sector_modes, [f.id]: oldMode },
-              };
-            current = next;
-          }
-        } else {
-          current.features[f.id] = enabled;
-          if (!enabled)
+        if (enabled && typeof f.handler !== 'function') throw Error('Handler indisponível: ' + f.id);
+        if (enabled && f.ownerOnly && !actor.owner) throw Error('Somente o dono pode ativar: ' + f.id);
+        for (const other of enabled ? f.incompatibilities || [] : [])
+          if (current.features[other]) throw Error('Desative primeiro o recurso incompatível: ' + other);
+        current.features[f.id] = enabled;
+        if (!enabled) {
+          const disabled = new Set([f.id]);
+          let expanded;
+          do {
+            expanded = false;
             for (const dependent of registry.list())
-              if (dependent.dependencies?.includes(f.id)) current.features[dependent.id] = false;
+              if (!disabled.has(dependent.id) && dependent.dependencies?.some(id => disabled.has(id))) {
+                current.features[dependent.id] = false;
+                disabled.add(dependent.id);
+                expanded = true;
+              }
+          } while (expanded);
         }
         for (const dependency of enabled ? f.dependencies || [] : [])
           if (!current.features[dependency])
@@ -87,6 +87,17 @@ function createManager(store) {
     return { changed, unchanged, policy: result };
   }
   return {
+    diagnostics(jid, { botAdmin = false } = {}) {
+      groupId(jid);
+      return states(jid).map(f => ({ id: f.id, name: f.name, enabled: f.enabled,
+        issues: [
+          ...(typeof f.handler !== 'function' ? ['HANDLER_AUSENTE'] : []),
+          ...(f.enabled && f.botAdminRequired && !botAdmin ? ['BOT_NAO_ADMIN'] : []),
+          ...(f.enabled ? (f.dependencies || []).filter(id => !registry.feature(id) || !isEnabled(jid, id)).map(id => 'DEPENDENCIA:' + id) : []),
+          ...(f.enabled ? (f.incompatibilities || []).filter(id => isEnabled(jid, id)).map(id => 'INCOMPATIVEL:' + id) : []),
+        ],
+      }));
+    },
     isEnabled,
     getGroupFeatures: states,
     getEnabledFeatures: (jid) => states(jid).filter((f) => f.enabled),

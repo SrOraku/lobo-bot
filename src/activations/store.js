@@ -43,7 +43,7 @@ function createPolicyStore(db) {
       next = new Map();
     for (const row of records) {
       try {
-        next.set(row.group_jid, normalize(JSON.parse(row.policy)));
+        next.set(row.group_jid, normalize(JSON.parse(row.policy), legacy.get(row.group_jid)));
       } catch {
         next.set(row.group_jid, new Error('Configuração de ativação inválida.'));
       }
@@ -90,6 +90,9 @@ function createPolicyStore(db) {
   });
   return {
     get,
+    history(jid, limit = 10) {
+      return db.prepare('SELECT feature,previous_state,new_state,actor,created_at FROM activation_audit WHERE group_jid=? ORDER BY id DESC LIMIT ?').all(jid, Math.max(1, Math.min(50, Number(limit) || 10)));
+    },
     preload,
     update(jid, actor, fn) {
       const next = transaction(jid, actor, fn);

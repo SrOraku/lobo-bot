@@ -39,6 +39,8 @@ async function fixture(t, options = {}) {
       await fs.writeFile(path.join(dir, 'package.json'), JSON.stringify({ version: '7.0.0-rc14' }));
       await fs.writeFile(path.join(settings.cwd, 'node_modules/new-marker'), 'new dependency');
     } else {
+      if (options.failSyntax && args.includes('check:syntax')) throw Error('syntax failed');
+      if (options.failTests && args[0] === 'test') throw Error('tests failed');
       if (options.failCheck) throw new Error('check failed');
       if (checker) await checker(settings.cwd);
     }
@@ -138,3 +140,13 @@ test('atualização só de código reutiliza dependências verificadas sem npm c
   assert.equal(await f.read('node_modules/old-marker'), 'old dependency');
   await f.preserved();
 });
+
+for (const option of ['failSyntax', 'failTests']) {
+  test('staging rejects ' + option + ' before applying any live file', async t => {
+    const f = await fixture(t, { [option]: true });
+    await assert.rejects(f.service.update('bot'));
+    assert.equal(await f.read('src/index.js'), 'old code');
+    assert.equal(await f.read('node_modules/old-marker'), 'old dependency');
+    await f.preserved();
+  });
+}
