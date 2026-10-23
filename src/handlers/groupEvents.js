@@ -3,8 +3,8 @@ const db = require('../utils/database');
 const fs = require('node:fs');
 const path = require('node:path');
 const welcomeImage = path.join(__dirname, '../assets/bem-vindo.jpg');
-const { IDENTITY } = require('../menus/render');
-const { BOT_NAME, cleanJid, getNumber, logger } = require('../utils/helpers');
+const { welcomeCaption, GOODBYE } = require('../menus/group-captions');
+const { cleanJid, getNumber, logger } = require('../utils/helpers');
 
 async function processGroupParticipantsUpdate(sock, update) {
   try {
@@ -13,7 +13,7 @@ async function processGroupParticipantsUpdate(sock, update) {
     for (const participant of participants) {
       const jid = cleanJid(typeof participant === 'string' ? participant : participant?.id || participant?.phoneNumber || '');
       if (!jid) continue;
-      const number = getNumber(jid);
+      const number = getNumber(typeof participant === 'object' && participant.phoneNumber ? cleanJid(participant.phoneNumber) : jid);
 
       if (action === 'add') {
         // Boas-vindas
@@ -29,7 +29,13 @@ async function processGroupParticipantsUpdate(sock, update) {
             db.upsertStrategy(jid, 34, 33, 33);
           }
 
-          const caption = `🌙 *[ ${BOT_NAME} ]*\n\n╔══════════════════════╗\n║   🐾 *BEM-VINDO!* 🐾   ║\n╚══════════════════════╝\n\n🐺 @${number} entrou na matilha!\n\n💰 Você ganhou *${goldStart} Gold* de boas-vindas!\n🐺 Seus *100 Lobos* estão prontos!\n\n📖 Use *!infolobos* para aprender o jogo\n📋 Use *!menu* para ver todos os comandos\n\n_A matilha te recebe com uivos! 🐺🌕_\n\n🌹 Dev: ${IDENTITY.developer}\n${IDENTITY.motto}`;
+          let groupName = db.getGroup?.(id)?.name || 'Alcateia';
+          if (typeof sock.groupMetadata === 'function') {
+            try { groupName = (await sock.groupMetadata(id))?.subject || groupName; }
+            catch { logger.warn('Nome do grupo indisponível; usando o nome salvo.'); }
+          }
+          const caption = welcomeCaption(number, groupName);
+
           try {
             await sock.sendMessage(id, {
               image: fs.readFileSync(welcomeImage), caption, mentions: [jid]
@@ -43,7 +49,7 @@ async function processGroupParticipantsUpdate(sock, update) {
       } else if (action === 'remove') {
         if (require('../activations/manager').manager.isEnabled(id,'despedida')) {
           await sock.sendMessage(id, {
-            text: `🌑 *[ ${BOT_NAME} ]*\n\n😢 *@${number}* deixou a matilha...\n\n_Os lobos uivam em sua despedida. 🐺_\n\n🌹 Dev: ${IDENTITY.developer}\n${IDENTITY.motto}`,
+            text: GOODBYE,
             mentions: [jid]
           });
         }
