@@ -226,33 +226,13 @@ async function startBot() {
 
       bus.emit(EVENTS.BOT_READY, { user });
 
+      console.log(require('./menus/render').connectionNotice());
+
       // Notificar dono
       const ownerJid = config.get('BOT_OWNER');
       if (ownerJid) {
         await sock.sendMessage(`${ownerJid}@s.whatsapp.net`, {
-          text: `🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
-
-      *${BOT_NAME}*
-   〘 SISTEMA OPERACIONAL ATIVO 〙
-
-✅ *Bot conectado com sucesso!*
-🐺 Matilha pronta para batalha!
-
-╭━━⪻ 🌕 *STATUS DO SISTEMA* 🌕 ⪼━━╮
-┃ 📡 *Conexão:* Estável e Sincronizada
-┃ 🛡️ *Blindagem:* Protocolos Ativos
-┃ ⚙️ *Módulos:* 100% Carregados
-┃ ⚔️ *Modo Operacional:* Prontidão Total
-╰━━━━━━━━━━━━━━━━━━━━━━━╯
-
-_Uuuuuuwooooo! 🐺🌕_
-
-╭━━⪻ 👑 *REGISTRO DE COMANDO* 👑 ⪼━━╮
-┃ 👨‍💻 *Dev:* 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
-┃ 📞 *Contato:* +5543920030769
-╰━━━━━━━━━━━━━━━━━━━━━━━╯
-
-🌹🐺✦❀🌹🐺✦❀🌹`
+          text: require('./menus/render').connectionNotice()
         }).catch(() => {});
       }
     }

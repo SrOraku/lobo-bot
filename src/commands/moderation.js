@@ -44,6 +44,8 @@ const ban = requireGroupAdmin(async (sock, ctx) => {
   if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem deseja banir!\n_Exemplo: !ban @usuário_` }, { quoted: msg });
 
   const target = cleanJid(mentioned);
+  if (await require('../utils/owners').protectedOwner(sock, target, jid))
+    return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser alvo de punições.') }, { quoted: msg });
   db.setBanned(target, 1);
 
   await sock.sendMessage(jid, {
@@ -78,6 +80,8 @@ const mute = requireGroupAdmin(async (sock, ctx) => {
   if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem silenciar!` }, { quoted: msg });
 
   const target = cleanJid(mentioned);
+  if (await require('../utils/owners').protectedOwner(sock, target, jid))
+    return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser alvo de punições.') }, { quoted: msg });
   db.setMuted(target, 1);
 
   await sock.sendMessage(jid, {
@@ -112,6 +116,8 @@ const kick = requireGroupAdmin(async (sock, ctx) => {
   if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem deseja remover!` }, { quoted: msg });
 
   const target = cleanJid(mentioned);
+  if (await require('../utils/owners').protectedOwner(sock, target, jid))
+    return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser alvo de punições.') }, { quoted: msg });
   const botAdm = await isBotAdmin(sock, jid);
   if (!botAdm) return sock.sendMessage(jid, { text: `❌ O bot precisa ser admin do grupo para remover membros!` }, { quoted: msg });
 
@@ -168,6 +174,8 @@ const rebaixar = requireGroupAdmin(async (sock, ctx) => {
   if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem rebaixar!` }, { quoted: msg });
 
   const target = cleanJid(mentioned);
+  if (await require('../utils/owners').protectedOwner(sock, target, jid))
+    return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser rebaixado.') }, { quoted: msg });
   await sock.groupParticipantsUpdate(jid, [target], 'demote');
   await sock.sendMessage(jid, {
     text: `⬇️ *[ ${BOT_NAME} ]*\n\n👤 *@${getNumber(target)}* foi *rebaixado* para membro.`,
@@ -234,6 +242,7 @@ const limparInatividade = requireGroupAdmin(async (sock, ctx) => {
   let removed = 0;
   for (const u of inactive) {
     try {
+      if (await require('../utils/owners').protectedOwner(sock, u.jid, jid)) continue;
       await sock.groupParticipantsUpdate(jid, [u.jid], 'remove');
       removed++;
       await sleep(500);

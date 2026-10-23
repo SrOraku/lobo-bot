@@ -61,3 +61,12 @@ function devFooter() {
 }
 
 module.exports = { success, error, warn, info, wolf, usage, ranking, noPermission, devFooter, BORDER_TOP, BORDER_BOT, DIVIDER };
+
+// Todos os avisos usam a mesma identidade e moldura compacta.
+const { frameNotice } = require('../menus/render');
+module.exports.success = (title, body, footer = '') => frameNotice('✅ ' + title, [body, footer].filter(Boolean));
+module.exports.error = (title, body, tip = '') => frameNotice('❌ ' + title, [body, tip ? `💡 _${tip}_` : ''].filter(Boolean));
+module.exports.warn = (title, body) => frameNotice('⚠️ ' + title, [body]);
+module.exports.info = (title, body) => frameNotice('📋 ' + title, [body]);
+module.exports.noPermission = (needed) => frameNotice('🔒 SEM PERMISSÃO', [`_Você precisa ser ${needed} para usar este comando._`]);
+module.exports.usage = (command, example, description = '') => frameNotice('📋 USO CORRETO', [`*${command}*`, `💡 _Exemplo: ${example}_`, description].filter(Boolean));

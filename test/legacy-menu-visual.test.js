@@ -34,8 +34,8 @@ async function render(args = [], prefix = '!!', extra = {}) {
 for (const category of ['', ...Object.keys(CATEGORIES)]) {
   test(`menu ${category || 'principal'} preserva moldura, identidade e prefixo`, async () => {
     const text = await render(category ? [category] : []);
-    assert.ok(text.startsWith('   ╔══❖♆❖══╗\n\n'));
-    assert.ok(text.endsWith('   ╚══❖♆❖══╝'));
+    assert.ok(text.startsWith('🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗\n'));
+    assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐾❖═══╝🐺'));
     for (const value of Object.values(IDENTITY)) assert.ok(text.includes(value));
     assert.ok(text.includes('!!menu'));
     assert.ok(!text.includes('!menu ') || text.includes('!!menu '));
@@ -49,7 +49,7 @@ test('principal compacto só mostra usuário e categorias, sem dados técnicos',
   for (const c of Object.keys(CATEGORIES)) assert.ok(text.includes('!!menu ' + c));
   for (const name of ['ban', 'treino', 'trabalhar', 'sticker', 'ytmp3'])
     assert.ok(!text.includes('!!' + name));
-  assert.ok(text.includes('👤 Usuário: Teste'));
+  assert.ok(text.includes('👤 *Usuário:* Teste'));
   for (const label of [
     'Prefixo:',
     'Versão:',
@@ -141,12 +141,10 @@ test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async ()
   assert.ok(sent.length >= 2);
 });
 
-test('principal usa moldura compacta e simétrica sem excesso de separadores', async () => {
+test('principal usa moldura oficial sem espaços nas bordas', async () => {
   const text = await render([], '!');
-  assert.ok(text.startsWith('   ╔══❖♆❖══╗\n\n' + IDENTITY.name));
-  assert.ok(text.includes(IDENTITY.motto + '\n\nMENU PRINCIPAL DA MATILHA'));
-  assert.ok(text.includes('\n\nDev: ' + IDENTITY.developer));
-  assert.ok(text.endsWith('   ╚══❖♆❖══╝'));
-  assert.equal((text.match(/╔/g) || []).length, 1);
-  assert.ok(!text.includes('🐾'));
+  assert.ok(text.startsWith('🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗\n*' + IDENTITY.name + '*'));
+  assert.ok(text.includes('┃ 🎮 *!menu jogos*'));
+  assert.ok(text.includes('🌹 *Dev:* ' + IDENTITY.developer));
+  assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐾❖═══╝🐺'));
 });

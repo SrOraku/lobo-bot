@@ -169,7 +169,8 @@ class UpdateService {
     const removed = result.action === 'bot' ? (previous?.files || []).filter(name => managedPath(name) && !incoming.has(name)) : [];
     const names = [...incoming, ...removed];
     const backup = path.join(this.directory, `backup-${Date.now()}-${randomUUID()}`);
-    await fs.mkdir(backup);
+    await fs.mkdir(backup, { mode: 0o700 });
+    await require('./data-backup').backupData(this.root, path.join(backup, 'protected-data'));
     const saved = [];
     let oldModules = false, newModules = false;
     const modules = await safeTarget(this.root, 'node_modules');

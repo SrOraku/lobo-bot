@@ -58,9 +58,13 @@ async function execute(commandName, sock, ctx) {
     const pluginCmds = getPluginCommands();
     if (pluginCmds[commandName]) {
       if (!await require('../activations/gate').checkActivation(sock,ctx,commandName)) return;
-      return pluginCmds[commandName](sock, ctx);
+      try { return await pluginCmds[commandName](sock, ctx); }
+      catch (error) {
+        logError(`plugin:${commandName}`, error);
+        return sock.sendMessage(ctx.jid, { text: R.error('ERRO NO COMANDO', 'Tente novamente em instantes.', `Consulte ${config.get('PREFIX')}menu para verificar o uso.`) }, { quoted: ctx.msg }).catch(() => {});
+      }
     }
-    return; // Comando desconhecido — silencioso
+    return sock.sendMessage(ctx.jid, { text: R.warn('COMANDO NÃO ENCONTRADO', `Use ${config.get('PREFIX')}menu para consultar os comandos disponíveis.`) }, { quoted: ctx.msg });
   }
 
   // Rate limit
@@ -101,7 +105,7 @@ async function execute(commandName, sock, ctx) {
     logError(`command:${commandName}`, err, { sender: ctx.sender });
     bus.emit(EVENTS.COMMAND_ERROR, { command: commandName, error: err });
     await sock.sendMessage(ctx.jid, {
-      text: R.error('Erro Inesperado!', `Ocorreu um erro ao executar *!${commandName}*.\n_Tente novamente em instantes._`, 'Se o erro persistir, contate o desenvolvedor.')
+      text: R.error('Erro Inesperado!', `Ocorreu um erro ao executar *${config.get('PREFIX')}${commandName}*.\n_Tente novamente em instantes._`, 'Se o erro persistir, contate o desenvolvedor.')
     }, { quoted: ctx.msg }).catch(() => {});
   }
 }

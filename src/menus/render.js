@@ -14,8 +14,17 @@ function uptime(seconds) {
   const n = Math.floor(seconds);
   return `${Math.floor(n / 3600)}h ${Math.floor((n % 3600) / 60)}m ${n % 60}s`;
 }
-// Blocos curtos e alinhamento simétrico, sem preencher linhas de conteúdo.
-function frameMenu(title, sections) {
-  return `   ╔══❖♆❖══╗\n\n${IDENTITY.name}\n\n${IDENTITY.motto}\n\n${title}\n\n${sections.join('\n\n')}\n\nDev: ${IDENTITY.developer}\n\n   ╚══❖♆❖══╝`;
+const DIVIDER = '┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈';
+function footer() {
+  return `🌹 *Dev:* ${IDENTITY.developer}\n📞 +5543920030769\n${IDENTITY.motto}`;
 }
-module.exports = { IDENTITY, clean, uptime, frameMenu };
+function frameMenu(title, sections) {
+  return `🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗\n*${IDENTITY.name}*\n\n╭──── 🌹 ⚜️ 🐾 ⚜️ 🌹 ────╮\n*${title}*\n╰──────────────────────╯\n\n${sections.join('\n\n')}\n\n${DIVIDER}\n${footer()}\n╚═══❖🌹❖═══♆═══❖🐾❖═══╝🐺`;
+}
+function frameNotice(title, sections) {
+  return `🌹╔═══❖♆❖═══╗\n*${IDENTITY.name}*\n${IDENTITY.motto}\n*${title}*\n${sections.join('\n')}\n🌹 *Dev:* ${IDENTITY.developer}\n📞 +5543920030769\n╚═══❖♆❖═══╝🐺`;
+}
+function connectionNotice() {
+  return `🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹\n\n*${IDENTITY.name}*\n\n✅ *Bot conectado com sucesso!*\n🐺 Matilha pronta para batalha!\n\n_Uuuuuuwooooo! 🐺🌕_\n\n👨‍💻 Dev: ${IDENTITY.developer}\n📞 +5543920030769\n\n${IDENTITY.motto}\n\n🌹🐺✦❀🌹🐺✦❀🌹`;
+}
+module.exports = { IDENTITY, clean, uptime, frameMenu, frameNotice, connectionNotice };

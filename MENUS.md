@@ -63,3 +63,14 @@ Resultado: 292 testes aprovados no Node 22.23.3 e 292 no Node 24.19.0; diagnóst
 O limite de áudio aumentou para 30 minutos e o de vídeo para 10 minutos, mantendo 32 MiB por mídia. Foi adicionado um cliente alternativo YouTube.js quando o ytdl-core falha nos metadados ou no stream. A interpretação de assinaturas usa Jinter em worker separado com prazo e limite de memória. Não utiliza programas Python.
 
 297 testes passaram no Node 22.23.3 e 297 no Node 24.19.0, além dos diagnósticos de inicialização. Um teste de acesso real ao YouTube retornou HTTP 403 neste ambiente; isso impede afirmar que um download externo completo foi validado. Restrições de IP, conteúdo privado ou bloqueios da plataforma podem impedir o download no servidor.
+
+
+## Padronização 3.8.0
+
+Os 15 submenus usam a moldura principal sem recuo, títulos/comandos em negrito e descrições em itálico. O nome do usuário e o prefixo são dinâmicos. Avisos compartilhados, erros de comandos, permissões e atualização usam a moldura compacta. A conexão no terminal e no WhatsApp usa o modelo floral oficial. Contato, lema e assinatura permanecem centralizados no renderizador.
+
+A atualização por comando cria `updates/backup-*/protected-data/` antes de substituir código: `.env`, `sessions`, `auth`, `data` e `storage`. SQLite usa a API de snapshot, incluindo transações confirmadas no WAL. Links são recusados e falhas interrompem a atualização. O backup contém credenciais privadas; não publique nem compartilhe essa pasta. O código não apaga nem restaura dados automaticamente. Backups representam o estado no momento da captura; mensagens recebidas posteriormente continuam nos dados originais.
+
+Proteção de dono cobre ban, mute, kick, rebaixamento, remoção de inativos e banimento do jogo. LIDs precisam de resolução confiável antes de punições. Novos comandos punitivos devem reutilizar o mesmo verificador.
+
+Esta revisão não anuncia funções ausentes como se existissem: IA, OCR, remoção de fundo, cassino, forca e velha não foram acrescentados. As categorias permanecem disponíveis e indicam ausência de comandos quando aplicável. Essas expansões precisam de implementação própria e, nos recursos externos, de provedor configurado. Não foi feita validação em WhatsApp real nesta revisão.

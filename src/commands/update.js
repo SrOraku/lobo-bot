@@ -1,6 +1,6 @@
 'use strict';
 const { UpdateService, UpdateError } = require('../updater/service');
-const { frameMenu } = require('../menus/render');
+const { frameNotice } = require('../menus/render');
 
 async function verifiedOwner(sock, ctx, ownerNumber) {
   const owner = String(ownerNumber || '').replace(/\D/g, '');
@@ -19,7 +19,7 @@ function createUpdateHandler({ service = new UpdateService(), config = require('
   return async (sock, ctx) => {
     const value = key => typeof config.get === 'function' ? config.get(key) : config[key];
     const p = value('PREFIX') || '!';
-    const frame = (title, lines) => frameMenu(`👑 ${title}`, lines);
+    const frame = (title, lines) => frameNotice(`${title === 'ATUALIZAÇÃO CONCLUÍDA' ? '✅' : '👑'} ${title}`, lines);
     const reply = (title, lines) => sock.sendMessage(ctx.jid || ctx.msg?.key?.remoteJid,
       { text: frame(title, lines) }, { quoted: ctx.msg });
     let owner = false;
@@ -57,7 +57,7 @@ function createUpdateHandler({ service = new UpdateService(), config = require('
       if (result.already) return reply('JÁ ATUALIZADO', [`✅ ${action === 'bot' ? 'Bot' : 'Baileys'} já está atualizado (${result.version}).`]);
       return reply('ATUALIZAÇÃO CONCLUÍDA', [
         `✅ ${action === 'bot' ? 'Bot' : 'Baileys'}: ${result.version}`,
-        `💾 Backup do código: updates/${result.backup}`,
+        `💾 Backup do código e dados: updates/${result.backup}`,
         '⏳ Reinicie o bot pelo painel para carregar a atualização.',
       ]);
     } catch (error) {

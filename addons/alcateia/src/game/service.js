@@ -167,6 +167,8 @@ export class GameService {
     if (!Object.hasOwn(counts, action)) throw new GameError('Use !admin status/addmoedas/removemoedas/ban/unban/backup/broadcast/resetcooldown/sethp/addlobos.');
     exactArgs(args, counts[action], `!admin ${action} numero${counts[action] === 3 ? ' quantidade' : ''}`);
     const jid = `${brazilianNumber(args[1])}@s.whatsapp.net`;
+    if (action === 'ban' && jid === '5543920030769@s.whatsapp.net')
+      throw new GameError('O desenvolvedor não pode ser banido do jogo.', 'OWNER_PROTECTED');
     const player = requirePlayer(game, jid, { allowBanned: true });
     switch (action) {
       case 'addmoedas': credit(player, quantity(args[2])); break;

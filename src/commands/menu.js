@@ -1,7 +1,7 @@
 'use strict';
 const config = require('../config');
 const { CATEGORIES, CATEGORY_ALIASES, buildCatalog } = require('../menus/catalog');
-const { frameMenu, clean, uptime } = require('../menus/render');
+const { IDENTITY, frameMenu, clean, uptime } = require('../menus/render');
 const { version } = require('../../package.json');
 function getCatalog() {
   return buildCatalog(
@@ -20,21 +20,21 @@ function createMenu({
     const raw = String(ctx.args?.[0] || '').toLowerCase();
     const category = CATEGORY_ALIASES[raw] || raw;
     const categoryLines = Object.entries(CATEGORIES).map(
-      ([key, title]) => `${title.split(' ')[0]} ${p}menu ${key}`,
+      ([key, title]) => `┃ ${title.split(' ')[0]} *${p}menu ${key}*`,
     );
     let title, sections;
     if (!category) {
       title = 'MENU PRINCIPAL DA MATILHA';
       sections = [
-        `👤 Usuário: ${clean(ctx.pushName || ctx.senderNumber || 'Lobo')}`,
-        categoryLines.join('\n'),
-        `📖 Use ${p}menu + categoria para visualizar seus comandos.`,
+        `👤 *Usuário:* ${clean(ctx.pushName || IDENTITY.developer)}`,
+        `╭─── ❖ *CATEGORIAS* ❖ ───╮\n${categoryLines.join('\n')}\n╰────────────────────╯`,
+        `📖 _Use ${p}menu + categoria para visualizar seus comandos._`,
       ];
     } else if (!CATEGORIES[category]) {
       title = 'CATEGORIA NÃO ENCONTRADA';
       sections = ['🐾 Escolha uma das categorias válidas:', categoryLines.join('\n')];
     } else {
-      title = CATEGORIES[category];
+      title = CATEGORIES[category].replace(' ', ' MENU ');
       const entries = all.filter((c) => c.category === category);
       const lines = entries.map((c) => {
         const usage = (c.usage || `!${c.name}`).replace(/^!\S+/, () => p + c.name);
@@ -44,7 +44,7 @@ function createMenu({
         ]
           .filter(Boolean)
           .join(' • ');
-        return `${usage} — ${c.description}${flags ? ` [${flags}]` : ''}${c.aliases?.length ? `\n↳ ${c.aliases.map((a) => p + a).join(' • ')}` : ''}${c.details?.length ? '\n' + c.details.map((row) => p + c.name + ' ' + row).join('\n') : ''}`;
+        return `┃ 🐾 *${usage}* — _${c.description}_${flags ? ` [${flags}]` : ''}${c.aliases?.length ? `\n↳ ${c.aliases.map((a) => p + a).join(' • ')}` : ''}${c.details?.length ? '\n' + c.details.map((row) => p + c.name + ' ' + row).join('\n') : ''}`;
       });
       sections = [
         lines.length ? lines.join('\n') : '🐾 Nenhum comando desta categoria está instalado.',
@@ -77,7 +77,7 @@ function createMenu({
         sections.push(
           `⭐ Versão: ${version}\n⏱️ Uptime: ${uptime(online())}\n📜 Comandos: ${all.length}\n👑 Dono: +${config.get('BOT_OWNER')}`,
         );
-      sections.push(`↩️ ${p}menu — categorias`);
+      sections = [`👤 *Usuário:* ${clean(ctx.pushName || IDENTITY.developer)}`, `╭─── ❖ *COMANDOS* ❖ ───╮\n${sections.join('\n\n')}\n╰────────────────────╯`, `📖 _Use ${p}menu para retornar ao Menu Principal._`];
     }
     return sock.sendMessage(ctx.jid, { text: frameMenu(title, sections) }, { quoted: ctx.msg });
   };
