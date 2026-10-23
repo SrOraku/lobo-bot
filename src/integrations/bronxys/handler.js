@@ -33,7 +33,7 @@ async function incoming(ctx,signal) {
  finally{signal.removeEventListener('abort',abort);stream.destroy();}
  return {buffer:Buffer.concat(chunks),mime:node.mimetype||({image:'image/jpeg',audio:'audio/mpeg',video:'video/mp4'})[kind],kind};
 }
-function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=incoming,convert}={}) {
+function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=incoming,convert,metadata=require('../../commands/media-info').lookupMedia}={}) {
  return async function handle(sock,ctx) {
   const reply=text=>sock.sendMessage(ctx.jid,{text},{quoted:ctx.msg});
   const query=(ctx.args||[]).join(' ').trim();
@@ -55,7 +55,12 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
    else if(def.format==='sticker'||def.name.startsWith('attp_'))params.fonte='Arial';
    if(def.name.endsWith('_video'))params.type='video';
    directory=await fs.mkdtemp(path.join(tempRoot,'lobo-bronxys-'));
-   const title=filename(query||def.name,'').replace(/\.$/,'');let counter=0;
+   let mediaInfo;
+   if(def.parameter==='nome_url') {
+    mediaInfo=await metadata(query);
+    if(mediaInfo?.url)params.nome_url=mediaInfo.url;
+   }
+   const title=filename(mediaInfo?.title||query||def.name,'').replace(/\.$/,'');let counter=0;
    async function sendFile(url,kind='image',name=title,mime) {
     const file=path.join(directory,'media-'+counter++);
     const received=await client.download(url,file,{signal});let output=file;
@@ -70,6 +75,7 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
     const buffer=await fs.readFile(output);
     const payload=kind==='audio-document'?{document:buffer,mimetype:'audio/mpeg',fileName:filename(name,'mp3')}:kind==='audio'?{audio:buffer,mimetype:'audio/mpeg',fileName:filename(name,'mp3'),ptt:false}:kind==='video'?{video:buffer,mimetype:'video/mp4',fileName:filename(name,'mp4')}:kind==='document'?{document:buffer,mimetype:mime||received||'application/octet-stream',fileName:filename(name,'').replace(/\.$/,'')}:{[kind]:buffer,...(kind==='image'?{mimetype:received||'image/jpeg'}:{})};
     await sock.sendMessage(ctx.jid,payload,{quoted:ctx.msg});
+    if(def.parameter==='nome_url')await require('../../commands/media-info').sendMediaInfo(reply,mediaInfo||{});
    }
    const json=()=>client.json(def.endpoint,params,{signal});
    if(['upload','transcribe','montage'].includes(def.format)) {

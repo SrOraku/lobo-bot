@@ -98,3 +98,7 @@ Links internos para `sessions`, `auth`, `data`, `storage` ou `.env` são copiado
 O `package.json` autoriza scripts de instalação somente nas versões explicitamente revisadas de SQLite, Sharp, FFmpeg Linux x64, Baileys e protobufjs. Não habilite scripts de todos os pacotes indiscriminadamente. O suporte a `allowScripts` depende da versão do npm da hospedagem.
 
 Se a instalação antiga falha com `BACKUP_SYMLINK`, ela ainda usa o atualizador antigo. Para receber esta correção pela primeira vez, extraia o ZIP novo na raiz do bot, substituindo somente os arquivos do código. Preserve `.env`, `sessions/`, `auth/`, `data/` e `storage/`. Depois use `bash atualizar.sh` com a instalação de módulos habilitada. O ZIP configurado contém uma chave privada de API: não publique nem compartilhe esse pacote.
+
+### Informações das músicas (1.5.5)
+
+`play`, `play_audio`, `play_video`, `ytmp3`, `ytmp4` e `playdoc` enviam o arquivo com um painel separado de título, duração, publicação, canal e descrição fornecida pela fonte. Com Bronxys, a busca de metadados seleciona o vídeo e o mesmo URL é enviado ao baixador. A descrição não é resumida pelo bot: mensagens longas são divididas preservando o texto. Dados ausentes são identificados; uma falha de consulta não impede baixar a mídia. A fonte pode fornecer uma descrição incompleta; o bot não reconstrói trechos ausentes. Não há progresso fictício de 100%.

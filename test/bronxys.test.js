@@ -28,7 +28,7 @@ test('redirect is checked and private destination never requested',async()=>{
 test('play delivers an MP3 file instead of just a link and cleans all temporary files',async t=>{
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'bronxys-play-test-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));const sent=[];
  const client={configured:()=>true,endpoint:()=> 'https://example.org/media',download:async(url,dest)=>{await fs.writeFile(dest,'audio bytes');return 'audio/mpeg';}};
- const handler=createHandler(definitions.find(d=>d.name==='play'),{client,tempRoot:directory,convert:(input,out)=>fs.copyFile(input,out)});
+ const handler=createHandler(definitions.find(d=>d.name==='play'),{client,metadata:async()=>null,tempRoot:directory,convert:(input,out)=>fs.copyFile(input,out)});
  await handler({sendMessage:async(jid,payload)=>sent.push(payload)},{jid:'123@g.us',args:['Nome','da','música'],msg:{}});
  assert.ok(Buffer.isBuffer(sent[0].audio));assert.equal(sent[0].mimetype,'audio/mpeg');assert.ok(sent[0].fileName.endsWith('.mp3'));assert.deepEqual(await fs.readdir(directory),[]);
 });
@@ -43,7 +43,7 @@ test('API wrappers are unwrapped and failed downloads leave no temporary files',
  const client=createClient({getKey:()=> 'test-key',lookup,request:async()=>({status:200,headers:{},data:{success:true,data:{cep:'12345678'}}})});
  assert.deepEqual(await client.json('consultacep'),{cep:'12345678'});
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'bronxys-fail-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));
- const handler=createHandler(definitions.find(d=>d.name==='play'),{tempRoot:directory,client:{configured:()=>true,endpoint:()=> 'https://example.org',download:async(url,file)=>{await fs.writeFile(file,'partial');throw Error('private-fixture-url-and-key');}}});
+ const handler=createHandler(definitions.find(d=>d.name==='play'),{metadata:async()=>null,tempRoot:directory,client:{configured:()=>true,endpoint:()=> 'https://example.org',download:async(url,file)=>{await fs.writeFile(file,'partial');throw Error('private-fixture-url-and-key');}}});
  const sent=[];await handler({sendMessage:async(jid,data)=>sent.push(data)},{jid:'123@g.us',args:['teste'],msg:{}});
  assert.equal(sent[0].text.includes('private-fixture'),false);assert.deepEqual(await fs.readdir(directory),[]);
 });
@@ -71,4 +71,11 @@ test('API configuration rejects members and group key disclosure; owner confirma
  assert.ok(sent.some(text=>text.includes('test-version')));
  assert.ok(sent.some(text=>text.includes('API respondeu')));
  assert.equal(writes,1);assert.ok(sent.every(text=>!text.includes('private-fixture')));
+});
+test('play sends actual metadata and downloads the exact selected video',async t=>{
+ const directory=await fs.mkdtemp(path.join(os.tmpdir(),'bronxys-info-test-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));const sent=[];let params;
+ const info={url:'https://www.youtube.com/watch?v=abcdefghijk',title:'Quintal da Magia',timestamp:'11:25',ago:'há 4 anos',author:{name:'Canal original'},description:'Descrição exata\nSem cortes.'};
+ const client={configured:()=>true,endpoint:(endpoint,value)=>{params=value;return 'https://example.org/media';},download:async(url,dest)=>{await fs.writeFile(dest,'audio bytes');return 'audio/mpeg';}};
+ await createHandler(definitions.find(d=>d.name==='play'),{client,metadata:async()=>info,tempRoot:directory,convert:(input,out)=>fs.copyFile(input,out)})({sendMessage:async(jid,payload)=>sent.push(payload)},{jid:'123@g.us',args:['cantiga'],msg:{}});
+ assert.equal(params.nome_url,info.url);assert.ok(Buffer.isBuffer(sent[0].audio));assert.ok(sent[1].text.includes(info.description));assert.ok(sent[1].text.includes('11:25'));assert.equal(sent[0].fileName,'Quintal da Magia.mp3');
 });

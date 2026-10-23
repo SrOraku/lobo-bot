@@ -231,6 +231,7 @@ function createMediaHandler(
               caption: `🎬 ${info.videoDetails.title}\n🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑`,
             };
       await bounded(sock.sendMessage(ctx.jid, content, { quoted: ctx.msg }), 30000);
+      await require('./media-info').sendMediaInfo(reply, info.videoDetails);
     } catch (error) {
       controller.abort();
       const messages = {

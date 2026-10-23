@@ -48,7 +48,7 @@ async function createYoutubeiAdapter({ create, fetch: customFetch } = {}) {
       const details = raw.basic_info;
       if (!details?.duration) throw Error('VIDEO_UNAVAILABLE');
       return {
-        videoDetails: { title: details.title, lengthSeconds: details.duration },
+        videoDetails: { title: details.title, lengthSeconds: details.duration, description: details.short_description, author: {name: details.author}, publishDate: details.publish_date },
         formats: [{ hasAudio: true, hasVideo: true, container: 'mp4', height: 360 }],
         raw,
       };
