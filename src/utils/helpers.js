@@ -17,13 +17,7 @@ const DEV_NAME = process.env.DEVELOPER_NAME    || '🌹♆̽Ø᩺Ɍͬ₳Ꮶび�
 const DEV_TEL  = process.env.DEVELOPER_CONTACT || '+5543920030769';
 
 // ── Logger simples (sem depender de config/logger para evitar circular) ──
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: { colorize: true, translateTime: 'SYS:HH:MM:ss', ignore: 'pid,hostname' }
-  }
-});
+const { logger } = require('../config/logger');
 
 // ── Formatadores ─────────────────────────────────────────────
 function formatNumber(n) {

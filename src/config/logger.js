@@ -11,21 +11,14 @@ const LOG_DIR  = path.join(__dirname, '../../logs');
 const LOG_FILE = path.join(LOG_DIR, `lobo-${new Date().toISOString().slice(0, 10)}.log`);
 fs.mkdirSync(LOG_DIR, { recursive: true });
 
-const level = process.env.LOG_LEVEL || 'info';
-const isDev = process.env.NODE_ENV !== 'production';
-
-// pino-pretty como transport (API correta para pino v8+)
+// Console: apenas erros, mesmo que uma instalação antiga tenha LOG_LEVEL=info.
+// Avisos continuam disponíveis no arquivo para diagnóstico.
 const logger = pino(
-  { level },
-  isDev
-    ? pino.transport({
-        target:  'pino-pretty',
-        options: { colorize: true, translateTime: 'SYS:HH:MM:ss', ignore: 'pid,hostname' },
-      })
-    : pino.multistream([
-        { level, stream: process.stdout },
-        { level: 'warn', stream: fs.createWriteStream(LOG_FILE, { flags: 'a' }) },
-      ])
+  { level: 'warn', redact: ['creds','auth','session','key','*.privKey','*.rootKey','*.chainKey','*.privateKey'] },
+  pino.multistream([
+    { level: 'error', stream: process.stderr },
+    { level: 'warn', stream: fs.createWriteStream(LOG_FILE, { flags: 'a', mode: 0o600 }) },
+  ])
 );
 
 function logError(context, err, extra = {}) {

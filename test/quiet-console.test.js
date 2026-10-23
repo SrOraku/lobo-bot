@@ -1,0 +1,21 @@
+'use strict';
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { installQuietConsole } = require('../src/utils/quiet-console');
+test('console oculta rotina e objetos de sessão, mantém erro e pareamento', () => {
+  const calls = [];
+  const terminal = Object.fromEntries(['log','info','warn','debug','error'].map(name => [name, (...args) => calls.push({name,args})]));
+  const quiet = installQuietConsole(terminal);
+  terminal.info('Closing session:', { privKey: 'secret' });
+  terminal.warn('Session already closed', { rootKey: 'secret' });
+  terminal.log('CMD menu'); terminal.debug('noise');
+  assert.equal(calls.length,0);
+  terminal.error('Falha de conexão', { privKey:'secret' });
+  terminal.error(new Error('Erro real'));
+  quiet.interactive('Digite o número e use o código de pareamento');
+  assert.equal(calls.length,3);
+  assert.ok(!JSON.stringify(calls).includes('secret'));
+  assert.match(calls[1].args[0], /Erro real/);
+  assert.match(calls[2].args[0], /pareamento/);
+  quiet.restore(); terminal.info('visível novamente'); assert.equal(calls.length,4);
+});

@@ -2,6 +2,7 @@
 const { ensureDependencies } = require('./bootstrap');
 if (!ensureDependencies()) process.exit(1);
 require('dotenv').config();
+const terminal = require('./utils/quiet-console').installQuietConsole();
 
 // ============================================================
 // 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ — PONTO DE ENTRADA PRINCIPAL
@@ -100,7 +101,7 @@ async function startBot() {
   logger.info(`📦 Baileys v${version.join('.')} | Atualizado: ${isLatest}`);
 
   const jaConectado = !!state.creds?.registered;
-  const silentLogger = pino({ level: 'silent' });
+  const silentLogger = pino({ level: 'error', redact: ['creds','auth','session','key','*.privKey','*.rootKey','*.chainKey','*.privateKey'] });
 
   sock = makeWASocket({
     version,
@@ -143,7 +144,7 @@ async function startBot() {
       const code = await sock.requestPairingCode(numero);
       const fmt  = code?.match(/.{1,4}/g)?.join('-') || code;
 
-      console.log(`
+      terminal.interactive(`
 🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
 
          🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑
