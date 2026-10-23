@@ -28,7 +28,7 @@ function createArcade(db, { now = Date.now, pick } = {}) {
       db.prepare(`INSERT INTO arcade_scores(chat_jid,user_jid,name,points,wins,played) VALUES (?,?,?,?,?,1)
         ON CONFLICT(chat_jid,user_jid) DO UPDATE SET name=excluded.name,points=points+excluded.points,wins=wins+excluded.wins,played=played+1`)
         .run(chat, user, name, result.points, Number(result.won));
-      result.text += `\n⭐ +${result.points} pontos de jogos (não são Gold nem WOK Coin).\n🏆 ${prefix}placarjogos`;
+      result.text += `\n⭐ +${result.points} pontos de jogos (não são WoK coin).\n🏆 ${prefix}placarjogos`;
     }
     const available = state ? 0 : now() + 60000;
     db.prepare(`INSERT INTO arcade_sessions(chat_jid,user_jid,game,state,updated_at,available_at) VALUES (?,?,?,?,?,?)

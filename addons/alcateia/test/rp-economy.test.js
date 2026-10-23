@@ -216,7 +216,7 @@ test('wrong career actions and low energy do not grant money, XP or reputation',
   assert.deepEqual(p, tired);
 });
 
-test('work, RP purchases and wolf-game purchases all spend the same WOK Coin balance', () => {
+test('work, RP purchases and wolf-game purchases all spend the same WoK coin balance', () => {
   const p = player();
   chooseJob(p, 'entregador', 0);
   work(p, { now: 0 });

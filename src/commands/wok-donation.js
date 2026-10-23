@@ -12,7 +12,7 @@ async function donate(sock,ctx) {
   if(!target?.phoneNumber) return reply('Não foi possível confirmar o número do destinatário.');
   try {
     const result=await require('../../plugins/alcateia-rp').donateWok({chat:ctx.jid,actor:actor.phone,target:target.phoneNumber,amount:Number(amountText[0]),event:ctx.msg.key.id});
-    return reply(`${result.duplicate?'ℹ️ Doação já processada':'✅ Doação concluída'}\n💰 ${result.amount} WOK Coin\nCarteira após essa operação: ${result.after}\n_A doação vale somente para a economia deste chat._`);
+    return reply(`${result.duplicate?'ℹ️ Doação já processada':'✅ Doação concluída'}\n💰 ${result.amount} WoK coin\nCarteira após essa operação: ${result.after}\n_A doação vale somente para a economia deste chat._`);
   } catch(error) {return reply(error.message);}
 }
 module.exports={donate};

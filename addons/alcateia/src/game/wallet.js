@@ -1,6 +1,6 @@
 import { GameError, integer, quantity, assertBalance } from './validation.js';
 
-export const CURRENCY = 'WOK Coin';
+export const CURRENCY = 'WoK coin';
 
 export function credit(player, amount) {
   integer(amount);

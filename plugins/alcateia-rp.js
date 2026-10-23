@@ -106,6 +106,7 @@ function createAdapter({ modules, db, config, logger = console, startedAt = Date
     return {
       sock, msg: ctx.msg, chatId, sender, senderPhone: actor.phoneNumber,
       senderKey: actor.phoneNumber, displayName: ctx.msg.pushName || ctx.pushName || actor.phoneNumber.split('@')[0],
+      verifiedAliases: aliases,
       isGroup, metadata, group, isOwner: actor.isOwner, isAdmin: actor.isAdmin,
       startedAt, config: { prefix, ownerNumber, botName: getConfig(config, 'BOT_NAME') || ctx.BOT_NAME || '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
         botDescription: getConfig(config, 'BOT_DESCRIPTION') || '' },
@@ -150,6 +151,18 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
       const [modules, upstream] = await Promise.all([loadModules(root), loadUpstream()]);
       const logger = upstream.logger || console;
       const store = new modules.Store(path.join(root, 'storage/alcateia/database.json'));
+      const sqlite=upstream.db?.db?.[Symbol.for('lobo.rawDatabase')];
+      if(sqlite) {
+        if(!sqlite.prepare('SELECT 1 FROM universal_currency_seed WHERE id=1').get()) {
+          const fs=require('node:fs/promises');
+          const directory=path.join(root,'storage/alcateia');
+          await fs.mkdir(directory,{recursive:true,mode:0o700});
+          const destination=path.join(directory,'before-universal.sqlite');
+          try {await fs.access(destination);}
+          catch(error){if(error.code!=='ENOENT')throw error;await sqlite.backup(destination);await fs.chmod(destination,0o600);}
+        }
+        require('../src/services/universal-currency').attachUniversalStore(store,upstream.db);
+      }
       const backupManager = new modules.BackupManager({ store,
         directory: path.join(root, 'storage/alcateia/backups'), logger, now });
       function runInBackground(task) {
@@ -179,6 +192,16 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
     const scopedHandler=state.modules.createGameCommandHandler({service:scopedService,backupManager:state.backupManager,logger:state.logger,now});
     const adapted = await state.adapter(sock, ctx, request);
     if (!adapted) return;
+    if(state.store.linkWallet&&adapted.senderPhone) {
+      const phone=state.modules.canonicalPlayerJid(adapted.senderPhone);
+      for(const alias of adapted.verifiedAliases || [adapted.sender])state.store.linkWallet(scopedChat,phone,alias);
+      const originalTarget=adapted.resolveTarget;
+      adapted.resolveTarget=async(...args)=>{
+        const target=await originalTarget(...args);
+        if(target?.phoneNumber)for(const alias of [target.jid,...(target.aliases || [])])state.store.linkWallet(scopedChat,state.modules.canonicalPlayerJid(target.phoneNumber),alias);
+        return target;
+      };
+    }
     if (command === 'menu' || (command === 'rp' && (!args.length || args[0]?.toLowerCase() === 'menu'))) {
       try {
         const jid = state.modules.canonicalPlayerJid(adapted.senderPhone);

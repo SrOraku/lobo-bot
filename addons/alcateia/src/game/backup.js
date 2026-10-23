@@ -19,7 +19,7 @@ export class BackupManager {
     const operation = this.pending.catch(() => {}).then(async () => {
       const at = this.now();
       // Allowlist persistent bot data so credentials added elsewhere never enter a backup.
-      const source = this.store.data;
+      const source = this.store.snapshot ? this.store.snapshot() : this.store.data;
       const snapshot = {
         version: 1, createdAt: at,
         data: structuredClone({ version: source.version, groups: source.groups, game: source.game, gameSeed: source.gameSeed, games: source.games }),

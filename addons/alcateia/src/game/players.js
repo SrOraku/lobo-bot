@@ -18,6 +18,8 @@ export function createPlayer(identity, now = Date.now()) {
 export function registerPlayer(game, identity, now = Date.now()) {
   const player = createPlayer(identity, now);
   if (Object.hasOwn(game.players, player.jid)) throw new GameError('Você já faz parte da alcateia.', 'ALREADY_REGISTERED');
+  // The host supplies the canonical wallet when registering a new game profile.
+  if(Object.hasOwn(game.universalBalances || {},player.jid))player.coins=integer(game.universalBalances[player.jid]);
   game.players[player.jid] = player;
   return player;
 }

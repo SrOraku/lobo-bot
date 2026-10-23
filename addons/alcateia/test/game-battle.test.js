@@ -133,8 +133,8 @@ test('battle message shows both participants, damage, final HP, result and coin 
   assert.match(message, /Danos: 6\.6 × 6\.6/);
   assert.match(message, /HP final: 93\.4\/100 × 33\.4\/100/);
   assert.match(message, /Vitória de Lobo Rosa/);
-  assert.match(message, /\+50 WOK Coin/);
-  assert.match(message, /-25 WOK Coin/);
+  assert.match(message, /\+50 WoK coin/);
+  assert.match(message, /-25 WoK coin/);
   assert.doesNotMatch(message, /[+-]\d+ moedas/);
   assert.doesNotMatch(message, /🌹 Dev:/);
 });

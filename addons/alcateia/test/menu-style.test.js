@@ -69,10 +69,10 @@ test('formatMenu is pure, uses compact borders and keeps signature and command t
 });
 
 test('formatMenu accepts a string subtitle without splitting it into characters', () => {
-  const text = formatMenu({ title: 'LOJA', botName: BOT_NAME, subtitle: 'WOK Coin da alcateia', sections: [], signature: DEV_SIGNATURE });
+  const text = formatMenu({ title: 'LOJA', botName: BOT_NAME, subtitle: 'WoK coin da alcateia', sections: [], signature: DEV_SIGNATURE });
   assertFrame(text);
   assertIdentity(text);
-  assert.match(text, /WOK Coin da alcateia/);
+  assert.match(text, /WoK coin da alcateia/);
   assert.ok(!text.includes(DEV_SIGNATURE));
 });
 
@@ -81,7 +81,7 @@ test('legacy box decorations are replaced while section titles, prices and comma
     '🌹╔═━━〔LOJA DA ALCATEIA〕━━╗',
     '║ Catálogo especial da alcateia',
     '╠══〔ITENS LUNARES〕══╣',
-    '║ 1. Fúria Lunar — 100 WOK Coin',
+    '║ 1. Fúria Lunar — 100 WoK coin',
     '║ !!comprar 1',
     `║ ${DEV_SIGNATURE}`,
     '╚══════════════════════════╝🐺',
@@ -90,7 +90,7 @@ test('legacy box decorations are replaced while section titles, prices and comma
   assertFrame(text);
   assertIdentity(text);
   for (const fragment of ['LOJA DA ALCATEIA', 'ITENS LUNARES', 'Catálogo especial da alcateia', 'Fúria Lunar', '!!comprar']) assert.ok(text.includes(fragment), fragment);
-  assert.match(text, /100\s+WOK\s+Coin/);
+  assert.match(text, /100\s+WoK\s+coin/);
   assert.doesNotMatch(text, /╔═━━〔|║\s*[╔╠╚]/u, 'não deve manter a moldura antiga aninhada');
 });
 
@@ -129,7 +129,7 @@ test('RP menu retains social, profession, inventory and bank command alternative
     for (const action of ['criar', 'perfil', 'convidar', 'casar', 'aceitar', 'recusar', 'sair', 'divorciar', 'depositar', 'retirar']) {
       assert.ok(text.includes(`${prefix}familia ${action}`), action);
     }
-    assert.match(text, /WOK Coin/);
+    assert.match(text, /WoK coin/);
     assert.ok(!text.includes(DEV_SIGNATURE));
   }
 });
@@ -150,8 +150,8 @@ test('wolf shop rendering receives the new frame while preserving item effects a
     assertIdentity(text);
     assert.match(text, /Fúria Lunar/);
     assert.match(text, /Treino Alfa/);
-    assert.match(text, /100\s+WOK\s+Coin/);
-    assert.match(text, /200\s+WOK\s+Coin/);
+    assert.match(text, /100\s+WoK\s+coin/);
+    assert.match(text, /200\s+WoK\s+coin/);
     assert.match(text, /20%/);
     assert.match(text, /1 hora/);
     assertCommands(text, prefix, ['comprar']);
@@ -164,11 +164,11 @@ test('RP shop and professions frames preserve pagination, price, cooldown and ac
     const examples = [
       { result: { type: 'rp-shop', page: 2, totalPages: 4, items: [
         { id: 'agua', name: 'Água Lunar', price: 30, description: 'Recupera a saciedade.' },
-      ] }, fragments: ['agua', 'Água Lunar', '30', 'WOK Coin', '2/4'], command: 'rpcomprar', pageCommand: 'rploja' },
+      ] }, fragments: ['agua', 'Água Lunar', '30', 'WoK coin', '2/4'], command: 'rpcomprar', pageCommand: 'rploja' },
       { result: { type: 'rp-jobs', page: 1, totalPages: 3, jobs: [
         { id: 'policial', name: 'Policial', category: 'publica', description: 'Protege a cidade.',
           salary: { min: 100, max: 200 }, cooldownMs: 300_000 },
-      ] }, fragments: ['policial', 'Policial', '5min', '100', '200', 'WOK Coin', '1/3'], command: 'profissao', pageCommand: 'profissoes' },
+      ] }, fragments: ['policial', 'Policial', '5min', '100', '200', 'WoK coin', '1/3'], command: 'profissao', pageCommand: 'profissoes' },
     ];
     for (const example of examples) {
       const f = ctx(prefix);

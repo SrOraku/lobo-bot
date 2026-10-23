@@ -47,7 +47,7 @@ function profileText(player, rank, at) {
     `💎 HP: ${player.hp}/100 • 🐺 Lobisomens: ${player.wolves}/100`,
     `🗡️ Ataque: ${player.attack}/40 • 🛡️ Defesa: ${player.defense}/40`,
     `⚡ Contra-ataque: ${player.counter}/20`,
-    `💰 WOK Coin: ${player.coins} • 🏆 Ranking: ${rank || 'fora do ranking'}`,
+    `💰 WoK coin: ${player.coins} • 🏆 Ranking: ${rank || 'fora do ranking'}`,
     `⚔️ Vitórias: ${player.wins} • Derrotas: ${player.losses} • Empates: ${player.draws}`,
     `🌹 Clã: ${line(player.clan || 'nenhum')}`,
     `⭐ Boosts ativos: ${boosts.length ? boosts.join(' | ') : 'nenhum'}`,
@@ -86,7 +86,7 @@ function shopText(items, config) {
     sections: [{ title: '🛍️ ARSENAL LUNAR', lines: items.map(item => {
     const effect = item.type === 'training' ? 'um treino extra imediato' :
       `${BOOST_NAMES[item.type] || line(item.type)} +${Math.round(item.value * 100)}% por 1 hora`;
-    return `💎 ${item.id}. ${line(item.name)}\n💰 ${item.price} WOK Coin\n⭐ ${effect}`;
+    return `💎 ${item.id}. ${line(item.name)}\n💰 ${item.price} WoK coin\n⭐ ${effect}`;
   }) }, { title: '💳 ORDEM DE COMPRA', lines: [`💰 Compre com ${config.prefix}comprar 1/2/3/4.`] }] });
 }
 
@@ -97,7 +97,7 @@ function rankingText(players) {
 }
 
 function eventText(reward) {
-  const text = reward.type === 'coins' ? `💰 Recompensa: ${reward.amount} WOK Coin` :
+  const text = reward.type === 'coins' ? `💰 Recompensa: ${reward.amount} WoK coin` :
     reward.type === 'wolves' ? `🐺 Recompensa: ${reward.added ?? reward.amount} lobisomens` :
       reward.type === 'hp' ? `💎 Recompensa: +${reward.amount} HP` :
         reward.type === 'boost' ? `⭐ Recompensa: ${BOOST_NAMES[reward.boost?.type] || 'boost'} +${Math.round((reward.boost?.value || 0) * 100)}% por 1 hora` :
@@ -163,7 +163,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
         case 'registered':
           await ctx.reply(frame('BEM-VINDO À ALCATEIA', [
             '🐺 Registro concluído, lobo.', '💎 HP: 100', '🐺 Lobisomens: 20/100',
-            '💰 WOK Coin: 100', '⚔️ Prepare sua estratégia.',
+            '💰 WoK coin: 100', '⚔️ Prepare sua estratégia.',
           ]));
           break;
         case 'profile':
@@ -195,7 +195,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
           break;
         case 'purchase':
           await ctx.reply(frame('COMPRA CONCLUÍDA', [
-            `⭐ ${line(result.item.name)} adquirido.`, `💰 Saldo: ${result.player.coins} WOK Coin`,
+            `⭐ ${line(result.item.name)} adquirido.`, `💰 Saldo: ${result.player.coins} WoK coin`,
             result.item.type === 'training' ? `🐺 Use ${prefix}treino para consumir um treino extra durante o cooldown.` :
               `⏳ Boost ativo por 1 hora: ${BOOST_NAMES[result.boost?.type || result.item.type]} +${Math.round((result.boost?.value ?? result.item.value) * 100)}%.`,
           ]));
@@ -204,7 +204,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
           await ctx.reply(frame('CLÃ DA ALCATEIA', [
             `🌹 Nome: ${line(result.clan.name)}`, `👑 Líder: +${result.clan.leader.split('@')[0]}`,
             `🐺 Membros: ${result.clan.members.length}`, `🏆 Vitórias: ${result.clan.wins} • Derrotas: ${result.clan.losses}`,
-            `💰 Pontuação WOK Coin: ${result.clan.coins} • ⭐ Ranking: ${result.rank ?? result.clan.ranking ?? '—'}`,
+            `💰 Pontuação WoK coin: ${result.clan.coins} • ⭐ Ranking: ${result.rank ?? result.clan.ranking ?? '—'}`,
           ]));
           break;
         case 'event':
@@ -224,7 +224,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
           await ctx.reply(frame('ADMINISTRAÇÃO DO JOGO', [
             `👑 ${ADMIN_ACTIONS[result.action] || 'Jogador atualizado'}.`,
             `🐺 ${line(result.player.name, 'Lobo')} • +${result.player.number}`,
-            `💎 HP: ${result.player.hp}/100 • 🐺 Lobisomens: ${result.player.wolves}/100 • 💰 WOK Coin: ${result.player.coins}`,
+            `💎 HP: ${result.player.hp}/100 • 🐺 Lobisomens: ${result.player.wolves}/100 • 💰 WoK coin: ${result.player.coins}`,
           ]));
           break;
         case 'backup':

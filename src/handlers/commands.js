@@ -41,9 +41,9 @@ function loadAllCommands() {
   r({name:'infolobos',aliases:['lobosinfo'],   description:'Guia do jogo',       category:'lobo',   usage:'!infolobos',                             example:'!infolobos',                  handler:wolf.infoJogo});
 
   // Gold
-  r({name:'gold',                              description:'Ver gold',           category:'gold',   usage:'!gold [@usuário]',                       example:'!gold',                       handler:gold.verGold});
-  r({name:'enviargold',aliases:['pay','pagar'],description:'Transferir gold',    category:'gold',   usage:'!enviargold @usuário [valor]',            example:'!enviargold @amigo 100',      handler:gold.enviarGold});
-  r({name:'rankgold', aliases:['topgold'],     description:'Top mais ricos',     category:'gold',   usage:'!rankgold',                              example:'!rankgold',                   handler:gold.rankGold});
+  r({name:'gold',aliases:['wok','wokcoin','saldo','carteira'],description:'Ver saldo de WoK coin',           category:'gold',   usage:'!gold [@usuário]',                       example:'!gold',                       handler:gold.verGold});
+  r({name:'enviargold',aliases:['pay','pagar','enviarwok'],description:'Transferir WoK coin',    category:'gold',   usage:'!enviargold @usuário [valor]',            example:'!enviargold @amigo 100',      handler:gold.enviarGold});
+  r({name:'rankgold', aliases:['topgold','rankwok'],     description:'Top mais ricos',     category:'gold',   usage:'!rankgold',                              example:'!rankgold',                   handler:gold.rankGold});
   r({name:'daily',    aliases:['diario'],      description:'Recompensa diária',  category:'gold',   usage:'!daily',                                 example:'!daily',                      handler:gold.daily});
   r({name:'loja',     aliases:['shop'],        description:'Loja da matilha',    category:'gold',   usage:'!loja',                                  example:'!loja',                       handler:gold.loja});
   r({name:'comprar',  aliases:['buy'],         description:'Comprar item',       category:'gold',   usage:'!comprar [ID]',                           example:'!comprar 2',                  handler:gold.comprar});
@@ -132,7 +132,7 @@ function loadAllCommands() {
   r({name:'setores',description:'Catálogo informativo dos setores e permissões',category:'info',menuShortcut:true,handler:require('../commands/sectors').sectors});
   r({name:'donos',description:'Cadastrar e consultar donos autorizados',category:'dono',minLevel:LEVELS.OWNER,usage:'!donos [lista|adicionar número|remover número]',handler:require('../commands/owners').owners});
   r({name:'fotomenu',description:'Definir foto ou GIF da capa dos menus',category:'dono',minLevel:LEVELS.OWNER,usage:'!fotomenu [ver|remover]',handler:require('../commands/menu-photo').menuPhoto});
-  r({name:'doarwok',aliases:['doacaowok'],description:'Doar WOK Coin com autorização e histórico',category:'dono',minLevel:LEVELS.OWNER,usage:'!doarwok @usuário quantidade',handler:require('../commands/wok-donation').donate});
+  r({name:'doarwok',aliases:['doacaowok'],description:'Doar WoK coin com autorização e histórico',category:'dono',minLevel:LEVELS.OWNER,usage:'!doarwok @usuário quantidade',handler:require('../commands/wok-donation').donate});
   r({name:'adm',replaceMenu:true,description:'Permissões e proteção das informações do grupo',category:'adm',usage:'!adm perm [on|off|permitir @usuário|revogar @usuário]',handler:require('../commands/group-permissions').groupPermissions});
   const activation = require('../commands/activations');
   r({name:'ativar',activationControl:true,description:'Ativar recurso do grupo',category:'adm',groupOnly:true,usage:'!ativar recurso',handler:activation.createActivationHandler({forcedAction:'enable'})});

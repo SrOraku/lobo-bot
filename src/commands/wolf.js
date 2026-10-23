@@ -197,7 +197,7 @@ async function atacar(sock, ctx) {
   // Checar lobos vivos
   if (atkStrat.wolves_alive <= 0) {
     return sock.sendMessage(jid, {
-      text: `💀 Seus lobos estão todos mortos! Use *!curarlobos* para ressuscitá-los.\n💰 Custo: *${CURE_COST} Gold*`
+      text: `💀 Seus lobos estão todos mortos! Use *!curarlobos* para ressuscitá-los.\n💰 Custo: *${CURE_COST} WoK coin*`
     }, { quoted: msg });
   }
   if (defStrat.wolves_alive <= 0) {
@@ -268,9 +268,9 @@ async function atacar(sock, ctx) {
   })();
 
   const winnerText = result.winner === 'attacker'
-    ? `🏆 *VITÓRIA de @${getNumber(sender)}!*\n💰 Prêmio: *+${goldPrize} Gold*`
+    ? `🏆 *VITÓRIA de @${getNumber(sender)}!*\n💰 Prêmio: *+${goldPrize} WoK coin*`
     : result.winner === 'defender'
-    ? `🛡️ *DEFESA VITORIOSA de @${getNumber(defender)}!*\n💰 Prêmio: *+${goldPrize} Gold*`
+    ? `🛡️ *DEFESA VITORIOSA de @${getNumber(defender)}!*\n💰 Prêmio: *+${goldPrize} WoK coin*`
     : `⚖️ *EMPATE! Ambas as matilhas se igualaram!*`;
 
   await sock.sendMessage(jid, {
@@ -335,7 +335,7 @@ ${wolvesBar(strat.wolves_alive)}
 🏆 Vitórias: *${strat.total_victories}*
 ⚔️ Total: *${strat.total_attacks}*
 📈 Win Rate: *${winRate}%*
-💰 Gold: *${user?.gold || 0}*
+💰 WoK coin: *${user?.gold || 0}*
 
 _${strat.wolves_alive <= 0 ? '💀 Seus lobos estão mortos! Use !curarlobos' : strat.wolves_alive <= 30 ? '⚠️ Atenção! Poucos lobos restantes!' : '✅ Matilha pronta para batalha!'}_`
   }, { quoted: msg });
@@ -384,14 +384,14 @@ async function curarLobos(sock, ctx) {
 
   if ((user?.gold || 0) < CURE_COST) {
     return sock.sendMessage(jid, {
-      text: `💸 Você precisa de *${CURE_COST} Gold* para curar sua matilha!\n\nVocê tem: *${user?.gold || 0} Gold*\n\n_Use !daily para ganhar gold diariamente!_`
+      text: `💸 Você precisa de *${CURE_COST} WoK coin* para curar sua matilha!\n\nVocê tem: *${user?.gold || 0} WoK coin*\n\n_Use !daily para ganhar WoK coin diariamente!_`
     }, { quoted: msg });
   }
 
   require('../services/economy').economy().buy(sender,{id:2,price:CURE_COST},msg.key?.id);
 
   await sock.sendMessage(jid, {
-    text: `✅ 🐺 *Matilha Curada!*\n\nSeus 100 lobos foram ressuscitados!\n💰 Custo: *-${CURE_COST} Gold*\n\n_Uuuuuuwooooo! 🐺🌕_`
+    text: `✅ 🐺 *Matilha Curada!*\n\nSeus 100 lobos foram ressuscitados!\n💰 Custo: *-${CURE_COST} WoK coin*\n\n_Uuuuuuwooooo! 🐺🌕_`
   }, { quoted: msg });
 }
 
@@ -444,14 +444,14 @@ A soma das 3 posições deve ser sempre *100*!
 
 ▸ *!lobos* → Ver sua matilha
 ▸ *!estrategia* → Ver estratégia atual
-▸ *!curarlobos* → Curar lobos (${CURE_COST} Gold)
+▸ *!curarlobos* → Curar lobos (${CURE_COST} WoK coin)
 ▸ *!ranklobos* → Ranking de batalhas
 
 *⚔️ MECÂNICA:*
 • Ataque vs Defesa do inimigo
 • Contra-ataque pode ferir o atacante
 • Lobos mortos = sem batalha
-• Vencer = ganhar Gold!
+• Vencer = ganhar WoK coin!
 
 _Que a lua cheia guie sua matilha! 🌕🐺_`
   }, { quoted: msg });

@@ -116,6 +116,6 @@ export function generateBattleMessage(result) {
 ⚔️ Danos: ${attacker.damage} × ${defender.damage}
 💎 HP final: ${attacker.hpAfter}/100 × ${defender.hpAfter}/100
 🏆 Resultado: ${final}
-🐺 Atacante: ${OUTCOME_LABEL[attacker.outcome]} • ${signed(attacker.coinChange)} WOK Coin
-🐺 Defensor: ${OUTCOME_LABEL[defender.outcome]} • ${signed(defender.coinChange)} WOK Coin`;
+🐺 Atacante: ${OUTCOME_LABEL[attacker.outcome]} • ${signed(attacker.coinChange)} WoK coin
+🐺 Defensor: ${OUTCOME_LABEL[defender.outcome]} • ${signed(defender.coinChange)} WoK coin`;
 }

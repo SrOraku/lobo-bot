@@ -24,7 +24,7 @@ async function verGold(sock, ctx) {
   const gold = user?.gold || 0;
 
   await sock.sendMessage(jid, {
-    text: `💰 🐺 *@${getNumber(target)}* possui:\n\n✨ *${formatNumber(gold)} Gold* ✨\n\n_Use !daily para ganhar gold diariamente!_\n_Use !loja para gastar seu gold!_`,
+    text: `💰 🐺 *@${getNumber(target)}* possui:\n\n✨ *${formatNumber(gold)} WoK coin* ✨\n\n_Use !daily para ganhar WoK coin diariamente!_\n_Use !loja para gastar sua WoK coin!_`,
     mentions: [target]
   }, { quoted: msg });
 }
@@ -45,13 +45,13 @@ async function enviarGold(sock, ctx) {
   }
 
   const target = cleanJid(mentioned);
-  if (target === sender) return sock.sendMessage(jid, { text: `❌ Você não pode enviar gold para si mesmo!` }, { quoted: msg });
+  if (target === sender) return sock.sendMessage(jid, { text: `❌ Você não pode enviar WoK coin para si mesmo!` }, { quoted: msg });
 
   try { require('../services/economy').economy().transfer(sender,target,amount,msg.key?.id); }
   catch(error) { return sock.sendMessage(jid,{text:'❌ '+error.message},{quoted:msg}); }
 
   await sock.sendMessage(jid, {
-    text: `💸 ✅ Transferência realizada!\n\n👤 De: @${getNumber(sender)}\n👤 Para: @${getNumber(target)}\n💰 Valor: *${formatNumber(amount)} Gold*\n\n_A matilha cuida dos seus!_ 🐺`,
+    text: `💸 ✅ Transferência realizada!\n\n👤 De: @${getNumber(sender)}\n👤 Para: @${getNumber(target)}\n💰 Valor: *${formatNumber(amount)} WoK coin*\n\n_A matilha cuida dos seus!_ 🐺`,
     mentions: [sender, target]
   }, { quoted: msg });
 }
@@ -66,17 +66,17 @@ async function rankGold(sock, ctx) {
   const lines = top.map((u, i) => {
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`;
     const name = u.name || getNumber(u.jid);
-    return `${medal} *${name}*\n    💰 ${formatNumber(u.gold)} Gold`;
+    return `${medal} *${name}*\n    💰 ${formatNumber(u.gold)} WoK coin`;
   }).join('\n\n');
 
   await sock.sendMessage(jid, {
     text: `╔══════════════════════╗
-║  💰 *RANKING DE GOLD*  ║
+║  💰 *RANKING WoK COIN*  ║
 ╚══════════════════════╝
 
 
 
-${lines || '📭 Nenhum usuário com gold ainda!'}
+${lines || '📭 Nenhum usuário com WoK coin ainda!'}
 
 _Quem é o mais rico da matilha? 🐺_`
   }, { quoted: msg });
@@ -94,7 +94,7 @@ async function daily(sock, ctx) {
   const {premium:isPremium,gold:goldAmount,xp:xpAmount}=result;
 
   await sock.sendMessage(jid, {
-    text: `🌅 ✅ *Daily coletado, ${pushName}!*\n\n💰 *+${formatNumber(goldAmount)} Gold*\n⭐ *+${xpAmount} XP*\n${isPremium ? '\n👑 Bônus Premium aplicado!' : ''}\n\n_Volte amanhã para mais recompensas!_\n_Uuuuuuwooooo! 🐺🌕_`
+    text: `🌅 ✅ *Daily coletado, ${pushName}!*\n\n💰 *+${formatNumber(goldAmount)} WoK coin*\n⭐ *+${xpAmount} XP*\n${isPremium ? '\n👑 Bônus Premium aplicado!' : ''}\n\n_Volte amanhã para mais recompensas!_\n_Uuuuuuwooooo! 🐺🌕_`
   }, { quoted: msg });
 }
 
@@ -104,7 +104,7 @@ async function daily(sock, ctx) {
 async function loja(sock, ctx) {
   const { jid, msg } = ctx;
   const items = SHOP_ITEMS.map(item =>
-    `*[${item.id}]* ${item.name}\n    💰 *${formatNumber(item.price)} Gold*\n    _${item.description}_`
+    `*[${item.id}]* ${item.name}\n    💰 *${formatNumber(item.price)} WoK coin*\n    _${item.description}_`
   ).join('\n\n');
 
   await sock.sendMessage(jid, {
@@ -141,14 +141,14 @@ async function comprar(sock, ctx) {
   catch(error) { return sock.sendMessage(jid,{text:'❌ '+error.message},{quoted:msg}); }
 
   await sock.sendMessage(jid, {
-    text: `✅ 🛒 *Compra realizada!*\n\n📦 ${item.name}\n💰 *-${formatNumber(item.price)} Gold*\n\n${effectMsg}\n\n_A matilha agradece! 🐺_`
+    text: `✅ 🛒 *Compra realizada!*\n\n📦 ${item.name}\n💰 *-${formatNumber(item.price)} WoK coin*\n\n${effectMsg}\n\n_A matilha agradece! 🐺_`
   }, { quoted: msg });
 }
 
 async function premiumInfo(sock, ctx) {
   const { jid, msg } = ctx;
   await sock.sendMessage(jid, {
-    text: `👑 *VANTAGENS PREMIUM:*\n\n• ⭐ XP dobrado por mensagem\n• 💰 Daily dobrado (500 gold)\n• 🐺 Título especial no perfil\n• ⚡ Acesso a comandos exclusivos\n\n_Compre na !loja por apenas 2000 Gold!_`
+    text: `👑 *VANTAGENS PREMIUM:*\n\n• ⭐ XP dobrado por mensagem\n• 💰 Daily dobrado (500 WoK coin)\n• 🐺 Título especial no perfil\n• ⚡ Acesso a comandos exclusivos\n\n_Compre na !loja por apenas 2000 WoK coin!_`
   }, { quoted: msg });
 }
 

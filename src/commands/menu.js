@@ -55,15 +55,15 @@ function createMenu({
         );
       if (category === 'alcateia') {
         sections = [
-          `🐺 *ALCATEIA WOK COIN*\n${lines.filter((_, i) => entries[i].source !== 'core').join('\n')}`,
+          `🐺 *ALCATEIA • WoK coin*\n${lines.filter((_, i) => entries[i].source !== 'core').join('\n')}`,
           `⚔️ *100 LOBOS ORIGINAIS*\n${lines.filter((_, i) => entries[i].source === 'core').join('\n')}`,
-          `💰 Gold original e WOK Coin são separados.\n👑 Administração dos jogos: ${p}menu dono`,
+          `💰 WoK coin é a moeda única de todos os sistemas.\n👑 Administração dos jogos: ${p}menu dono`,
         ];
       }
       if (category === 'rp') sections.push(`💰 Compras e transferências: ${p}menu economia`);
       if (category === 'economia')
         sections.push(
-          `💎 WOK Coin: RP e nova alcateia compartilham a carteira.\n💰 Gold: saldo original separado.\n🐺 Boosts exclusivos: ${p}menu alcateia`,
+          `💎 WoK coin: uma carteira para economia, RP e Alcateia.\n🐺 Boosts exclusivos: ${p}menu alcateia`,
         );
       if (category === 'dono')
         sections.push(

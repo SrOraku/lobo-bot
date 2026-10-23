@@ -183,6 +183,14 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
     CREATE TABLE persistent_cooldowns(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,action TEXT NOT NULL,expires_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,user_jid,action));
     CREATE TABLE economy_operations(chat_jid TEXT NOT NULL,event_id TEXT NOT NULL,kind TEXT NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,event_id));
   `},
+  {version:12,name:'universal_wok_currency',up:`
+    CREATE TABLE universal_wallets(chat_jid TEXT NOT NULL,wallet_jid TEXT NOT NULL,balance INTEGER NOT NULL CHECK(typeof(balance)='integer' AND balance BETWEEN 0 AND 9007199254740991),PRIMARY KEY(chat_jid,wallet_jid));
+    CREATE TABLE universal_wallet_aliases(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,wallet_jid TEXT NOT NULL,PRIMARY KEY(chat_jid,user_jid));
+    CREATE INDEX universal_wallet_alias_target ON universal_wallet_aliases(chat_jid,wallet_jid);
+    CREATE TABLE universal_game_states(chat_jid TEXT PRIMARY KEY,state TEXT NOT NULL);
+    CREATE TABLE universal_currency_seed(id INTEGER PRIMARY KEY CHECK(id=1),state TEXT NOT NULL);
+    CREATE TABLE universal_currency_audit(id INTEGER PRIMARY KEY,chat_jid TEXT NOT NULL,action TEXT NOT NULL,user_jid TEXT,amount INTEGER NOT NULL,created_at TEXT DEFAULT(datetime('now')));
+  `},
 ];
 
 function runMigrations(db) {

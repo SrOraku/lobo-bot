@@ -14,7 +14,10 @@ function createScopedDatabase(db) {
     statements = new Map();
   function partition(scope) {
     chatId(scope);
-    if (ready.has(scope)) return ready.get(scope);
+    if (ready.has(scope)) {
+      require('../services/universal-currency').ensureScope(db,scope,ready.get(scope));
+      return ready.get(scope);
+    }
     const prefix = 'chat_' + createHash('sha256').update(scope).digest('hex').slice(0, 32) + '_';
     db.transaction(() => {
       for (const table of TABLES) {
@@ -55,6 +58,7 @@ function createScopedDatabase(db) {
         prefix,
       );
     })();
+    require('../services/universal-currency').ensureScope(db,scope,prefix);
     ready.set(scope, prefix);
     return prefix;
   }
@@ -72,6 +76,7 @@ function createScopedDatabase(db) {
   }
   return new Proxy(db, {
     get(target, key) {
+      if(key===Symbol.for('lobo.rawDatabase'))return target;
       if (key === 'exec')
         return (sql) => {
           const scope = current(),

@@ -35,6 +35,7 @@ async function processMessage(sock, msg) {
     body = body.trim();
     if (msg.key.fromMe && !body.startsWith(PREFIX) && !/^\d+$/.test(body)) return;
 
+    await require('../services/universal-currency').linkMessageWallet(db,sock,msg,{jid,sender,isGroup});
     db.upsertUser(sender, pushName);
     const user = db.getUser(sender);
 

@@ -122,7 +122,7 @@ test('unresolved sender LID is not transformed into a phone or owner identity', 
 test('successful registration uses the requested welcome and developer signature', async () => {
   const f = fixture('start', { type: 'registered', player: player() });
   await f.handler(f.ctx);
-  assert.equal(f.text(), `${header('BEM-VINDO À ALCATEIA')}\n🐺 Registro concluído, lobo.\n💎 HP: 100\n🐺 Lobisomens: 20/100\n💰 WOK Coin: 100\n⚔️ Prepare sua estratégia.\n${DEV_SIGNATURE}`);
+  assert.equal(f.text(), `${header('BEM-VINDO À ALCATEIA')}\n🐺 Registro concluído, lobo.\n💎 HP: 100\n🐺 Lobisomens: 20/100\n💰 WoK coin: 100\n⚔️ Prepare sua estratégia.\n${DEV_SIGNATURE}`);
 });
 
 test('profile includes all player fields and only currently active boosts', async () => {
@@ -348,7 +348,7 @@ test('game handler dispatches RP responses through the shared interface and wall
   assert.equal(await f.handler(f.ctx), true);
   assert.equal(f.calls.service[0].command, 'carteira');
   assert.equal(f.calls.service[0].actor.jid, ACTOR);
-  assert.match(f.text(), /735 WOK Coin/);
+  assert.match(f.text(), /735 WoK coin/);
   assert.match(f.text(), /Carteira única do RP e dos lobisomens/);
   assert.equal(p.coins, 735);
 });
@@ -360,7 +360,7 @@ test('integrated menu adds RP careers, families and WOK wallet alongside wolf co
     assert.equal(isGameCommand(command, []), true, command);
   }
   assert.match(text, /MENU RP DA ALCATEIA/);
-  assert.match(text, /WOK Coin/);
+  assert.match(text, /WoK coin/);
   assert.match(text, /!!ataque @user/);
   assert.doesNotMatch(text, /!!duelo|!!aceitar|!!recusar/);
 });

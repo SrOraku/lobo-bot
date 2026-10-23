@@ -35,7 +35,7 @@ function totalMoney(game) {
     Object.values(game.rp.families).reduce((sum, family) => sum + family.coins, 0);
 }
 
-test('family creation charges its creator 200 WOK Coin, keeps clan state separate and normalizes name uniqueness', () => {
+test('family creation charges its creator 200 WoK coin, keeps clan state separate and normalizes name uniqueness', () => {
   const { game, first, second } = fixture();
   first.clan = 'clan-existing';
   const family = createFamily(game, first, 'Família   Lunar', NOW);
@@ -205,7 +205,7 @@ test('leadership passes to the earliest remaining member and a departing leader 
   assert.equal(familyProfile(game, second).leader, THIRD);
 });
 
-test('deposits and leader withdrawals conserve shared WOK Coin without copying balances', () => {
+test('deposits and leader withdrawals conserve shared WoK coin without copying balances', () => {
   const { game, first, second } = fixture();
   const family = createFamily(game, first, 'Luna', NOW);
   addMember(game, first, second);

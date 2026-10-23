@@ -40,7 +40,7 @@ function createEconomy(api, { now = Date.now, scope = () => require('../isolatio
     activeEffect,
     transfer(from,to,value,event) {
       amount(value);
-      if(from===to) throw Error('Você não pode transferir para si mesmo.');
+      if(from===to || require('./universal-currency').sameWallet(api,scope(),from,to)) throw Error('Você não pode transferir para si mesmo.');
       return operation(event,'transfer',()=>{ensure(from);ensure(to);move(from,-value);move(to,value);api.logGoldTransaction(from,to,value,'Transferência');return {success:true};});
     },
     daily(jid,event) {

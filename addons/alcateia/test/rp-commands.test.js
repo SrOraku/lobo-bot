@@ -39,7 +39,7 @@ async function render(result, prefix = '!') {
     assert.match(f.text(), /🌹╔═/);
   } else assert.match(f.text(), /🌹═══\[/);
   assert.ok(!f.text().includes(DEV_SIGNATURE));
-  assert.match(f.text(), /WOK Coin/);
+  assert.match(f.text(), /WoK coin/);
   return f;
 }
 
@@ -62,10 +62,10 @@ test('RP menu follows the configured prefix and remains available in text', asyn
   assert.equal(f.text(), text);
 });
 
-test('RP registration displays the shared WOK Coin wallet without granting another reward', async () => {
+test('RP registration displays the shared WoK coin wallet without granting another reward', async () => {
   const p = player();
   const f = await render({ type: 'rp-registered', player: p, rp: rp() });
-  assert.match(f.text(), /WOK Coin/);
+  assert.match(f.text(), /WoK coin/);
   assert.match(f.text(), /9[.\s,]?000/);
   assert.equal(p.coins, 9_000);
   assert.equal(p.hp, 25);
@@ -85,7 +85,7 @@ test('RP profile separates roleplay health from wolf HP and includes social and 
   assert.match(text, /HP/i);
   assert.match(text, /pris|pres|cadeia/i);
   assert.match(text, /casad|cônjuge|conjuge|relacionamento/i);
-  assert.match(text, /WOK Coin/);
+  assert.match(text, /WoK coin/);
 });
 
 test('professions pages show stable ids, descriptions and categories with at most ten jobs', async () => {
@@ -109,7 +109,7 @@ test('selecting a profession shows the confirmed job and unchanged shared balanc
     id: 'medico', name: 'Médico', category: 'legal', description: 'Atende cidadãos.', salary: 200,
   } });
   assert.match(f.text(), /Médico/);
-  assert.match(f.text(), /WOK Coin/);
+  assert.match(f.text(), /WoK coin/);
 });
 
 test('work rewards, fines and imprisonment are reported without hiding the result', async () => {
@@ -123,26 +123,26 @@ test('work rewards, fines and imprisonment are reported without hiding the resul
   assert.match(f.text(), /polícia/);
   assert.match(f.text(), /multa/i);
   assert.match(f.text(), /pris|pres|cadeia/i);
-  assert.match(f.text(), /WOK Coin/);
+  assert.match(f.text(), /WoK coin/);
 });
 
-test('job action result text and money delta use the WOK Coin denomination', async () => {
+test('job action result text and money delta use the WoK coin denomination', async () => {
   const f = await render({ type: 'rp-action', player: player(), job: { name: 'Detetive' },
     result: { message: 'Você resolveu o caso da lua.', amount: 120 } });
   assert.match(f.text(), /resolveu o caso da lua/);
   assert.match(f.text(), /120/);
-  assert.match(f.text(), /WOK Coin/);
+  assert.match(f.text(), /WoK coin/);
 });
 
 test('wallet and transfers display shared amounts without interpreting LID digits as telephone numbers', async () => {
   const wallet = await render({ type: 'rp-wallet', player: player({ jid: '700000@lid', number: null }) });
-  assert.match(wallet.text(), /WOK Coin/);
+  assert.match(wallet.text(), /WoK coin/);
   assert.match(wallet.text(), /9[.\s,]?000/);
   assert.doesNotMatch(wallet.text(), /\+700000/);
   const transfer = await render({ type: 'rp-transfer', player: player({ coins: 8_500 }),
     target: player({ name: 'Lobo Lua', number: null, jid: '700000@lid' }), amount: 500 });
   assert.match(transfer.text(), /500/);
-  assert.match(transfer.text(), /WOK Coin/);
+  assert.match(transfer.text(), /WoK coin/);
   assert.doesNotMatch(transfer.text(), /\+700000/);
 });
 
@@ -155,7 +155,7 @@ test('RP shop pages display prices and item descriptions while bounding the visi
   assert.match(f.text(), /Item 10/);
   assert.doesNotMatch(f.text(), /Item 11|Item 12/);
   assert.match(f.text(), /Descrição do item/);
-  assert.match(f.text(), /WOK Coin/);
+  assert.match(f.text(), /WoK coin/);
   assert.match(f.text(), /2\s*\/\s*4/);
 });
 
@@ -166,7 +166,7 @@ test('purchase, item use and inventory render the service result without applyin
   assert.match(purchase.text(), /Pão Lunar/);
   assert.match(purchase.text(), /2/);
   assert.match(purchase.text(), /60/);
-  assert.match(purchase.text(), /WOK Coin/);
+  assert.match(purchase.text(), /WoK coin/);
   const used = await render({ type: 'rp-use', player: player(), result: { item, message: 'Fome recuperada em 20.' } });
   assert.match(used.text(), /Fome recuperada em 20/);
   const inventory = await render({ type: 'rp-inventory', player: player(), rp: rp({ inventory: { pao: 2, agua: 1 } }) });
@@ -186,7 +186,7 @@ test('family profile is compact, shows member roles and does not enumerate beyon
   assert.match(f.text(), /12/);
   assert.match(f.text(), /lider|líder/i);
   assert.match(f.text(), /membro/i);
-  assert.match(f.text(), /WOK Coin/);
+  assert.match(f.text(), /WoK coin/);
   assert.doesNotMatch(f.text(), new RegExp(members[11].jid.split('@')[0]));
 });
 
@@ -210,7 +210,7 @@ test('family answers, leaving and bank operations report the confirmed outcome',
   const bank = await render({ type: 'rp-family-bank', player: player(), family, action: 'depositar', amount: 100 });
   assert.match(bank.text(), /100/);
   assert.match(bank.text(), /400/);
-  assert.match(bank.text(), /WOK Coin/);
+  assert.match(bank.text(), /WoK coin/);
 });
 
 test('unrelated and unknown response types are not consumed and never send anything', async () => {
@@ -229,12 +229,12 @@ test('actual RP domain fields render cooldowns, coin changes, item effects and s
   assert.match(catalogue.text(), /XP mínimo: 100/);
   const work = await render({ type: 'rp-work', player: player(), job,
     reward: { salary: 0, coinChange: -20, experienceGain: 10, event: 'fine', jailedUntil: NOW + 600_000 } });
-  assert.match(work.text(), /-20 WOK Coin/);
+  assert.match(work.text(), /-20 WoK coin/);
   assert.match(work.text(), /XP: \+10/);
   assert.match(work.text(), /multa/);
   const action = await render({ type: 'rp-action', player: player(), job,
     result: { message: 'Tratamento concluído.', coinChange: -20, experienceGain: 5, healthGain: 7 } });
-  assert.match(action.text(), /-20 WOK Coin/);
+  assert.match(action.text(), /-20 WoK coin/);
   assert.match(action.text(), /recuperada: \+7/);
   const item = { id: 'remedio', name: 'Remédio de RP', type: 'medicine', price: 30, effects: { health: 25 } };
   const shop = await render({ type: 'rp-shop', items: [item], page: 1, totalPages: 1 });

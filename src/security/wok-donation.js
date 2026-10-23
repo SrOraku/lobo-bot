@@ -1,7 +1,7 @@
 'use strict';
 function applyDonation(game, {actor,target,amount,event,now=Date.now()}, owners) {
-  if(!owners.includes(actor?.split('@')[0])) throw Error('Somente donos cadastrados podem doar WOK Coin.');
-  if(!Number.isSafeInteger(amount) || amount<1 || amount>1000000) throw Error('Informe de 1 a 1000000 WOK Coin por operação.');
+  if(!owners.includes(actor?.split('@')[0])) throw Error('Somente donos cadastrados podem doar WoK coin.');
+  if(!Number.isSafeInteger(amount) || amount<1 || amount>1000000) throw Error('Informe de 1 a 1000000 WoK coin por operação.');
   if(typeof event!=='string' || !event || event.length>200) throw Error('Identificador da doação inválido.');
   const key=actor+':'+event;
   if(game.donations?.[key]) return {...game.donations[key],duplicate:true};

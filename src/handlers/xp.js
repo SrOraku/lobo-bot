@@ -52,7 +52,7 @@ async function handleXP(sock, msg, { jid, sender, body, user }) {
 🆙 *Novo nível:* *${result.newLevel}*
 🏆 *Rank atual:* ${result.rank}
 
-${features.isEnabled(jid,'economia') ? '💰 *+50 Gold* de presente pelo level up!' : '💰 Economia pausada neste grupo.'}
+${features.isEnabled(jid,'economia') ? '💰 *+50 WoK coin* de presente pelo level up!' : '💰 Economia pausada neste grupo.'}
 
 _Uuuuuuwooooo! 🐺_`,
           mentions: [sender]

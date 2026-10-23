@@ -153,6 +153,7 @@ test('conta logada só executa comandos próprios se for dona, sem loop de respo
   vm.runInNewContext(code, {
     module: loaded,
     require(id) {
+      if (id === '../services/universal-currency') return {linkMessageWallet:async()=>{}};
       if (id === 'dotenv') return { config: () => {} };
       if (id === '../utils/helpers') return helper;
       if (id === '../isolation/context') return {run:(chat,fn)=>fn()};

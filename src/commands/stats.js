@@ -69,7 +69,7 @@ ${require('../services/economy').economy().titles(target).filter(t=>t.equipped).
 ⭐ *XP Total:* ${formatNumber(user.xp)}
 ${require('../services/economy').isPremium(user) ? '👑 *Status: PREMIUM*\n' : ''}
 ━━━━━━━━━━━━━━━━━━━━
-💰 *Gold:* ${formatNumber(user.gold)}
+💰 *WoK coin:* ${formatNumber(user.gold)}
 
 🐺 *BATALHAS:*
 ⚔️ Total: ${user.battles}
