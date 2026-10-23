@@ -3,6 +3,7 @@ const db = require('../utils/database');
 const fs = require('node:fs');
 const path = require('node:path');
 const welcomeImage = path.join(__dirname, '../assets/bem-vindo.jpg');
+const goodbyeImage = path.join(__dirname, '../assets/despedida.jpg');
 const { welcomeCaption, GOODBYE } = require('../menus/group-captions');
 const { cleanJid, getNumber, logger } = require('../utils/helpers');
 
@@ -48,10 +49,12 @@ async function processGroupParticipantsUpdate(sock, update) {
 
       } else if (action === 'remove') {
         if (require('../activations/manager').manager.isEnabled(id,'despedida')) {
-          await sock.sendMessage(id, {
-            text: GOODBYE,
-            mentions: [jid]
-          });
+          try {
+            await sock.sendMessage(id, {image: fs.readFileSync(goodbyeImage), caption: GOODBYE, mentions: [jid]});
+          } catch (error) {
+            logger.warn('Não foi possível enviar a imagem de despedida; enviando texto.');
+            await sock.sendMessage(id, {text: GOODBYE, mentions: [jid]});
+          }
         }
       }
     }

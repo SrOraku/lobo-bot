@@ -13,7 +13,7 @@ function managedPath(name) {
   if (typeof name !== 'string' || name.includes('\\') || name.includes('\0') || path.posix.isAbsolute(name)) return false;
   const parts = name.split('/');
   if (parts.some(p => !p || p === '.' || p === '..' || BLOCKED.has(p))) return false;
-  if (ROOT_FILES.has(name) || ['src/assets/bem-vindo.jpg','src/assets/menu-principal.jpg'].includes(name)) return true;
+  if (ROOT_FILES.has(name) || ['src/assets/bem-vindo.jpg','src/assets/menu-principal.jpg','src/assets/despedida.jpg'].includes(name)) return true;
   return /^(?:src|scripts|plugins|test)\/.+\.(?:js|json|md|txt)$/.test(name)
     || /^addons\/alcateia\/.+\.(?:js|json|md|txt)$/.test(name);
 }

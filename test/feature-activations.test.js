@@ -312,8 +312,19 @@ test('bem-vindo/despedida usam o mesmo estado central e aceitam participantes do
     participants: [{ id: admin.phone }],
   });
   assert.equal(gold, 1);
+  assert.ok(sent[0].caption.includes('Seja bem-vindo(a)!'));
   assert.ok(sent[0].image);
   assert.ok(sent[0].mentions.includes(admin.phone));
+  sent.length=0;
+  await loaded.exports.handleGroupParticipantsUpdate(sock,{id:A,action:'remove',participants:[admin.phone]});
+  assert.ok(sent[0].image);
+  assert.ok(sent[0].caption.includes('MEU FILHO, ELE SÓ SAIU DO GRUPO.'));
+  sent.length=0;
+  const originalSend=sock.sendMessage;
+  sock.sendMessage=async (jid,content)=>{if(content.image)throw Error('image unavailable');return originalSend(jid,content);};
+  await loaded.exports.handleGroupParticipantsUpdate(sock,{id:A,action:'remove',participants:[admin.phone]});
+  assert.ok(sent[0].text.includes('MEU FILHO, ELE SÓ SAIU DO GRUPO.'));
+  sock.sendMessage=originalSend;
   await f.manager.disableFeature(A, 'bye', { actor: admin });
   sent.length = 0;
   await loaded.exports.handleGroupParticipantsUpdate(sock, {
