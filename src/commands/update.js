@@ -1,5 +1,6 @@
 'use strict';
 const { UpdateService, UpdateError } = require('../updater/service');
+const { frameMenu } = require('../menus/render');
 
 async function verifiedOwner(sock, ctx, ownerNumber) {
   const owner = String(ownerNumber || '').replace(/\D/g, '');
@@ -18,7 +19,7 @@ function createUpdateHandler({ service = new UpdateService(), config = require('
   return async (sock, ctx) => {
     const value = key => typeof config.get === 'function' ? config.get(key) : config[key];
     const p = value('PREFIX') || '!';
-    const frame = (title, lines) => `🌹╔═══❖♆❖═══╗\n${value('BOT_NAME')}\n${value('BOT_DESCRIPTION')}\n👑 ${title}\n${lines.join('\n')}\n🌹 Dev: ${value('DEVELOPER_NAME')}\n╚═══❖♆❖═══╝🐺`;
+    const frame = (title, lines) => frameMenu(`👑 ${title}`, lines);
     const reply = (title, lines) => sock.sendMessage(ctx.jid || ctx.msg?.key?.remoteJid,
       { text: frame(title, lines) }, { quoted: ctx.msg });
     let owner = false;

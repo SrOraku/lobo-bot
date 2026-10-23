@@ -34,12 +34,9 @@ async function render(args = [], prefix = '!!', extra = {}) {
 for (const category of ['', ...Object.keys(CATEGORIES)]) {
   test(`menu ${category || 'principal'} preserva moldura, identidade e prefixo`, async () => {
     const text = await render(category ? [category] : []);
-    assert.ok(text.startsWith('🌹'));
-    assert.ok(text.endsWith(category ? '🐺' : '╝'));
-    for (const [key, value] of Object.entries(IDENTITY))
-      assert.ok(text.includes(!category && key === 'name' ? value.replace(/^🌹/, '🌹 ') : value));
-    assert.match(text, /╔.*❖.*♆/u);
-    assert.match(text, /╚.*🌹/u);
+    assert.ok(text.startsWith('   ╔══❖♆❖══╗\n\n'));
+    assert.ok(text.endsWith('   ╚══❖♆❖══╝'));
+    for (const value of Object.values(IDENTITY)) assert.ok(text.includes(value));
     assert.ok(text.includes('!!menu'));
     assert.ok(!text.includes('!menu ') || text.includes('!!menu '));
     assert.ok(text.length < 6000);
@@ -144,10 +141,12 @@ test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async ()
   assert.ok(sent.length >= 2);
 });
 
-test('principal usa exatamente a nova moldura solicitada', async () => {
+test('principal usa moldura compacta e simétrica sem excesso de separadores', async () => {
   const text = await render([], '!');
-  assert.ok(text.startsWith('🌹╔══❖♆❖══🐺 ══❖♆❖══╗🌹\n\n🌹 ᵇᵒᵗ'));
-  assert.ok(text.includes('╭──── 🌹 ⚜️🐺 ⚜️ 🌹 ───╮\n*MENU PRINCIPAL DA MATILHA*\n╰──────────────────╯'));
-  assert.ok(text.includes('┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈\n\n🌹 Dev:'));
-  assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐺 ❖═══╝'));
+  assert.ok(text.startsWith('   ╔══❖♆❖══╗\n\n' + IDENTITY.name));
+  assert.ok(text.includes(IDENTITY.motto + '\n\nMENU PRINCIPAL DA MATILHA'));
+  assert.ok(text.includes('\n\nDev: ' + IDENTITY.developer));
+  assert.ok(text.endsWith('   ╚══❖♆❖══╝'));
+  assert.equal((text.match(/╔/g) || []).length, 1);
+  assert.ok(!text.includes('🐾'));
 });

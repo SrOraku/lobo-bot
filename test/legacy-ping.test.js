@@ -21,5 +21,5 @@ test('ping mostra métricas dinâmicas e identidade em uma mensagem', async () =
   for (const value of ['🌹 Prefixo: ?', `⭐ Versão: ${require('../package.json').version}`,
     '⏱️ Uptime: 0h 5m 19s', '🏓 Ping interno: 0.4 ms', '💚 Status: online',
     '📜 Comandos: 2 (sem aliases)']) assert.ok(text.includes(value), value);
-  assert.ok(text.startsWith('🌹') && text.endsWith('🐺'));
+  assert.ok(text.startsWith('   ╔══❖♆❖══╗') && text.endsWith('   ╚══❖♆❖══╝'));
 });
