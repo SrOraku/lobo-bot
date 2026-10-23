@@ -3,6 +3,16 @@
 // 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — MIGRATIONS DO BANCO
 // ============================================================
 
+// Também verificado no boot: instalações antigas podem ter a versão marcada
+// sem a tabela de auditoria. Não repetir migrações que alteram configurações.
+const ACTIVATION_AUDIT_SCHEMA = `CREATE TABLE IF NOT EXISTS activation_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, group_jid TEXT NOT NULL,
+      feature TEXT NOT NULL, previous_state TEXT, new_state TEXT,
+      actor TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_activation_audit_group ON activation_audit(group_jid,created_at);
+`;
+
 const migrations = [
   {
     version: 1,
@@ -133,13 +143,7 @@ const migrations = [
   {
     version: 5,
     name: 'central_feature_activations',
-    up: `CREATE TABLE IF NOT EXISTS activation_audit (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, group_jid TEXT NOT NULL,
-      feature TEXT NOT NULL, previous_state TEXT, new_state TEXT,
-      actor TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now'))
-    );
-    CREATE INDEX IF NOT EXISTS idx_activation_audit_group ON activation_audit(group_jid,created_at);
-    INSERT INTO group_activations(group_jid,policy,updated_by)
+    up: ACTIVATION_AUDIT_SCHEMA + `    INSERT INTO group_activations(group_jid,policy,updated_by)
       SELECT jid,'{"bot":true,"sectors":{},"delegates":{},"features":{}}','migration' FROM groups WHERE true
       ON CONFLICT(group_jid) DO NOTHING;
     UPDATE group_activations SET policy=json_set(policy,
@@ -157,6 +161,7 @@ CREATE TABLE isolation_seed_gold_transactions AS SELECT * FROM gold_transactions
 CREATE TABLE isolation_seed_auto_replies AS SELECT * FROM auto_replies;
 CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messages;
 `},
+  { version: 7, name: 'repair_activation_audit', up: ACTIVATION_AUDIT_SCHEMA },
 ];
 
 function runMigrations(db) {
@@ -183,6 +188,10 @@ function runMigrations(db) {
     ran++;
     console.log(`  🌹 Migration v${m.version} "${m.name}" aplicada`);
   }
+
+  // Reparo idempotente inclusive quando o histórico já informa a versão atual.
+  // A falha deve impedir o boot antes de aceitar comandos sem auditoria.
+  db.transaction(() => db.exec(ACTIVATION_AUDIT_SCHEMA))();
 
   if (ran === 0) console.log(`  ✅ Banco atualizado (v${migrations.at(-1).version})`);
   return ran;
