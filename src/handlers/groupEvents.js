@@ -5,7 +5,7 @@ const path = require('node:path');
 const welcomeImage = path.join(__dirname, '../assets/bem-vindo.jpg');
 const { BOT_NAME, cleanJid, getNumber, logger } = require('../utils/helpers');
 
-async function handleGroupParticipantsUpdate(sock, update) {
+async function processGroupParticipantsUpdate(sock, update) {
   try {
     const { id, participants, action } = update;
 
@@ -69,4 +69,5 @@ async function handleGroupsUpdate(sock, updates) {
   }
 }
 
+async function handleGroupParticipantsUpdate(sock,update){return require('../isolation/context').run(update.id,()=>processGroupParticipantsUpdate(sock,update));}
 module.exports = { handleGroupParticipantsUpdate, handleGroupsUpdate };

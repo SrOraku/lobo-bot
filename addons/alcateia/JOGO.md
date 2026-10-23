@@ -10,7 +10,7 @@
 
 ## Primeiro acesso
 
-Envie `!start` ao bot para registrar sua conta. O registro usa o nome da sua conta no momento da criação e o número brasileiro confirmado pelo WhatsApp. Cada número tem um único perfil nesta instância do bot, compartilhado entre grupos e conversas privadas.
+Envie `!start` ao bot para registrar sua conta. O registro usa o nome da sua conta no momento da criação e o número brasileiro confirmado pelo WhatsApp. Cada número tem um perfil independente por grupo; a conversa privada tem seu próprio perfil. O progresso anterior foi copiado como ponto inicial, sem sincronizar avanços posteriores.
 
 A carteira usa **WOK Coin**, moeda fictícia interna compartilhada com o [RP](RP.md). O primeiro registro recebe 100 WOK Coins uma única vez. Se você já iniciou o RP ou já jogava na versão anterior, seu saldo existente é preservado na proporção 1:1. Trabalhos, transferências e compras RP usam essa mesma carteira. A saúde RP é independente do HP da alcateia; remédios RP tratam somente a saúde RP.
 
@@ -156,7 +156,7 @@ O evento pode ser usado mesmo com HP zero. O resultado é aleatório: a recupera
 
 `!rank` mostra até 10 jogadores, excluindo os banidos do jogo. A ordem considera mais vitórias, mais WOK Coins, mais lobisomens e menos derrotas. A identificação do jogador resolve a ordenação restante.
 
-O ranking é global nesta instância do bot. A posição mostrada em `!perfil` considera todos os jogadores elegíveis, inclusive quem aparece depois dos 10 primeiros.
+O ranking considera somente os dados do chat atual. A posição mostrada em `!perfil` considera todos os jogadores elegíveis, inclusive quem aparece depois dos 10 primeiros.
 
 ## Administração do jogo
 
@@ -187,7 +187,7 @@ O broadcast confirma a posição na fila e envia as mensagens em segundo plano, 
 
 ## Limites de uso e persistência
 
-Todos os comandos novos do jogo, incluindo `!admin`, compartilham por usuário um limite de **1 comando por segundo** e **50 comandos em uma janela móvel de 1 hora**. A contagem é global entre grupos e privados e inclui os donos. Cada comando admitido nessa cota conta mesmo quando a ação é recusada por saldo, sintaxe, permissão ou tempo de espera. Tentativas bloqueadas pela própria cota não acrescentam outra entrada.
+Todos os comandos novos do jogo, incluindo `!admin`, compartilham por usuário um limite de **1 comando por segundo** e **50 comandos em uma janela móvel de 1 hora**. A contagem é individual por chat, entre grupos e privados e inclui os donos. Cada comando admitido nessa cota conta mesmo quando a ação é recusada por saldo, sintaxe, permissão ou tempo de espera. Tentativas bloqueadas pela própria cota não acrescentam outra entrada.
 
 O bot responde com o tempo restante quando esse limite é atingido. Os comandos antigos de grupo mantêm suas proteções próprias. As restrições configuradas no grupo, como bot pausado e uso de comandos somente por administradores, continuam se aplicando ao atendimento naquela conversa.
 

@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const DB_PATH = path.join(__dirname, '../../data/lobo.db');
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-const db = new Database(DB_PATH);
+let db = new Database(DB_PATH);
 
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = NORMAL');
@@ -16,6 +16,7 @@ db.pragma('foreign_keys = ON');
 const { runMigrations } = require('../config/migrations');
 console.log('🌹 Verificando banco de dados...');
 runMigrations(db);
+db = require('../isolation/sqlite').createScopedDatabase(db);
 
 const stmts = {
   getUser:       db.prepare(`SELECT * FROM users WHERE jid=?`),

@@ -149,6 +149,14 @@ const migrations = [
       'despedida',goodbye,'autoresposta',auto_reply,'level',level_up_msg) FROM groups WHERE jid=group_jid),'{}')));
     `
   },
+  {version:6,name:'chat_isolation_seed',up:`CREATE TABLE IF NOT EXISTS chat_partitions(chat_jid TEXT PRIMARY KEY,table_prefix TEXT NOT NULL UNIQUE,created_at TEXT DEFAULT (datetime('now')));
+CREATE TABLE isolation_seed_users AS SELECT * FROM users;
+CREATE TABLE isolation_seed_wolf_strategy AS SELECT * FROM wolf_strategy;
+CREATE TABLE isolation_seed_battle_log AS SELECT * FROM battle_log;
+CREATE TABLE isolation_seed_gold_transactions AS SELECT * FROM gold_transactions;
+CREATE TABLE isolation_seed_auto_replies AS SELECT * FROM auto_replies;
+CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messages;
+`},
 ];
 
 function runMigrations(db) {

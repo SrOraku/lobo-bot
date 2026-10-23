@@ -166,6 +166,7 @@ test('conta logada só executa comandos próprios se for dona, sem loop de respo
     require(id) {
       if (id === 'dotenv') return { config: () => {} };
       if (id === '../utils/helpers') return helper;
+      if (id === '../isolation/context') return {run:(chat,fn)=>fn()};
       if (id === '../utils/owners') return { ownerNumbers: () => ['5543920030769'] };
       if (id === '../utils/database') return { upsertUser: () => {}, getUser: () => ({}) };
       if (id === '../core/eventBus') return { bus: { emit: () => {} }, EVENTS: {} };

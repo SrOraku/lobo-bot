@@ -8,7 +8,7 @@ const { handleProtection }  = require('./protection');
 const { handleAutoReply }   = require('./autoReply');
 const { handleXP }          = require('./xp');
 
-async function handleMessage(sock, msg) {
+async function processMessage(sock, msg) {
   try {
     if (!msg.message) return;
     if (msg.key.fromMe) {
@@ -67,4 +67,10 @@ async function handleMessage(sock, msg) {
   }
 }
 
+async function handleMessage(sock,msg) {
+  const chat=msg.key?.remoteJid;
+  if(!chat||chat==='status@broadcast')return;
+  try {return await require('../isolation/context').run(chat,()=>processMessage(sock,msg));}
+  catch(error){logger.error({code:error.code||error.name},'Não foi possível processar o chat isolado.');}
+}
 module.exports = { handleMessage };

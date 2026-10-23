@@ -27,7 +27,7 @@ Envie estes comandos, aguardando pelo menos 1 segundo entre eles:
 
 `!rp iniciar` cria o personagem RP. Se o número ainda não tiver perfil, o primeiro registro recebe **100 WOK Coins** e os atributos iniciais da alcateia. Se você já usou `!start`, o RP reutiliza esse perfil e seu saldo. Repetir o início ou atualizar o bot preserva a carteira, sem conceder outro bônus.
 
-**WOK Coin é uma moeda fictícia interna**, sem conversão em dinheiro real, depósitos bancários ou saques reais. Há uma única carteira por número, compartilhada entre RP e alcateia. Por exemplo, gastar 20 WOK Coins em uma refeição RP reduz em 20 o saldo disponível na loja da alcateia. Os saldos da versão anterior são mantidos na proporção 1:1.
+**WOK Coin é uma moeda fictícia interna**, sem conversão em dinheiro real, depósitos bancários ou saques reais. Há uma carteira por número em cada chat, compartilhada entre RP e alcateia somente naquele chat. Grupos diferentes e privado mantêm saldos independentes. Por exemplo, gastar 20 WOK Coins em uma refeição RP reduz em 20 o saldo disponível na loja da alcateia. Os saldos da versão anterior são mantidos na proporção 1:1.
 
 Os atributos RP começam em 100:
 

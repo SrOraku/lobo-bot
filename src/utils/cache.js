@@ -20,6 +20,7 @@ async function initRedis() {
 }
 
 async function get(key) {
+  key=require('../isolation/context').cacheKey(key);
   if (redisClient?.isReady) {
     const val = await redisClient.get(key);
     return val ? JSON.parse(val) : null;
@@ -28,6 +29,7 @@ async function get(key) {
 }
 
 async function set(key, value, ttl = 300) {
+  key=require('../isolation/context').cacheKey(key);
   if (redisClient?.isReady) {
     await redisClient.setEx(key, ttl, JSON.stringify(value));
   } else {
@@ -36,6 +38,7 @@ async function set(key, value, ttl = 300) {
 }
 
 async function del(key) {
+  key=require('../isolation/context').cacheKey(key);
   if (redisClient?.isReady) {
     await redisClient.del(key);
   } else {
@@ -44,6 +47,7 @@ async function del(key) {
 }
 
 async function exists(key) {
+  key=require('../isolation/context').cacheKey(key);
   if (redisClient?.isReady) {
     return (await redisClient.exists(key)) === 1;
   }

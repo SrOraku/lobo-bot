@@ -150,7 +150,6 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
       const [modules, upstream] = await Promise.all([loadModules(root), loadUpstream()]);
       const logger = upstream.logger || console;
       const store = new modules.Store(path.join(root, 'storage/alcateia/database.json'));
-      const service = new modules.GameService({ store, now });
       const backupManager = new modules.BackupManager({ store,
         directory: path.join(root, 'storage/alcateia/backups'), logger, now });
       function runInBackground(task) {
@@ -162,8 +161,7 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
         return job;
       }
       const adapter = createAdapter({ modules, ...upstream, logger, startedAt, runInBackground });
-      const handler = modules.createGameCommandHandler({ service, backupManager, logger, now });
-      return { modules, upstream, logger, store, service, backupManager, adapter, handler,
+      return { modules, upstream, logger, store, backupManager, adapter,
         dedup: new modules.Deduplicator() };
     })().catch(error => { initialization = null; throw error; });
     return initialization;
@@ -174,12 +172,17 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
     const id = `${ctx.msg?.key?.remoteJid}:${ctx.msg?.key?.participant || ''}:${ctx.msg?.key?.id}`;
     if (ctx.msg?.key?.id && !state.dedup.accept(id, now())) return;
     const request = { command, args, argText: args.join(' ') };
+    if(!ctx.msg?.key?.remoteJid)return;
+    const scopedChat=state.modules.normalizeJid(ctx.msg.key.remoteJid)||ctx.msg.key.remoteJid;
+    const scopedStore=state.store.scoped(scopedChat);
+    const scopedService=new state.modules.GameService({store:scopedStore,now});
+    const scopedHandler=state.modules.createGameCommandHandler({service:scopedService,backupManager:state.backupManager,logger:state.logger,now});
     const adapted = await state.adapter(sock, ctx, request);
     if (!adapted) return;
     if (command === 'menu' || (command === 'rp' && (!args.length || args[0]?.toLowerCase() === 'menu'))) {
       try {
         const jid = state.modules.canonicalPlayerJid(adapted.senderPhone);
-        const allowance = await state.store.transactionGame(game => state.modules.consumeCommand(game, jid, now()));
+        const allowance = await scopedStore.transactionGame(game => state.modules.consumeCommand(game, jid, now()));
         if (!allowance.allowed) return adapted.reply(state.modules.ANTI_SPAM_MESSAGE);
         const current = state.upstream.registry.get('menu');
         if (current) return current.handler(sock, {
@@ -191,7 +194,7 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
         else throw error;
       }
     } else if (state.modules.isGameCommand(command, args)) {
-      await state.handler(adapted);
+      await scopedHandler(adapted);
     } else {
       await adapted.reply(`🐺 Comando da alcateia desconhecido. Use ${adapted.config.prefix}alcateia menu.`);
     }

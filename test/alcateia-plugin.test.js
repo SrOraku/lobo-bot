@@ -33,6 +33,7 @@ async function fixture(t, { prefix = '!', users = new Map(), group = {}, mapping
   const logs = [];
   const legacyCalls = [];
   let tick = NOW;
+  let currentChat = GROUP;
   let sequence = 0;
   let loads = 0;
   const config = { get(key) { return { BOT_OWNER: OWNER.split('@')[0], PREFIX: prefix, BOT_NAME: '🐺 Lobo' }[key]; } };
@@ -67,6 +68,7 @@ async function fixture(t, { prefix = '!', users = new Map(), group = {}, mapping
 
   function ctx(command = 'start', args = [], { sender = MEMBER_LID, alternative,
     chatId = GROUP, id = `msg-${++sequence}`, fromMe = false } = {}) {
+    currentChat = chatId;
     const body = `${prefix}${command}${args.length ? ` ${args.join(' ')}` : ''}`;
     return { jid: chatId, sender, senderNumber: sender.split('@')[0], pushName: 'Lobo de teste',
       isGroup: chatId.endsWith('@g.us'), PREFIX: prefix, command, args, body,
@@ -76,7 +78,9 @@ async function fixture(t, { prefix = '!', users = new Map(), group = {}, mapping
   const adapter = createAdapter({ modules, db, config, logger, startedAt: NOW });
   function data() {
     const file = path.join(root, 'storage/alcateia/database.json');
-    return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+    if(!fs.existsSync(file))return null;
+    const data=JSON.parse(fs.readFileSync(file,'utf8'));
+    return {...data,game:data.games?.[currentChat] || data.game};
   }
   return { root, modules, sent, logs, legacyCalls, config, db, users, group, metadata, sock,
     registry, register, originals, plugin, adapter, ctx, data, loads: () => loads,

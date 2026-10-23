@@ -22,7 +22,7 @@ export class BackupManager {
       const source = this.store.data;
       const snapshot = {
         version: 1, createdAt: at,
-        data: structuredClone({ version: source.version, groups: source.groups, game: source.game }),
+        data: structuredClone({ version: source.version, groups: source.groups, game: source.game, gameSeed: source.gameSeed, games: source.games }),
       };
       const stamp = new Date(at).toISOString().replace(/[:.]/g, '-');
       const destination = path.join(this.directory, `lobo-game-${stamp}-${randomUUID()}.json`);

@@ -35,11 +35,19 @@ export class Store {
       }
     }
     game.duels = {};
+    if(!this.data.games)this.data.games={};
     if (game.rp === undefined) game.rp = { families: {}, invites: {}, history: [] };
     if (!game.rp || typeof game.rp !== 'object' || Array.isArray(game.rp) ||
         !game.rp.families || typeof game.rp.families !== 'object' || Array.isArray(game.rp.families) ||
         !game.rp.invites || typeof game.rp.invites !== 'object' || Array.isArray(game.rp.invites) ||
         !Array.isArray(game.rp.history)) throw new Error('Dados RP inválidos. Restaure um backup.');
+    if(!this.data.gameSeed)this.data.gameSeed=structuredClone(game);
+    if(!this.data.games || typeof this.data.games!=='object' || Array.isArray(this.data.games))throw new Error('Dados isolados inválidos.');
+    for(const scoped of [this.data.gameSeed,...Object.values(this.data.games)]) {
+      if(scoped?.version!==1 || !Array.isArray(scoped.battles))throw new Error('Dados de jogo isolado inválidos.');
+      for(const key of ['players','clans','duels','rateLimits'])if(!scoped[key]||typeof scoped[key]!=='object'||Array.isArray(scoped[key]))throw new Error('Dados de jogo isolado inválidos.');
+      if(!scoped.rp||!scoped.rp.families||!scoped.rp.invites||!Array.isArray(scoped.rp.history))throw new Error('Dados RP isolados inválidos.');
+    }
   }
 
   group(id) {
@@ -54,14 +62,20 @@ export class Store {
 
   groups() { return Object.entries(this.data.groups); }
 
-  transactionGame(callback) {
+  scoped(chatId) {
+    if(!/^\d+(?:-\d+)?@(?:g\.us|s\.whatsapp\.net|lid)$/.test(chatId))throw new Error('Chat inválido.');
+    return {transactionGame:callback=>this.transactionGame(callback,chatId)};
+  }
+
+  transactionGame(callback,chatId=null) {
     const pending = this.gameQueue.then(async () => {
-      const draft = structuredClone(this.data.game);
+      const current=chatId?this.data.games[chatId]:this.data.game;
+      const draft = structuredClone(current || this.data.gameSeed);
       const result = await callback(draft);
-      const previous = this.data.game;
-      this.data.game = draft;
+      const previous = current;
+      if(chatId)this.data.games[chatId]=draft;else this.data.game = draft;
       try { this.save(); }
-      catch (error) { this.data.game = previous; throw error; }
+      catch (error) { if(chatId){if(previous)this.data.games[chatId]=previous;else delete this.data.games[chatId];}else this.data.game=previous; throw error; }
       return structuredClone(result);
     });
     this.gameQueue = pending.catch(() => {});

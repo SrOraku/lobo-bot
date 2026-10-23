@@ -15,6 +15,7 @@ const floodTracker = new Map(); // jid → { count, windowStart }
 const floodBanned  = new Map(); // jid → bannedUntil
 
 function checkRateLimit(senderJid) {
+  senderJid=require('../isolation/context').cacheKey(senderJid);
   const now = Date.now();
 
   // Verificar flood ban
