@@ -2,7 +2,11 @@
 
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
-## Edição atual — v1.2.0
+## Edição atual — v1.3.0
+
+Novos sistemas: `!donos`, capa de foto/GIF por `!fotomenu`, emissão autorizada de moedas por `!doarwok` e controle de informações de grupo por `!adm perm`. Consulte [comandos, limites e funcionamento](MENUS.md). O antirroubo depende de privilégios e eventos do WhatsApp; não garante impedir tomada de grupos.
+
+## Atualização automática — v1.2.0
 
 `!setores` é informativo; categorias não podem mais ser desativadas. As proteções de grupo continuam em `!ativacoes`. O inicializador `node src/index.js` permite que `!atualizar bot` aplique arquivos e reinicie o processo WhatsApp automaticamente, reutilizando a sessão. A primeira instalação desta edição requer um reinício pelo painel. Atualizações só de código reutilizam dependências após verificação; bloqueios da hospedagem continuam sendo informados com segurança.
 

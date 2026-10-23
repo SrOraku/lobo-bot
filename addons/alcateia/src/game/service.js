@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { COOLDOWNS, LIMITS } from './constants.js';
-import { GameError, assertGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
+import { GameError, assertGameOwner, isGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
   integer, quantity, formatRemaining, validatePlayer } from './validation.js';
 import { registerPlayer, requirePlayer, addWolves, trainPlayer, setFormation, rankPlayers } from './players.js';
 import { SHOP_ITEMS, buyItem } from './shop.js';
@@ -59,7 +59,7 @@ function completeBattle(game, attacker, defender, request, now) {
 }
 
 export class GameService {
-  constructor({ store, now = () => Date.now(), rng = Math.random }) { this.store = store; this.now = now; this.rng = rng; }
+  constructor({ store, now = () => Date.now(), rng = Math.random, isOwner = isGameOwner }) { this.store = store; this.now = now; this.rng = rng; this.isOwner = isOwner; }
 
   async execute(request) {
     try {
@@ -149,7 +149,7 @@ export class GameService {
   }
 
   admin(game, request, now) {
-    assertGameOwner(request.actor.jid);
+    if (!this.isOwner(request.actor.jid)) throw new GameError('Esse comando é exclusivo dos donos cadastrados.', 'OWNER');
     const args = request.args || [];
     const action = args[0]?.toLowerCase();
     if (action === 'status') {

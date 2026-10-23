@@ -67,7 +67,7 @@ function createAdapter({ modules, db, config, logger = console, startedAt = Date
     const alternative = key.fromMe ? sock.user?.lid : isGroup ? key.participantAlt : key.remoteJidAlt;
     const actor = await identities.member(sender, alternative);
     if (actor?.phoneNumber) {
-      const values=[getConfig(config,'BOT_OWNER'),getConfig(config,'BOT_OWNERS')];
+      const values=[getConfig(config,'BOT_OWNER'),getConfig(config,'BOT_OWNERS'),...require('../src/utils/owners').ownerNumbers(config)];
       actor.isOwner=actor.isOwner||values.flatMap(value=>String(value||'').split(/[,;\s]+/)).some(number=>/^\+?\d{10,15}$/.test(number)&&number.replace(/^\+/,'')===actor.phoneNumber.split('@')[0]);
     }
     if (!actor?.phoneNumber) {
@@ -175,7 +175,7 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
     if(!ctx.msg?.key?.remoteJid)return;
     const scopedChat=state.modules.normalizeJid(ctx.msg.key.remoteJid)||ctx.msg.key.remoteJid;
     const scopedStore=state.store.scoped(scopedChat);
-    const scopedService=new state.modules.GameService({store:scopedStore,now});
+    const scopedService=new state.modules.GameService({store:scopedStore,now,isOwner:jid=>require('../src/utils/owners').ownerNumbers(state.upstream.config).includes(jid.split('@')[0])});
     const scopedHandler=state.modules.createGameCommandHandler({service:scopedService,backupManager:state.backupManager,logger:state.logger,now});
     const adapted = await state.adapter(sock, ctx, request);
     if (!adapted) return;
@@ -214,6 +214,11 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
     name: 'alcateia-rp', version: '1.0.0',
     description: '100 Lobisomens Estratégia e RP com WOK Coin, preservando o bot legado.',
     commands: routes(),
+    async donateWok(request) {
+      const state=await initialize();
+      return state.store.scoped(request.chat).transactionGame(game=>
+        require('../src/security/wok-donation').applyDonation(game,request,require('../src/utils/owners').ownerNumbers(state.upstream.config)));
+    },
     async onLoad() {
       const state = await initialize();
       // Registered legacy names always win. A future upstream command can also

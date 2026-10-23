@@ -172,6 +172,11 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
     CREATE TABLE arcade_events(chat_jid TEXT NOT NULL,event_id TEXT NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,event_id));
     CREATE INDEX arcade_event_date ON arcade_events(created_at);
   ` },
+  {version:10,name:'owner_security_media',up:`
+    CREATE TABLE bot_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
+    CREATE TABLE security_audit(id INTEGER PRIMARY KEY AUTOINCREMENT,chat_jid TEXT,actor TEXT NOT NULL,action TEXT NOT NULL,details TEXT,created_at TEXT DEFAULT(datetime('now')));
+    CREATE TABLE group_guard(group_jid TEXT PRIMARY KEY,enabled INTEGER NOT NULL DEFAULT 0,policy TEXT NOT NULL);
+  `},
 ];
 
 function runMigrations(db) {

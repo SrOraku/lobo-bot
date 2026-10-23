@@ -79,7 +79,7 @@ function createMenu({
         );
       sections = [`👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}`, `╭─── ❖ *COMANDOS* ❖ ───╮\n${sections.join('\n\n')}\n╰────────────────────╯`, `📖 _Digite ${p}menu para voltar ao Menu Principal._`];
     }
-    return sock.sendMessage(ctx.jid, { text: frameMenu(title, sections) }, { quoted: ctx.msg });
+    return require('../menus/media').sendMenu(sock,ctx,frameMenu(title,sections));
   };
 }
 const menu = createMenu();

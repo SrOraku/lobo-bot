@@ -31,6 +31,8 @@ function requireGroupAdmin(fn) {
         text: `🚫 _Apenas administradores podem usar este comando!_ 🐺`
       }, { quoted: ctx.msg });
     }
+    if (!await require('../security/group-guard').canManage(sock,ctx))
+      return sock.sendMessage(ctx.jid,{text:'🛡️ O dono não autorizou você a administrar este grupo pelo bot.'},{quoted:ctx.msg});
     return fn(sock, ctx);
   };
 }

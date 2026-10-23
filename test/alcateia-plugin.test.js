@@ -119,7 +119,7 @@ test('an unresolved LID matching owner digits cannot register or administer game
   assert.equal(f.data(), null);
 });
 
-test('trusted participantAlt authorizes either game owner without legacy owner elevation', async t => {
+test('trusted participantAlt não concede dono para número não cadastrado', async t => {
   const f = await fixture(t);
   f.metadata.participants.push({ id: '888000@lid', admin: null });
   const raw = f.ctx('admin', ['status'], { sender: '888000@lid', alternative: SECOND_OWNER });
@@ -128,15 +128,15 @@ test('trusted participantAlt authorizes either game owner without legacy owner e
   assert.equal(adapted.isOwner, false);
   assert.equal(adapted.isAdmin, false);
   await f.plugin.commands.admin(f.sock, raw);
-  assert.match(f.text(), /STATUS DA ALCATEIA/);
+  assert.match(f.text(), /donos cadastrados/);
 });
 
-test('private LID sender uses remoteJidAlt and never context sender digits', async t => {
+test('private LID resolve identidade sem conceder dono não cadastrado', async t => {
   const f = await fixture(t);
   const raw = f.ctx('admin', ['status'], { chatId: '888000@lid' });
   raw.msg.key.remoteJidAlt = SECOND_OWNER;
   await f.plugin.commands.admin(f.sock, raw);
-  assert.match(f.text(), /STATUS DA ALCATEIA/);
+  assert.match(f.text(), /donos cadastrados/);
 });
 
 test('legacy global bans and command mutes apply to either trusted PN or LID', async t => {

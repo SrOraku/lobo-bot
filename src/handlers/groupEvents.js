@@ -58,11 +58,13 @@ async function handleGroupsUpdate(sock, updates) {
   try {
     for (const update of updates) {
       if (!update.id) continue;
+      await require('../security/group-guard').enforce(sock,update);
       const group = db.getGroup(update.id);
       if (!group) continue;
 
       if (update.subject) {
-        db.updateGroup(update.id, 'name', update.subject);
+        const guard = require('../security/group-guard').get(update.id);
+        db.updateGroup(update.id, 'name', guard.enabled ? guard.subject : update.subject);
       }
     }
   } catch (err) {

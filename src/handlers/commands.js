@@ -123,6 +123,10 @@ function loadAllCommands() {
     ['resetadvertencias',['resetadv'],'reset','Zerar advertências do participante neste grupo'],
   ]) r({name,aliases,description,category:'adm',groupOnly:true,minLevel:LEVELS.USER,usage:'!'+name+' @usuário',handler:warningCommands.createWarningCommand(action)});
   r({name:'setores',description:'Catálogo informativo dos setores e permissões',category:'info',menuShortcut:true,handler:require('../commands/sectors').sectors});
+  r({name:'donos',description:'Cadastrar e consultar donos autorizados',category:'dono',minLevel:LEVELS.OWNER,usage:'!donos [lista|adicionar número|remover número]',handler:require('../commands/owners').owners});
+  r({name:'fotomenu',description:'Definir foto ou GIF da capa dos menus',category:'dono',minLevel:LEVELS.OWNER,usage:'!fotomenu [ver|remover]',handler:require('../commands/menu-photo').menuPhoto});
+  r({name:'doarwok',aliases:['doacaowok'],description:'Doar WOK Coin com autorização e histórico',category:'dono',minLevel:LEVELS.OWNER,usage:'!doarwok @usuário quantidade',handler:require('../commands/wok-donation').donate});
+  r({name:'adm',description:'Permissões e proteção das informações do grupo',category:'adm',usage:'!adm perm [on|off|permitir @usuário|revogar @usuário]',handler:require('../commands/group-permissions').groupPermissions});
   const activation = require('../commands/activations');
   r({name:'ativar',activationControl:true,description:'Ativar recurso do grupo',category:'adm',groupOnly:true,usage:'!ativar recurso',handler:activation.createActivationHandler({forcedAction:'enable'})});
   r({name:'desativar',activationControl:true,description:'Desativar recurso do grupo',category:'adm',groupOnly:true,usage:'!desativar recurso',handler:activation.createActivationHandler({forcedAction:'disable'})});
