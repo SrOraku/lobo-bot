@@ -2,9 +2,13 @@
 
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
-## Edição atual — v1.0.0
+## Segurança — v1.0.1
 
-A numeração pública foi ajustada para a série v1, mantendo todas as melhorias e os dados das edições anteriores. `!ping` exibe v1.0.0.
+Diretórios pessoais foram retirados da árvore atual e bloqueados no Git e no contexto Docker. Isso **não remove os commits antigos nem revoga credenciais**. Consulte [as ações necessárias na conta e a limpeza de histórico](SECURITY.md). Docker agora executa sem root; revise as permissões dos volumes antes de atualizar. A CI verifica Node 22 e 24.
+
+## Jogos da edição v1
+
+A numeração pública foi ajustada para a série v1, mantendo todas as melhorias e os dados das edições anteriores. `!ping` exibe a versão atual do pacote.
 
 O menu Jogos ganhou `!quiz`, `!forca`, `!adivinhar`, `!aventura` e `!placarjogos`. Partidas persistentes, conquistas e ranking são separados por chat. O Akinator agora utiliza respostas para filtrar 18 personagens em vez de sortear uma hipótese. O evento lunar ganhou cenas de exploração. Pontos dos minijogos não alteram Gold ou WOK Coin. Consulte [regras e comandos](MENUS.md).
 

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   lobo-bot:
     build: .
@@ -10,12 +8,17 @@ services:
       - ./data:/app/data
       - ./storage/alcateia:/app/storage/alcateia
       - ./logs:/app/logs
+      - ./updates:/app/updates
       - ./plugins:/app/plugins
-      - ./.env:/app/.env:ro
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
+      - TZ=America/Sao_Paulo
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   redis:
     image: redis:7-alpine
@@ -23,6 +26,11 @@ services:
     restart: unless-stopped
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
   redis-data:

@@ -31,3 +31,23 @@ addons/alcateia/node_modules/
 
 # Área local do atualizador: staging, backups de código e controle de operações
 updates/
+
+# Diretórios pessoais e credenciais de ferramentas
+.ssh/
+.config/
+.npm/
+.cache/
+.termux/
+.bash_history
+.zsh_history
+.gitconfig
+.netrc
+.npmrc
+SpamWa
+SpamWa/
+.env.*
+!.env.example
+auth/
+backups/
+*.pem
+*.key

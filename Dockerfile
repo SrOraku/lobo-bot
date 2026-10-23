@@ -13,10 +13,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
 
-COPY . .
+COPY --chown=node:node . .
 
-RUN mkdir -p sessions data logs plugins
+RUN mkdir -p sessions data logs plugins storage/alcateia updates && chown -R node:node /app
 
 ENV NODE_ENV=production
+ENV TZ=America/Sao_Paulo
+USER node
 
 CMD ["node", "src/index.js"]
