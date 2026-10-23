@@ -192,7 +192,7 @@ const GroupService = {
       return;
     }
     if(['antilink_mode','inactivity_days'].includes(field)){
-      if(field==='antilink_mode'&&!['delete','warn','kick'].includes(value)||field==='inactivity_days'&&(!Number.isInteger(value)||value<1||value>365))throw Error('Opção de ativação inválida.');
+      if(field==='antilink_mode'&&!['delete','warn','kick'].includes(value)||field==='inactivity_days'&&(!Number.isInteger(value)||value<1||value>90))throw Error('Opção de ativação inválida.');
       require('../activations/store').getStore().update(jid,'internal:GroupService',policy=>{policy.options[field]=value;return policy;});
       return;
     }

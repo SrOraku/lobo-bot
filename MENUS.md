@@ -116,3 +116,8 @@ O evento lunar ganhou cinco cenas de exploração associadas às recompensas exi
 Abra `!ativacoes` no grupo. Todos os recursos e setores são numerados automaticamente, em sequência. Envie somente o número desejado: o bot mostra o estado atual e pede confirmação. Responda `1` para confirmar a mudança ou `2` para cancelar. A seleção e a confirmação expiram em dois minutos cada. A interação pertence ao remetente e ao grupo que abriram o painel, revalida permissões antes de gravar e ignora reenvios da mesma mensagem. Uma confirmação pendente é descartada ao reiniciar; configurações já confirmadas persistem normalmente. Comandos diretos anteriores continuam funcionando.
 
 Nome completo do bot, assinatura e lema deixam de aparecer nos menus, lojas, respostas de jogos, avisos e conexão. Permanecem no `!ping`, boas-vindas e despedidas. A identidade configurada não foi alterada. A ausência desses textos nos menus é intencional, conforme a preferência mais recente do dono.
+
+
+### Prazo de inatividade — v1.1.1
+
+Ao escolher Limpeza manual de inativos no painel e confirmar a ativação, o bot solicita um número inteiro de 1 a 90 dias. Envie apenas `15`, por exemplo, sem D ou outro sufixo. A função e o prazo só são salvos depois de uma resposta válida; prazo inválido não ativa a função. A configuração é independente por grupo e persiste após reiniciar. `!antiinatividade on` e `!ativar antiinatividade` também solicitam o prazo; `!antiinatividade 15` continua disponível. O painel mostra o prazo configurado. A ativação não executa remoções: use o comando de limpeza para aplicar o prazo salvo.

@@ -36,3 +36,41 @@ test('número inválido, mensagem repetida e falta de admin do bot não alteram 
   assert.equal(store.get(ctx.jid).features.antilink, false);
   assert.ok(sent.at(-1).includes('administrador'));
 });
+
+test('inatividade solicita dias após confirmar, aceita 1 e 90 e rejeita 0 e 91', async t => {
+  const db = new Database(':memory:'); t.after(() => db.close()); runMigrations(db);
+  const store = createPolicyStore(db);
+  const ui = createInteraction({ store, resolveActor: async () => ({ admin: true, botAdmin: true, phone: 'admin' }) });
+  const ctx = { jid: '120000@g.us', sender: 'user', msg: { key: { id: 'open' } } };
+  db.prepare('INSERT INTO groups(jid) VALUES (?)').run(ctx.jid);
+  const messages = [], sock = { sendMessage: async (_, c) => messages.push(c.text) };
+  let event = 0;
+  const send = input => { ctx.msg = { key: { id: String(++event) } }; return ui.handle(sock, ctx, input); };
+  const number = require('../src/activations/registry').list().findIndex(f => f.id === 'antiinatividade') + 1;
+  ui.open(ctx); await send(String(number)); await send('1');
+  assert.ok(messages.at(-1).includes('1 a 90'));
+  assert.equal(store.get(ctx.jid).features.antiinatividade, false);
+  for (const value of ['0', '91', '999999999999999999999']) {
+    await send(value); assert.equal(store.get(ctx.jid).features.antiinatividade, false);
+  }
+  await send('1');
+  assert.equal(store.get(ctx.jid).features.antiinatividade, true);
+  assert.equal(store.get(ctx.jid).options.inactivity_days, 1);
+  assert.equal(db.prepare('SELECT inactivity_days FROM groups WHERE jid=?').get(ctx.jid).inactivity_days, 1);
+  ui.requestDays(ctx, true); await send('90');
+  assert.equal(createPolicyStore(db).get(ctx.jid).options.inactivity_days, 90);
+  assert.equal(store.get('130000@g.us').options.inactivity_days, 7);
+  assert.ok(messages.at(-1).includes('ninguém foi removido agora'));
+});
+
+test('prazo não é salvo depois de perder permissão ou quando a seleção expira', async t => {
+  const db = new Database(':memory:'); t.after(() => db.close()); runMigrations(db);
+  const store = createPolicyStore(db); let admin = true, clock = 0;
+  const ui = createInteraction({ store, now: () => clock, resolveActor: async () => ({ admin, botAdmin: true, phone: 'admin' }) });
+  const ctx = { jid: '120000@g.us', sender: 'user', msg: { key: { id: 'open' } } };
+  const sock = { sendMessage: async () => {} };
+  ui.requestDays(ctx); admin = false; ctx.msg.key.id = 'days'; await ui.handle(sock, ctx, '30');
+  assert.equal(store.get(ctx.jid).features.antiinatividade, false);
+  admin = true; ui.requestDays(ctx); clock = 120001; ctx.msg.key.id = 'expired'; await ui.handle(sock, ctx, '30');
+  assert.equal(store.get(ctx.jid).options.inactivity_days, 7);
+});

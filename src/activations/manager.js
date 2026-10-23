@@ -34,6 +34,8 @@ function createManager(store) {
   }
   async function set(jid, names, enabled, { actor, botAdmin = false, options = {} } = {}) {
     groupId(jid);
+    if (Object.hasOwn(options, 'inactivity_days') && (!Number.isInteger(options.inactivity_days) || options.inactivity_days < 1 || options.inactivity_days > 90))
+      throw Error('Informe um número inteiro de 1 a 90 dias.');
     if (!actor?.owner && !actor?.admin)
       throw Error('Somente administradores do grupo ou donos podem alterar ativações.');
     const defs = names.map((name) => {

@@ -40,10 +40,14 @@ function createActivationHandler({
           options[(registry.feature(name)?.id || name) + '_mode'] = args.shift();
         if (name === 'antiinatividade' && /^\d+$/.test(args[0])) {
           options.inactivity_days = Number(args.shift());
-          if (options.inactivity_days < 1 || options.inactivity_days > 365)
-            throw Error('Informe entre 1 e 365 dias.');
+          if (options.inactivity_days < 1 || options.inactivity_days > 90)
+            throw Error('Informe entre 1 e 90 dias.');
         }
         if (args.length) throw Error('Argumentos extras inválidos.');
+        if (registry.feature(name)?.id === 'antiinatividade' && value && !Object.hasOwn(options, 'inactivity_days')) {
+          require('../activations/interaction').interaction().requestDays(ctx, manager.isEnabled(ctx.jid, 'antiinatividade'));
+          return reply(require('../menus/render').frameNotice('📅 PRAZO DE INATIVIDADE', ['Digite somente o número de dias, de *1 a 90*.', 'Exemplo: *15*.', '_A função será ativada após salvar o prazo. Responda em até 2 minutos._']));
+        }
         const context = { actor, botAdmin: actor.botAdmin, options };
         result =
           String(name).toLowerCase() === 'tudo'
@@ -92,7 +96,7 @@ function createActivationHandler({
             : '🟢'
           : '🔴';
         const lines = categories.get(item.category) || [];
-        lines.push(`┃ *${number}.* ${state} ${item.name}${item.mode ? ' • ' + item.mode : ''}`);
+        lines.push(`┃ *${number}.* ${state} ${item.name}${item.id === 'antiinatividade' ? ' • ' + policy.options.inactivity_days + ' dias' : ''}${item.mode ? ' • ' + item.mode : ''}`);
         categories.set(item.category, lines);
       }
       const sections = [
