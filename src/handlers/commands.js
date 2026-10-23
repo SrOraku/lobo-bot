@@ -15,6 +15,8 @@ const updater = require('../commands/update');
 function loadAllCommands() {
   const r = (def) => register(def);
 
+  r({name:'ativacoes',aliases:['ativações'],description:'Painel de setores e permissões do grupo',category:'adm',usage:'!ativacoes [setor modo]',handler:require('../commands/activations').activations,groupOnly:true});
+
   // Menu
   r({name:'menu',    aliases:['ajuda','help'], description:'Menu principal',     category:'geral',  usage:'!menu [categoria]', example:'!menu gold', handler:menu.menu});
 

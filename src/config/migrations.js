@@ -120,6 +120,16 @@ const migrations = [
       );
     `
   },
+  {
+    version: 4,
+    name: 'group_activations',
+    up: `CREATE TABLE IF NOT EXISTS group_activations (
+      group_jid TEXT PRIMARY KEY,
+      policy TEXT NOT NULL,
+      updated_by TEXT NOT NULL,
+      updated_at TEXT DEFAULT (datetime('now'))
+    );`
+  },
 ];
 
 function runMigrations(db) {

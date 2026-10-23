@@ -11,12 +11,15 @@ const { handleXP }          = require('./xp');
 async function handleMessage(sock, msg) {
   try {
     if (!msg.message) return;
-    if (msg.key.fromMe) return;
+    if (msg.key.fromMe) {
+      const connected=String(sock.user?.id||'').split('@')[0].split(':')[0];
+      if (!require('../utils/owners').ownerNumbers().includes(connected)) return;
+    }
     const jid = msg.key.remoteJid;
     if (!jid || jid === 'status@broadcast') return;
 
     const isGroup      = jid.endsWith('@g.us');
-    const sender       = isGroup ? cleanJid(msg.key.participant || '') : cleanJid(jid);
+    const sender       = msg.key.fromMe ? cleanJid(sock.user?.id || '') : isGroup ? cleanJid(msg.key.participant || '') : cleanJid(jid);
     if (!sender) return;
     const senderNumber = getNumber(sender);
     const pushName     = msg.pushName || senderNumber;
@@ -29,6 +32,7 @@ async function handleMessage(sock, msg) {
     else if (msgType === 'imageMessage')        body = msg.message.imageMessage?.caption || '';
     else if (msgType === 'videoMessage')        body = msg.message.videoMessage?.caption || '';
     body = body.trim();
+    if (msg.key.fromMe && !body.startsWith(PREFIX)) return;
 
     db.upsertUser(sender, pushName);
     const user = db.getUser(sender);

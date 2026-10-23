@@ -49,12 +49,14 @@ function register(def) {
 // Executar comando pelo nome
 async function execute(commandName, sock, ctx) {
   const cmd = registry.get(commandName);
+  if (cmd && !await require('../activations/gate').checkActivation(sock,ctx,commandName,cmd)) return;
 
   // Verificar plugins dinamicamente
   if (!cmd) {
     const { getPluginCommands } = require('./pluginLoader');
     const pluginCmds = getPluginCommands();
     if (pluginCmds[commandName]) {
+      if (!await require('../activations/gate').checkActivation(sock,ctx,commandName)) return;
       return pluginCmds[commandName](sock, ctx);
     }
     return; // Comando desconhecido — silencioso

@@ -66,6 +66,10 @@ function createAdapter({ modules, db, config, logger = console, startedAt = Date
     if (!sender) return null;
     const alternative = key.fromMe ? sock.user?.lid : isGroup ? key.participantAlt : key.remoteJidAlt;
     const actor = await identities.member(sender, alternative);
+    if (actor?.phoneNumber) {
+      const values=[getConfig(config,'BOT_OWNER'),getConfig(config,'BOT_OWNERS')];
+      actor.isOwner=actor.isOwner||values.flatMap(value=>String(value||'').split(/[,;\s]+/)).some(number=>/^\+?\d{10,15}$/.test(number)&&number.replace(/^\+/,'')===actor.phoneNumber.split('@')[0]);
+    }
     if (!actor?.phoneNumber) {
       await textReply(sock, ctx, '🐺 Não consegui confirmar seu número. Tente novamente no privado do bot.');
       return null;

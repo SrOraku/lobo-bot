@@ -24,7 +24,7 @@ function requireGroupAdmin(fn) {
     if (!ctx.isGroup) return sock.sendMessage(ctx.jid, { text: `❌ Apenas em grupos!` }, { quoted: ctx.msg });
     const isAdm = await isGroupAdmin(sock, ctx.jid, ctx.sender);
     const isBotAdm = db.isBotAdmin(ctx.sender);
-    const isOwner = ctx.senderNumber === OWNER;
+    const isOwner = ctx.senderLevel === 3 || require('../utils/owners').ownerNumbers().includes(ctx.senderNumber);
     if (!isAdm && !isBotAdm && !isOwner) {
       return sock.sendMessage(ctx.jid, {
         text: `🚫 *[ ${BOT_NAME} ]*\n\n_Apenas administradores podem usar este comando!_ 🐺`

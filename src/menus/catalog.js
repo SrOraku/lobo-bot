@@ -27,7 +27,7 @@ const CATEGORY_ALIASES = {
 };
 const GROUPS = {
   alcateia: 'estrategia mudar atacar lobos ranklobos curarlobos infolobos',
-  adm: 'ban unban mute unmute kick add promover rebaixar abrirgrupo fechargrupo antilink antifake anticontato antimarcacao antiinatividade limparinatividade marcartodos resetarlobos agendarmensagem autoreply removeautoreply',
+  adm: 'ativacoes ban unban mute unmute kick add promover rebaixar abrirgrupo fechargrupo antilink antifake anticontato antimarcacao antiinatividade limparinatividade marcartodos resetarlobos agendarmensagem autoreply removeautoreply',
   economia: 'gold enviargold rankgold daily loja comprar premiun',
   rp: 'level perfil ranking',
   grupo: 'estatisticas',
@@ -120,7 +120,7 @@ function buildCatalog(commands, pluginCommands = {}) {
       permission:
         c.name === 'atualizar'
           ? 'dono (identidade verificada)'
-          : ['usuário', 'admin do grupo', 'admin do bot', 'dono'][c.minLevel || 0],
+          : c.name === 'ativacoes' ? 'dono/admin do grupo; controle delegado' : ['usuário', 'admin do grupo', 'admin do bot', 'dono'][c.minLevel || 0],
     }));
   const occupied = new Set(commands.flatMap((c) => [c.name, ...(c.aliases || [])]));
   for (const name of Object.keys(pluginCommands)) {

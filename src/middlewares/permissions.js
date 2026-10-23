@@ -35,21 +35,12 @@ async function getGroupMeta(sock, jid) {
 
 // Resolver nível do usuário
 async function resolveLevel(sock, senderJid, groupJid) {
-  const ownerNumber = config.get('BOT_OWNER');
-  const senderNumber = senderJid.split('@')[0].replace(/\D/g, '');
-
-  if (senderNumber === ownerNumber) return LEVELS.OWNER;
-  if (db.isBotAdmin(senderJid))    return LEVELS.BOT_ADMIN;
-
-  if (groupJid) {
-    const meta = await getGroupMeta(sock, groupJid);
-    if (meta) {
-      const p = meta.participants.find(x =>
-        x.id.split('@')[0] === senderNumber
-      );
-      if (p?.admin === 'admin' || p?.admin === 'superadmin') return LEVELS.GROUP_ADMIN;
-    }
-  }
+  const {IdentityResolver}=await import('../../addons/alcateia/src/identity.js');
+  const meta=groupJid?await getGroupMeta(sock,groupJid):null;
+  const actor=await new IdentityResolver(sock,config.get('BOT_OWNER')+'@s.whatsapp.net',meta).member(senderJid);
+  if(require('../utils/owners').ownerNumbers(config).includes(actor?.phoneNumber?.split('@')[0]))return LEVELS.OWNER;
+  if(db.isBotAdmin(senderJid)||actor?.phoneNumber&&db.isBotAdmin(actor.phoneNumber))return LEVELS.BOT_ADMIN;
+  if(actor?.isAdmin)return LEVELS.GROUP_ADMIN;
   return LEVELS.USER;
 }
 

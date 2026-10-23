@@ -22,7 +22,11 @@ function createUpdateHandler({ service = new UpdateService(), config = require('
     const reply = (title, lines) => sock.sendMessage(ctx.jid || ctx.msg?.key?.remoteJid,
       { text: frame(title, lines) }, { quoted: ctx.msg });
     let owner = false;
-    try { owner = await verifiedOwner(sock, ctx, value('BOT_OWNER')); } catch {}
+    try {
+      for (const number of require('../utils/owners').ownerNumbers(config)) {
+        if (await verifiedOwner(sock, ctx, number)) { owner = true; break; }
+      }
+    } catch {}
     if (!owner) return reply('ACESSO DO DONO', ['🐺 Este comando é exclusivo do dono do bot.']);
     const args = ctx.args || [];
     if (!args.length) return reply('ATUALIZAÇÃO DA ALCATEIA', [

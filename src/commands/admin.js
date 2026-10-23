@@ -7,7 +7,7 @@ const scheduledJobs = new Map();
 
 function requireOwner(fn) {
   return async (sock, ctx) => {
-    const isOwner = ctx.senderNumber === OWNER;
+    const isOwner = ctx.senderLevel === 3 || require('../utils/owners').ownerNumbers().includes(ctx.senderNumber);
     const isBotAdm = db.isBotAdmin(ctx.sender);
     if (!isOwner && !isBotAdm) {
       return sock.sendMessage(ctx.jid, {

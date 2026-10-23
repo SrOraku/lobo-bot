@@ -203,3 +203,11 @@ module.exports = {
 
 _Fiel como o lobo • Bela como a rosa • Estratégico como o alfa_ 🌹🐺
 **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ sempre ao seu lado!**
+
+## Ativações por grupo — 3.5.0
+
+Use `!ativacoes` dentro do grupo para consultar os setores. O dono pode usar `!ativacoes midia off`, `!ativacoes jogos membros`, `!ativacoes rp adm` ou `!ativacoes bot off/on`. Para autorizar os administradores daquele grupo a configurar um setor: `!ativacoes delegar midia on` (revogar com `off`). Cada grupo mantém sua própria configuração após reiniciar.
+
+O dono permanece em `BOT_OWNER`; donos adicionais podem ser configurados em `BOT_OWNERS`, com números completos separados por vírgula. O número conectado não vira dono automaticamente. Se ele estiver na lista de donos, seus próprios comandos também são aceitos, sem processar as respostas normais do bot em loop. Administradores comuns não se tornam donos nem podem delegar controles, alterar o setor Dono ou conceder poderes administrativos a membros. Ligar um setor mantém as permissões, registros, saldos e cooldowns originais. Os administradores fixos dos jogos são preservados.
+
+Pausar o bot pelo painel de ativações bloqueia comandos de função para outros usuários naquele grupo; a navegação e o próprio painel continuam disponíveis para recuperação. A pausa não remove o bot, não fecha o grupo e não desliga as proteções automáticas de moderação nem os eventos de entrada/saída.
