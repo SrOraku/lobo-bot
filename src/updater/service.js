@@ -112,7 +112,7 @@ class UpdateService {
         phase = 'consulta ao GitHub';
         const source = await this.snapshot(); sha = source.sha;
         const previous = await readJSON(path.join(this.directory, 'state.json'));
-        if (previous?.sha === sha) return { already: true, action, version: (await this.status()).version };
+        // Reaplicar o snapshot também repara arquivos locais alterados no mesmo commit.
         files = source.files;
         phase = 'download dos arquivos';
         let bytes = 0, cursor = 0;
@@ -151,12 +151,30 @@ class UpdateService {
       if (!lockfile?.packages?.['']) throw new UpdateError('A atualização não contém um lockfile válido.');
       for (const value of Object.values(lockfile.packages)) if (value.resolved?.startsWith('git+ssh://git@github.com/')) value.resolved = value.resolved.replace('git+ssh://git@github.com/', 'git+https://github.com/');
       await atomicWrite(path.join(stage, 'package-lock.json'), JSON.stringify(lockfile, null, 2) + '\n');
-      phase = 'instalação de dependências';
-      await this._run('npm', ['ci', '--omit=dev', '--no-audit', '--no-fund'], stage);
-      phase = 'verificação de inicialização';
-      await this._run(process.execPath, ['scripts/check-startup.js'], stage);
+      // Reutilizar a instalação verificada quando só o código mudou evita downloads
+      // e compilações desnecessários em hospedagens com recursos limitados.
+      const graph = lock => {
+        if (!lock?.packages) return null;
+        const packages = structuredClone(lock.packages);
+        if (packages['']) { delete packages[''].version; delete packages[''].name; }
+        return JSON.stringify(packages);
+      };
+      const installedLock = await readJSON(path.join(this.root, 'package-lock.json'));
+      let reuseDependencies = action === 'bot' && graph(installedLock) === graph(lockfile) &&
+        await exists(path.join(this.root, 'node_modules'));
+      if (reuseDependencies) {
+        await fs.symlink(path.join(this.root, 'node_modules'), path.join(stage, 'node_modules'), 'dir');
+        try { phase = 'verificação de inicialização'; await this._run(process.execPath, ['scripts/check-startup.js'], stage); }
+        catch { await fs.unlink(path.join(stage, 'node_modules')); reuseDependencies = false; }
+      }
+      if (!reuseDependencies) {
+        phase = 'instalação de dependências';
+        await this._run('npm', ['ci', '--omit=dev', '--no-audit', '--no-fund'], stage);
+        phase = 'verificação de inicialização';
+        await this._run(process.execPath, ['scripts/check-startup.js'], stage);
+      }
       phase = 'backup e aplicação';
-      const result = await this._apply(stage, files, { action, sha, version: targetVersion || pkg.version });
+      const result = await this._apply(stage, files, { action, sha, version: targetVersion || pkg.version, reuseDependencies });
       this.needsRestart = true;
       return result;
     } catch (error) {
@@ -210,8 +228,10 @@ class UpdateService {
         }
         saved.push({ name, present, mode: present ? (await fs.stat(target)).mode & 0o777 : 0o644 });
       }
-      if (await exists(modules)) { await fs.rename(modules, path.join(backup, 'node_modules')); oldModules = true; }
-      await fs.rename(path.join(stage, 'node_modules'), modules); newModules = true;
+      if (!result.reuseDependencies) {
+        if (await exists(modules)) { await fs.rename(modules, path.join(backup, 'node_modules')); oldModules = true; }
+        await fs.rename(path.join(stage, 'node_modules'), modules); newModules = true;
+      }
       for (const file of files) {
         await atomicWrite(await safeTarget(this.root, file.path), await fs.readFile(path.join(stage, file.path)), file.mode === '100755' ? 0o755 : 0o644);
       }

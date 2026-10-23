@@ -122,6 +122,7 @@ function loadAllCommands() {
     ['advertencias',['avisos'],'status','Consultar advertências do participante neste grupo'],
     ['resetadvertencias',['resetadv'],'reset','Zerar advertências do participante neste grupo'],
   ]) r({name,aliases,description,category:'adm',groupOnly:true,minLevel:LEVELS.USER,usage:'!'+name+' @usuário',handler:warningCommands.createWarningCommand(action)});
+  r({name:'setores',description:'Catálogo informativo dos setores e permissões',category:'info',menuShortcut:true,handler:require('../commands/sectors').sectors});
   const activation = require('../commands/activations');
   r({name:'ativar',activationControl:true,description:'Ativar recurso do grupo',category:'adm',groupOnly:true,usage:'!ativar recurso',handler:activation.createActivationHandler({forcedAction:'enable'})});
   r({name:'desativar',activationControl:true,description:'Desativar recurso do grupo',category:'adm',groupOnly:true,usage:'!desativar recurso',handler:activation.createActivationHandler({forcedAction:'disable'})});

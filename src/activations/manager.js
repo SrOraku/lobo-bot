@@ -10,7 +10,7 @@ function createManager(store) {
   const repository = () => store || require('./store').getStore();
   function states(jid) {
     const p = repository().get(jid);
-    return registry.list().map((f) => ({
+    return registry.list().filter(f => f.source !== 'sector').map((f) => ({
       ...f,
       enabled:
         f.source === 'sector'
@@ -25,6 +25,7 @@ function createManager(store) {
     if (!jid?.endsWith('@g.us')) return true;
     const f = registry.feature(name);
     if (!f) return false;
+    if (f.source === 'sector') return true;
     const p = repository().get(jid);
     return f.source === 'sector'
       ? p.bot && p.sectors[f.id] !== 'off'
@@ -41,14 +42,13 @@ function createManager(store) {
     const defs = names.map((name) => {
       const f = registry.feature(name);
       if (!f) throw Error('Ativação não encontrada. Use o painel de ativações.');
+      if (f.source === 'sector') throw Error('Setores são informativos e não podem ser alterados. Use o comando setores.');
       return f;
     });
     const changed = [],
       unchanged = [];
     const result = repository().update(jid, actor.phone || actor.jid || 'administrador', (current) => {
       for (const f of defs) {
-        if (!actor.owner && ['off', 'dono'].includes(current.sectors.adm))
-          throw Error('O dono restringiu as configurações administrativas deste grupo.');
         if (enabled && f.botAdminRequired && !botAdmin)
           throw Error('Esta função exige que o bot seja administrador do grupo.');
         const previous =
@@ -101,7 +101,7 @@ function createManager(store) {
         registry
           .list()
           .filter((f) => (enabled ? f.bulkSafe : true))
-          .filter((f) => ctx.actor.owner || f.source !== 'sector')
+          .filter((f) => f.source !== 'sector')
           .map((f) => f.id),
         enabled,
         ctx,

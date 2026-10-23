@@ -95,3 +95,16 @@ test('GitHub integrity failure or incomplete tree stops the update', async () =>
   await assert.rejects(snapshot.download(snapshot.files[0]), /integridade/);
   await assert.rejects(githubSnapshot({ get: sourceFixture({ truncated: true }).get }), /incompleta/);
 });
+
+test('atualização concluída avisa antes de solicitar reinício automático', async () => {
+  const f = commandFixture();
+  let restarted = false;
+  const handler = createUpdateHandler({ config, service: {
+    async update() { return { version: '1.2.0', backup: 'safe-backup' }; },
+  }, restart: {
+    canRestart: () => true,
+    requestRestart() { assert.match(f.replies.at(-1), /Reiniciando automaticamente/); restarted = true; },
+  } });
+  f.ctx.args = ['bot']; await handler(f.sock, f.ctx);
+  assert.equal(restarted, true);
+});

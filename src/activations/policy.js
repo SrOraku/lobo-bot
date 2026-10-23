@@ -20,38 +20,22 @@ function change(current, { action, target, value, owner, admin }) {
     key = sector(target),
     mode = normalizeMode(String(value || '').toLowerCase());
   if (!SECTORS.includes(key)) throw Error('Setor inválido.');
-  if (action === 'delegar') {
-    if (!owner) throw Error('Somente o dono pode delegar controles aos administradores.');
-    if (['bot', 'dono'].includes(key) || !['on', 'off'].includes(mode))
-      throw Error('Use delegar SETOR on/off; bot e dono não podem ser delegados.');
-    next.delegates[key] = mode === 'on';
-    return next;
-  }
-  if (action !== 'set' || !MODES.includes(mode)) throw Error('Use SETOR on/off/membros/adm/dono.');
-  if (!owner && (!admin || !current.delegates[key]))
-    throw Error('O dono ainda não delegou este setor aos administradores do grupo.');
+  if (key !== 'bot') throw Error('Setores são informativos e não podem ser ativados ou desativados. Use o comando setores.');
+  if (action !== 'set') throw Error('Use bot on/off.');
   if (key === 'bot') {
     if (!owner) throw Error('Somente o dono pode ativar ou pausar o bot no grupo.');
     if (!['on', 'off'].includes(mode)) throw Error('Use bot on/off.');
     next.bot = mode === 'on';
     return next;
   }
-  if (key === 'dono')
-    throw Error('O setor dono é exclusivo dos donos e não pode ser liberado para outros cargos.');
-  if (key === 'adm' && mode === 'membros')
-    throw Error('Administração não pode ser liberada para membros comuns.');
-  if (!owner && mode === 'dono') throw Error('Somente o dono pode restringir um setor aos donos.');
-  if (!owner && current.sectors[key] === 'dono') throw Error('Este setor está reservado ao dono.');
-  next.sectors[key] = mode === 'on' ? (key === 'adm' ? 'adm' : 'membros') : mode;
   return next;
 }
 function allowed(policy, key, actor) {
   if (actor.owner) return true;
-  if (!policy.bot) return false;
-  const mode = key === 'dono' ? 'dono' : policy.sectors[key] || (key === 'adm' ? 'adm' : 'membros');
-  if (mode === 'off' || mode === 'dono') return false;
-  return mode !== 'adm' || actor.admin;
+  if (!policy.bot || key === 'dono') return false;
+  return key !== 'adm' || !!actor.admin;
 }
+
 function commandSector(name, args = [], definition) {
   if (
     name === 'menu' ||

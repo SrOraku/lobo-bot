@@ -170,7 +170,7 @@ test('painel é gerado do registry, mostra grupo e confirma idempotência', asyn
   const handler = createActivationHandler({ store: f.store, resolveActor: access });
   await handler(sock, { jid: A, args: ['status'] });
   assert.match(sent[0], /Alcateia Teste/);
-  for (const entry of registry.list()) assert.ok(sent[0].includes(entry.name));
+  for (const entry of registry.list().filter(f => f.source !== 'sector')) assert.ok(sent[0].includes(entry.name));
   const enable = createActivationHandler({
     store: f.store,
     resolveActor: access,
@@ -198,8 +198,9 @@ test('ativação coletiva não amplia papéis e reativação restaura restriçã
   f.store.update(A, owner.phone, (p) => ({ ...p, sectors: { rp: 'adm' }, delegates: {} }));
   await f.manager.bulk(A, true, { actor: owner });
   assert.equal(f.store.get(A).sectors.rp, 'adm');
-  await f.manager.disableFeature(A, 'rp', { actor: owner });
-  await f.manager.enableFeature(A, 'rp', { actor: owner });
+  await assert.rejects(f.manager.disableFeature(A, 'rp', { actor: owner }), /informativos/);
+  await assert.rejects(f.manager.enableFeature(A, 'rp', { actor: owner }), /informativos/);
+  assert.ok(f.manager.isEnabled(A, 'rp'));
   assert.equal(f.store.get(A).sectors.rp, 'adm');
 });
 test('configuração inválida é isolada e não sobrescrita', (t) => {

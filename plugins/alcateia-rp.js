@@ -225,7 +225,11 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
       state.backupManager.start();
     },
     async onUnload() {
-      if (initialization) (await initialization).backupManager.stop();
+      if (initialization) {
+        const state = await initialization;
+        state.backupManager.stop();
+        await state.store.gameQueue;
+      }
     },
     async drain() { await Promise.all([...background]); },
   };

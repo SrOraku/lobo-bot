@@ -121,3 +121,12 @@ Nome completo do bot, assinatura e lema deixam de aparecer nos menus, lojas, res
 ### Prazo de inatividade — v1.1.1
 
 Ao escolher Limpeza manual de inativos no painel e confirmar a ativação, o bot solicita um número inteiro de 1 a 90 dias. Envie apenas `15`, por exemplo, sem D ou outro sufixo. A função e o prazo só são salvos depois de uma resposta válida; prazo inválido não ativa a função. A configuração é independente por grupo e persiste após reiniciar. `!antiinatividade on` e `!ativar antiinatividade` também solicitam o prazo; `!antiinatividade 15` continua disponível. O painel mostra o prazo configurado. A ativação não executa remoções: use o comando de limpeza para aplicar o prazo salvo.
+
+
+## v1.2.0 — setores informativos e atualização com reinício automático
+
+`!setores` apresenta as 15 categorias, finalidade e atalhos. Setores não aparecem nem são numerados em `!ativacoes`. Comandos antigos de desativar/restringir setores são recusados; flags antigas ficam preservadas no banco como histórico, mas não bloqueiam mais categorias. Permissões nativas de dono/admin, banimentos, registros e cooldowns continuam obrigatórios. A pausa global do bot pelo dono permanece separada.
+
+O caminho `node src/index.js` agora é um inicializador estável que supervisiona `src/runtime.js`. Depois de uma atualização concluída por `!atualizar bot`, ele encerra o processo WhatsApp antigo e inicia outro usando a mesma sessão. É necessário instalar e iniciar esta edição uma vez; uma versão antiga em execução não pode ganhar esse comportamento retroativamente. Nenhum pareamento novo é necessário se a sessão continua válida. No modo antigo sem inicializador, o comando avisa sobre esse reinício inicial pelo painel.
+
+O atualizador reaplica o snapshot mesmo quando o commit já foi registrado, reparando arquivos locais alterados. Quando o grafo do lockfile permanece igual, verifica as dependências existentes no staging e as reutiliza. Se a verificação falhar, tenta uma instalação limpa antes de aplicar. Se houver mudança de dependências, usa npm ci. Falhas de rede, bloqueios do host, falta de disco ou testes de inicialização continuam interrompendo a operação com diagnóstico; nenhum comando consegue forçar a hospedagem a liberar recursos externos. Não se usa git reset, não se apagam sessões e os dados são copiados antes da publicação.

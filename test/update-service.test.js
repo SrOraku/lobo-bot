@@ -21,7 +21,7 @@ async function fixture(t, options = {}) {
   const protectedFiles = { '.env': 'BOT_OWNER=5543920030769', 'sessions/creds.json': '{"fixture":true}',
     'data/lobo.db': 'old sqlite fixture', 'storage/alcateia/database.json': '{"coins":123}' };
   for (const [name, data] of Object.entries(protectedFiles)) await put(name, data);
-  const next = { ...pkg, version: '3.4.0' };
+  const next = { ...pkg, version: '3.4.0', dependencies: options.sameDependencies ? pkg.dependencies : { '@whiskeysockets/baileys': 'npm:baileys@7.0.0-rc14' } };
   const contents = { 'package.json': JSON.stringify(next), 'package-lock.json': JSON.stringify(lock(next)),
     'src/index.js': 'new code', 'src/bootstrap.js': 'new bootstrap', 'scripts/check-startup.js': 'new check', ...(options.contents || {}) };
   const files = Object.keys(contents).map(name => ({ path: name, mode: '100644' }));
@@ -126,4 +126,15 @@ test('only previously managed removed source files are deleted; data never is', 
   const f = await fixture(t); await f.put('plugins/removed.js', 'old plugin');
   await f.put('updates/state.json', JSON.stringify({ sha: 'old', files: ['plugins/removed.js', '.env'] }));
   await f.service.update('bot'); await assert.rejects(f.read('plugins/removed.js'), { code: 'ENOENT' }); await f.preserved();
+});
+
+
+test('atualização só de código reutiliza dependências verificadas sem npm ci', async t => {
+  const f = await fixture(t, { sameDependencies: true });
+  const result = await f.service.update('bot');
+  assert.equal(result.reuseDependencies, true);
+  assert.ok(!f.calls.some(c => c.args[0] === 'ci'));
+  assert.equal(await f.read('src/index.js'), 'new code');
+  assert.equal(await f.read('node_modules/old-marker'), 'old dependency');
+  await f.preserved();
 });

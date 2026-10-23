@@ -146,7 +146,7 @@ test('package.json inválido retorna false sem executar npm', t => {
 });
 
 test('ponto de entrada encerra com código 1 antes de carregar dotenv quando bootstrap falha', () => {
-  const source = fs.readFileSync(path.join(__dirname, '../src/index.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '../src/runtime.js'), 'utf8');
   const exit = new Error('saída simulada');
   const required = [];
   let exitCode;
@@ -165,7 +165,7 @@ test('ponto de entrada encerra com código 1 antes de carregar dotenv quando boo
 });
 
 test('ponto de entrada verifica dependências antes de carregar dotenv', () => {
-  const source = fs.readFileSync(path.join(__dirname, '../src/index.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '../src/runtime.js'), 'utf8');
   const stop = new Error('parada antes de carregar o bot');
   const events = [];
 

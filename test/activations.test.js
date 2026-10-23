@@ -15,15 +15,10 @@ test('setores iniciam liberados sem alterar permissões de moderação/dono', ()
   assert.ok(allowed(p, 'adm', admin));
   assert.ok(!allowed(p, 'dono', admin));
 });
-test('membro não configura e admin depende de delegação explícita', () => {
-  let p = defaults();
-  assert.throws(() => change(p, { action: 'set', target: 'jogos', value: 'off', ...member }));
-  assert.throws(() => change(p, { action: 'set', target: 'jogos', value: 'off', ...admin }));
-  p = change(p, { action: 'delegar', target: 'jogos', value: 'on', ...owner });
-  p = change(p, { action: 'set', target: 'jogos', value: 'off', ...admin });
-  assert.ok(!allowed(p, 'jogos', member));
-  assert.ok(allowed(p, 'jogos', owner));
-  assert.throws(() => change(p, { action: 'set', target: 'rp', value: 'off', ...admin }));
+test('setores são informativos e ninguém pode desativá-los', () => {
+  for (const actor of [owner, admin, member])
+    for (const action of ['set', 'delegar'])
+      assert.throws(() => change(defaults(), {action,target:'jogos',value:'off',...actor}), /informativos/);
 });
 test('admin não delega, não pausa o bot, não libera dono ou ADM para membros', () => {
   const p = defaults();
@@ -35,17 +30,11 @@ test('admin não delega, não pausa o bot, não libera dono ou ADM para membros'
     assert.throws(() => change(p, { ...request, ...admin }));
   assert.throws(() => change(p, { action: 'set', target: 'adm', value: 'membros', ...owner }));
 });
-test('modos adm/dono/off, pausa e retomada são por grupo e reversíveis', () => {
-  let p = change(defaults(), { action: 'set', target: 'rp', value: 'adm', ...owner });
-  assert.ok(!allowed(p, 'rp', member));
-  assert.ok(allowed(p, 'rp', admin));
-  p = change(p, { action: 'set', target: 'rp', value: 'dono', ...owner });
-  assert.ok(!allowed(p, 'rp', admin));
-  p = change(p, { action: 'set', target: 'bot', value: 'off', ...owner });
-  assert.ok(!allowed(p, 'jogos', admin));
-  assert.ok(allowed(p, 'jogos', owner));
-  p = change(p, { action: 'set', target: 'bot', value: 'on', ...owner });
-  assert.ok(allowed(p, 'jogos', member));
+test('pausa e retomada do bot continuam exclusivas do dono', () => {
+  const paused = change(defaults(), {action:'set',target:'bot',value:'off',...owner});
+  assert.ok(!allowed(paused,'jogos',member));
+  const active = change(paused, {action:'set',target:'bot',value:'on',...owner});
+  assert.ok(allowed(active,'jogos',member));
 });
 test('setores inválidos e entradas malformadas não alteram estado', () => {
   const p = defaults();
@@ -73,12 +62,12 @@ test('persistência SQLite, isolamento entre grupos e transação sem sobrescrit
     runMigrations(db);
     let store = createPolicyStore(db);
     store.update('one@g.us', 'owner', (p) =>
-      change(p, { action: 'set', target: 'rp', value: 'off', ...owner }),
+      ({...p,features:{...p.features,antilink:true}}),
     );
     store.update('one@g.us', 'owner', (p) =>
-      change(p, { action: 'set', target: 'midia', value: 'adm', ...owner }),
+      ({...p,features:{...p.features,bemvindo:false}}),
     );
-    assert.equal(store.get('one@g.us').sectors.rp, 'off');
+    assert.equal(store.get('one@g.us').features.antilink, true);
     assert.deepEqual(store.get('two@g.us').sectors, defaults().sectors);
     assert.throws(() =>
       store.update('one@g.us', 'member', () => {
@@ -88,8 +77,8 @@ test('persistência SQLite, isolamento entre grupos e transação sem sobrescrit
     db.close();
     db = new Database(file);
     store = createPolicyStore(db);
-    assert.equal(store.get('one@g.us').sectors.midia, 'adm');
-    assert.equal(store.get('one@g.us').sectors.rp, 'off');
+    assert.equal(store.get('one@g.us').features.bemvindo, false);
+    assert.equal(store.get('one@g.us').features.antilink, true);
   } finally {
     db?.close();
     fs.rmSync(dir, { recursive: true, force: true });
@@ -97,7 +86,7 @@ test('persistência SQLite, isolamento entre grupos e transação sem sobrescrit
 });
 test('gate bloqueia membros, preserva manutenção do dono e não afeta privado', async () => {
   const { createGate } = require('../src/activations/gate');
-  const p = change(defaults(), { action: 'set', target: 'midia', value: 'off', ...owner });
+  const p = change(defaults(), { action: 'set', target: 'bot', value: 'off', ...owner });
   const sent = [];
   const sock = { sendMessage: async (j, c) => sent.push(c.text) };
   const gate = createGate({ store: { get: () => p }, resolveActor: async () => member });

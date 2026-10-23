@@ -15,7 +15,7 @@ async function verifiedOwner(sock, ctx, ownerNumber) {
   return (await resolver.member(sender, alternate))?.isOwner === true;
 }
 
-function createUpdateHandler({ service = new UpdateService(), config = require('../config'), logger = console } = {}) {
+function createUpdateHandler({ service = new UpdateService(), config = require('../config'), logger = console, restart = require('../updater/supervisor') } = {}) {
   return async (sock, ctx) => {
     const value = key => typeof config.get === 'function' ? config.get(key) : config[key];
     const p = value('PREFIX') || '!';
@@ -55,11 +55,13 @@ function createUpdateHandler({ service = new UpdateService(), config = require('
       await reply('ATUALIZAÇÃO INICIADA', ['⚙️ Aguarde a verificação e instalação.', '🛡️ Sessão, configurações e dados dos jogos serão preservados.']);
       const result = await service.update(action);
       if (result.already) return reply('JÁ ATUALIZADO', [`✅ ${action === 'bot' ? 'Bot' : 'Baileys'} já está atualizado (${result.version}).`]);
-      return reply('ATUALIZAÇÃO CONCLUÍDA', [
+      const automatic = restart.canRestart();
+      await reply('ATUALIZAÇÃO CONCLUÍDA', [
         `✅ ${action === 'bot' ? 'Bot' : 'Baileys'}: ${result.version}`,
         `💾 Backup do código e dados: updates/${result.backup}`,
-        '⏳ Reinicie o bot pelo painel para carregar a atualização.',
+        automatic ? '♻️ Reiniciando automaticamente para carregar os arquivos novos. A sessão será reutilizada.' : '⏳ Reinicie uma vez pelo painel para habilitar o novo inicializador automático.',
       ]);
+      if (automatic) restart.requestRestart();
     } catch (error) {
       logger.error?.({ error: error.message }, 'Atualização não concluída.');
       return reply('ATUALIZAÇÃO NÃO CONCLUÍDA', [

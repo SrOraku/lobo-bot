@@ -7,7 +7,7 @@ function createInteraction({ now = Date.now, resolveActor, store, rateLimit } = 
   function open(ctx) {
     for (const [id, item] of sessions) if (item.expires <= now()) sessions.delete(id);
     if (sessions.size >= 2000) sessions.delete(sessions.keys().next().value);
-    sessions.set(key(ctx), { stage: 'select', ids: registry.list().map(f => f.id), expires: now() + 120000, last: ctx.msg?.key?.id });
+    sessions.set(key(ctx), { stage: 'select', ids: registry.list().filter(f => f.source !== 'sector').map(f => f.id), expires: now() + 120000, last: ctx.msg?.key?.id });
   }
   function requestDays(ctx, previous = false) {
     open(ctx);
