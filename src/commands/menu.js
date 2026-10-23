@@ -28,7 +28,7 @@ function createMenu({
       sections = [
         `👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}`,
         `╭─── ❖ *CATEGORIAS* ❖ ───╮\n${categoryLines.join('\n')}\n╰────────────────────╯`,
-        `📖 _Use ${p}menu + categoria para visualizar seus comandos._`,
+        `📖 _Use ${p}menu + categoria para visualizar seus comandos._\n⚡ _${p}atalhos — versões abreviadas._`,
       ];
     } else if (!CATEGORIES[category]) {
       title = 'CATEGORIA NÃO ENCONTRADA';

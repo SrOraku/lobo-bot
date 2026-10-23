@@ -49,6 +49,10 @@ function register(def) {
 
 // Executar comando pelo nome
 async function execute(commandName, sock, ctx) {
+  const pluginCommands = require('./pluginLoader').getPluginCommands();
+  const resolved = require('../commands/shortcuts').resolveInput(commandName,ctx.args,name=>registry.has(name)||!!pluginCommands[name]);
+  commandName = resolved.command;
+  ctx = {...ctx,command:commandName,args:resolved.args,argText:resolved.args.join(' ')};
   const cmd = registry.get(commandName);
   if (cmd && !await require('../activations/gate').checkActivation(sock,ctx,commandName,cmd)) return;
 

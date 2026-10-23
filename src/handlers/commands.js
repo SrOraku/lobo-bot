@@ -17,6 +17,8 @@ function loadAllCommands() {
 
   r({name:'ativacoes',activationControl:true,aliases:['ativações'],description:'Painel de setores e permissões do grupo',category:'adm',usage:'!ativacoes [setor modo]',handler:require('../commands/activations').activations,groupOnly:true});
 
+  r({name:'atalhos',description:'Versões curtas dos comandos, sem trocar os originais',category:'info',handler:require('../commands/shortcuts').shortcuts});
+
   // Menu
   r({name:'menu',    aliases:['ajuda','help'], description:'Menu principal',     category:'geral',  usage:'!menu [categoria]', example:'!menu gold', handler:menu.menu});
 
