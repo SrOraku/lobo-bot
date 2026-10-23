@@ -22,3 +22,25 @@ test('atalhos administrativos apontam para os mesmos destinos que exigem dono/ad
   assert.deepEqual(resolve('adm',['p','lib','@pessoa']),{command:'adm',args:['perm','permitir','@pessoa']});
   for(const [alias,target] of Object.entries(SHORT)) assert.equal(resolve(alias).command,target);
 });
+test('prefixos automáticos são inequívocos e não substituem comandos registrados',()=>{
+  const {availableShortcuts}=require('../src/commands/shortcuts');
+  const names=['investigar','inventar','recompensa','abc'];
+  const exists=name=>names.includes(name);
+  const routes=availableShortcuts(exists,names);
+  assert.equal(routes.has('inv'),false);
+  assert.equal(routes.get('rec'),'recompensa');
+  assert.deepEqual(resolveInput('rec',['Texto','Árvore'],exists,names),{command:'recompensa',args:['Texto','Árvore']});
+  assert.equal(availableShortcuts(name=>exists(name)||name==='rec',names).has('rec'),false);
+});
+test('argumentos livres e comandos completos são preservados',()=>{
+  assert.deepEqual(resolve('adm',['n','Árvore','DA','Lua']),{command:'adm',args:['nome','Árvore','DA','Lua']});
+  assert.deepEqual(resolve('rp',['Um','Nome']),{command:'rp',args:['Um','Nome']});
+  assert.deepEqual(resolve('play',['AC/DC','Thunderstruck']),{command:'play',args:['AC/DC','Thunderstruck']});
+  assert.deepEqual(resolve('família',['criar','Lua','Azul']),{command:'familia',args:['criar','Lua','Azul']});
+});
+test('atalhos de operações e recursos convergem para os comandos originais',()=>{
+  assert.deepEqual(resolve('ati',['diag']),{command:'ativacoes',args:['diagnostico']});
+  assert.deepEqual(resolve('ativ',['al']),{command:'ativar',args:['antilink']});
+  assert.deepEqual(resolve('des',['alg']),{command:'desativar',args:['antilinkgrupo']});
+  assert.deepEqual(resolve('alc',['admin','bk']),{command:'alcateia',args:['admin','backup']});
+});

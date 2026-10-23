@@ -19,6 +19,12 @@ const SHORT = Object.freeze({
   acont:'anticontato', am:'antimarcacao', ai:'antiinatividade', aimg:'antiimagem', avd:'antivideo',
   aaudio:'antiaudio', adoc:'antidocumento', aloc:'antilocalizacao', ast:'antisticker', avo:'antiviewonce',
   arp:'autoresposta', ativ:'ativar', des:'desativar',
+  md:'mudar', lb:'lobos', mu:'mute', um:'unmute', ub:'unban',
+  dad:'dado', moe:'moeda', az:'azar', afe:'antifake', aspm:'antispam', ale:'antilinkexterno',
+  pl:'play', yta:'ytmp3', ytv:'ytmp4', pa:'play_audio', pv:'play_video', ol:'olamundo',
+  mj:'jogos', ma:'alcateia', mm:'midia', mad:'adm', mdo:'dono', mut:'util',
+  mf:'figurinhas', mp:'pesquisa', mia:'ia', mdiv:'diversao', mg:'grupo',
+  mi:'info', mfer:'ferramentas', mrp:'rp', mec:'economia',
 });
 const fold = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const ACTIONS = Object.freeze({
@@ -29,34 +35,77 @@ const ACTIONS = Object.freeze({
   fotomenu:{v:'ver',rm:'remover'},
   adm:{p:'perm',n:'nome',desc:'descricao'},
   atualizar:{b:'bot',bl:'baileys',st:'status'},
+  ativacoes:{st:'status',diag:'diagnostico',hist:'historico'},
+  admin:{st:'status',bk:'backup',bc:'broadcast',addm:'addmoedas',rmm:'removemoedas',rcd:'resetcooldown',addl:'addlobos'},
 });
-function resolveInput(input, originalArgs, exists) {
+// Recomputed from the loaded registry: never invent a route without a real target.
+function availableShortcuts(exists, names = []) {
+  const routes = new Map(Object.entries(SHORT).filter(([alias,target]) => !exists(alias) && exists(target)));
+  const candidates = [...new Set(names.map(fold))].sort();
+  for (const target of candidates) {
+    if (target.length <= 3 || !exists(target) || [...routes.values()].includes(target)) continue;
+    for (let length = 3; length < target.length; length++) {
+      const alias = target.slice(0, length);
+      if (exists(alias) || routes.has(alias) || candidates.some(other => other !== target && other.startsWith(alias))) continue;
+      routes.set(alias, target);
+      break;
+    }
+  }
+  return routes;
+}
+function resolveInput(input, originalArgs, exists, names = []) {
   const normalized=fold(input);
-  let command=exists(input)?input:exists(normalized)?normalized:SHORT[normalized] && exists(SHORT[normalized])?SHORT[normalized]:input;
+  let command=exists(input)?input:exists(normalized)?normalized:availableShortcuts(exists, names).get(normalized) || input;
   let args=[...(originalArgs || [])];
   const actions=(name,values)=>{
     if(!values.length) return values;
     const first=fold(values[0]);
-    return [ACTIONS[name]?.[first] || first,...values.slice(1)];
+    const known = ACTIONS[name] || {};
+    // Unrecognized arguments are names, titles or text; preserve them byte for byte.
+    return [known[first] || (Object.values(known).includes(first) ? first : values[0]),...values.slice(1)];
   };
   if(command==='familia' && ['alcateia','rp'].includes(fold(args[0]))) args.shift();
   if(command==='alcateia' && args.length) {
     const sub=fold(args[0]), target=SHORT[sub] || sub;
-    if(['familia','clan','rp'].includes(target)) args=[target,...actions(target,args.slice(1))];
+    if(['familia','clan','rp','admin'].includes(target)) args=[target,...actions(target,args.slice(1))];
     else if(exists(target) && ['start','treino','ataque','formacao','rank','evento'].includes(target)) args=[target,...args.slice(1)];
   } else if(ACTIONS[command]) args=actions(command,args);
+  if (['ativar','desativar'].includes(command) && args[0]) {
+    const target = SHORT[fold(args[0])];
+    if (target && (target.startsWith('anti') || ['bemvindo','despedida','autoresposta','level'].includes(target))) args[0] = target;
+  }
   if(command==='adm' && args[0]==='perm' && args[1]) args[1]=({lib:'permitir',rev:'revogar',st:'status'})[fold(args[1])] || fold(args[1]);
   return {command,args};
 }
 async function shortcuts(sock,ctx) {
   const registry=require('../core/commandRegistry').registry,plugins=require('../core/pluginLoader').getPluginCommands();
   const exists=name=>registry.has(name)||!!plugins[name],p=require('../config').get('PREFIX');
-  const lines=Object.entries(SHORT).filter(([alias,target])=>!exists(alias)&&exists(target)).map(([alias,target])=>`*${p}${alias}* → ${p}${target}`);
-  return sock.sendMessage(ctx.jid,{text:require('../menus/render').frameMenu('⚡ ATALHOS DA MATILHA',[
-    '_Comandos completos continuam funcionando. Os atalhos usam as mesmas permissões e limites._',
-    lines.join('\n'),
-    `👨‍👩‍👧 ${p}fam cr Nome → criar família\n📜 ${p}fam pf → perfil\n🏙️ ${p}rp ini → iniciar RP\n🐺 ${p}cla cr Nome → criar clã\n👑 ${p}ds add número → cadastrar dono`,
-    '_Também aceita família, clã e outros nomes com acentos, quando não houver conflito com um comando existente._',
-  ])},{quoted:ctx.msg});
+  const names=[...new Set([...registry.values()].map(cmd=>cmd.name).concat(Object.keys(plugins)))];
+  const routes=availableShortcuts(exists,names);
+  const lines=[...routes].map(([alias,target])=>`*${p}${alias}* → ${p}${target}`);
+  const requested=fold(ctx.args?.[0]);
+  const filtered=requested ? [...routes].filter(([alias,target])=>target===requested || alias===requested).map(([alias,target])=>`*${p}${alias}* → ${p}${target}`) : lines;
+  const sections=[
+    '_Comandos completos continuam funcionando. Mesmas permissões e limites._',
+    ...filtered,
+    `👨‍👩‍👧 ${p}fam cr Nome → criar família`,
+    `📜 ${p}fam pf → perfil • ${p}fam dep 100 → depositar`,
+    `🏙️ ${p}rp ini → iniciar RP • ${p}cla cr Nome → criar clã`,
+    `🛡️ ${p}ativ al → ativar AntiLink • ${p}ati diag → diagnóstico`,
+    `👑 ${p}ds add número → cadastrar dono • ${p}up b → atualizar bot`,
+    `_Use ${p}atalhos nome para consultar um comando._`,
+  ];
+  if (requested && !filtered.length) sections.splice(1,0,'Nenhum atalho alternativo para esse nome; use o comando completo.');
+  // Keep the catalogue readable on mobile even with new plugin commands.
+  const pages=[];
+  let page=[];
+  for(const line of sections) {
+    if(page.join('\n').length+line.length>2800) { pages.push(page); page=[]; }
+    page.push(line);
+  }
+  if(page.length) pages.push(page);
+  for(let index=0;index<pages.length;index++)
+    await sock.sendMessage(ctx.jid,{text:require('../menus/render').frameMenu(`⚡ ATALHOS ${index+1}/${pages.length}`, [pages[index].join('\n')])},{quoted:ctx.msg});
+
 }
-module.exports={SHORT,resolveInput,shortcuts};
+module.exports={SHORT,ACTIONS,availableShortcuts,resolveInput,shortcuts};

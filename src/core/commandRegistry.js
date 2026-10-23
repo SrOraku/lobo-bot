@@ -50,7 +50,7 @@ function register(def) {
 // Executar comando pelo nome
 async function execute(commandName, sock, ctx) {
   const pluginCommands = require('./pluginLoader').getPluginCommands();
-  const resolved = require('../commands/shortcuts').resolveInput(commandName,ctx.args,name=>registry.has(name)||!!pluginCommands[name]);
+  const resolved = require('../commands/shortcuts').resolveInput(commandName,ctx.args,name=>registry.has(name)||!!pluginCommands[name], [...new Set([...registry.values()].map(cmd=>cmd.name).concat(Object.keys(pluginCommands)))]);
   commandName = resolved.command;
   ctx = {...ctx,command:commandName,args:resolved.args,argText:resolved.args.join(' ')};
   const cmd = registry.get(commandName);
