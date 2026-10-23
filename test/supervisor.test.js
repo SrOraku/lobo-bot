@@ -3,14 +3,17 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const { start } = require('../src/updater/supervisor');
-test('inicializador reinicia só depois de encerrar o processo anterior', () => {
+test('inicializador encaminha a escolha de número e reinicia só depois de encerrar o processo anterior', async () => {
   const children = [], exits = [];
   const beforeTerm = process.listeners('SIGTERM'), beforeInt = process.listeners('SIGINT');
   const controller = start({ spawn: (_, args, options) => {
     assert.equal(options.env.LOBO_SUPERVISED, '1');
-    const child = new EventEmitter(); child.signals = []; child.kill = signal => child.signals.push(signal);
+    const child = new EventEmitter(); child.connected = true; child.answers = []; child.send = message => child.answers.push(message); child.signals = []; child.kill = signal => child.signals.push(signal);
     children.push(child); return child;
-  }, exit: code => exits.push(code) });
+  }, exit: code => exits.push(code), ask: async question => { assert.equal(question,'Digite o número'); return '5511988887777'; } });
+  children[0].emit('message', {type:'lobo:prompt',id:'choice',question:'Digite o número'});
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(children[0].answers,[{type:'lobo:prompt-answer',id:'choice',answer:'5511988887777'}]);
   children[0].emit('message', { type: 'lobo:restart' });
   assert.deepEqual(children[0].signals, ['SIGTERM']);
   assert.equal(children.length, 1);

@@ -64,8 +64,7 @@ const MAX_RECONNECT   = config.getNumber('MAX_RECONNECT') || 10;
 // HELPER: PERGUNTAR NO TERMINAL
 // ============================================================
 function askQuestion(query) {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise(resolve => rl.question(query, ans => { rl.close(); resolve(ans.trim()); }));
+  return require('./utils/terminal-input').askConsole(query);
 }
 
 // ============================================================
