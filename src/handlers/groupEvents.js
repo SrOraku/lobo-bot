@@ -1,5 +1,8 @@
 'use strict';
 const db = require('../utils/database');
+const fs = require('node:fs');
+const path = require('node:path');
+const welcomeImage = path.join(__dirname, '../assets/bem-vindo.jpg');
 const { BOT_NAME, cleanJid, getNumber, logger } = require('../utils/helpers');
 
 async function handleGroupParticipantsUpdate(sock, update) {
@@ -25,10 +28,15 @@ async function handleGroupParticipantsUpdate(sock, update) {
             db.upsertStrategy(jid, 34, 33, 33);
           }
 
-          await sock.sendMessage(id, {
-            text: `🌙 *[ ${BOT_NAME} ]*\n\n╔══════════════════════╗\n║   🐾 *BEM-VINDO!* 🐾   ║\n╚══════════════════════╝\n\n🐺 @${number} entrou na matilha!\n\n💰 Você ganhou *${goldStart} Gold* de boas-vindas!\n🐺 Seus *100 Lobos* estão prontos!\n\n📖 Use *!infolobos* para aprender o jogo\n📋 Use *!menu* para ver todos os comandos\n\n_A matilha te recebe com uivos! 🐺🌕_`,
-            mentions: [jid]
-          });
+          const caption = `🌙 *[ ${BOT_NAME} ]*\n\n╔══════════════════════╗\n║   🐾 *BEM-VINDO!* 🐾   ║\n╚══════════════════════╝\n\n🐺 @${number} entrou na matilha!\n\n💰 Você ganhou *${goldStart} Gold* de boas-vindas!\n🐺 Seus *100 Lobos* estão prontos!\n\n📖 Use *!infolobos* para aprender o jogo\n📋 Use *!menu* para ver todos os comandos\n\n_A matilha te recebe com uivos! 🐺🌕_`;
+          try {
+            await sock.sendMessage(id, {
+              image: fs.readFileSync(welcomeImage), caption, mentions: [jid]
+            });
+          } catch (error) {
+            logger.warn('Não foi possível enviar a imagem de boas-vindas; enviando texto.');
+            await sock.sendMessage(id, { text: caption, mentions: [jid] });
+          }
         }
 
       } else if (action === 'remove') {
