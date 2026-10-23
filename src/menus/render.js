@@ -16,13 +16,14 @@ function uptime(seconds) {
 }
 const DIVIDER = '┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈';
 function footer() {
-  return `🌹 *Dev:* ${IDENTITY.developer}\n📞 +5543920030769\n${IDENTITY.motto}`;
+  return `🌹 *Dev:* ${IDENTITY.developer}\n${IDENTITY.motto}`;
 }
 function frameMenu(title, sections) {
-  return `🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗\n*${IDENTITY.name}*\n\n╭──── 🌹 ⚜️ 🐾 ⚜️ 🌹 ────╮\n*${title}*\n╰──────────────────────╯\n\n${sections.join('\n\n')}\n\n${DIVIDER}\n${footer()}\n╚═══❖🌹❖═══♆═══❖🐾❖═══╝🐺`;
+  return `🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗\n*${IDENTITY.name}*\n\n╭──── 🌹 ⚜️ 🐾 ⚜️ 🌹 ────╮\n   *${title}*\n╰──────────────────────╯\n\n${sections.join('\n\n')}\n\n${DIVIDER}\n${footer()}\n╚═══❖🌹❖═══♆═══❖🐾❖═══╝🐺`;
 }
 function frameNotice(title, sections) {
-  return `🌹╔═══❖♆❖═══╗\n*${IDENTITY.name}*\n${IDENTITY.motto}\n*${title}*\n${sections.join('\n')}\n🌹 *Dev:* ${IDENTITY.developer}\n📞 +5543920030769\n╚═══❖♆❖═══╝🐺`;
+  const heading = String(title).replace(/^(\S+)\s+(.+)$/u, (_, icon, text) => `${icon} *${text}*`);
+  return `🌹╔═══❖♆❖═══╗\n*${IDENTITY.name}*\n${IDENTITY.motto}\n${DIVIDER}\n${heading}\n${sections.join('\n')}\n${DIVIDER}\n🌹 *Dev:* ${IDENTITY.developer}\n╚═══❖♆❖═══╝🐺`;
 }
 function connectionNotice() {
   return `🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹\n\n*${IDENTITY.name}*\n\n✅ *Bot conectado com sucesso!*\n🐺 Matilha pronta para batalha!\n\n_Uuuuuuwooooo! 🐺🌕_\n\n👨‍💻 Dev: ${IDENTITY.developer}\n📞 +5543920030769\n\n${IDENTITY.motto}\n\n🌹🐺✦❀🌹🐺✦❀🌹`;

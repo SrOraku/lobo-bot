@@ -44,7 +44,7 @@ function createMenu({
         ]
           .filter(Boolean)
           .join(' • ');
-        return `┃ 🐾 *${usage}* — _${c.description}_${flags ? ` [${flags}]` : ''}${c.aliases?.length ? `\n↳ ${c.aliases.map((a) => p + a).join(' • ')}` : ''}${c.details?.length ? '\n' + c.details.map((row) => p + c.name + ' ' + row).join('\n') : ''}`;
+        return `┃ 🐾 *${usage}* — _${c.description}_${flags ? ` [${flags}]` : ''}${c.aliases?.length ? `\n┃ ↳ ${c.aliases.map((a) => '*' + p + a + '*').join(' • ')}` : ''}${c.details?.length ? '\n' + c.details.map((row) => '┃ ↳ *' + p + c.name + ' ' + row + '*').join('\n') : ''}`;
       });
       sections = [
         lines.length ? lines.join('\n') : '🐾 Nenhum comando desta categoria está instalado.',
@@ -75,9 +75,9 @@ function createMenu({
         );
       if (category === 'info')
         sections.push(
-          `⭐ Versão: ${version}\n⏱️ Uptime: ${uptime(online())}\n📜 Comandos: ${all.length}\n👑 Dono: +${config.get('BOT_OWNER')}`,
+          `⭐ Versão: ${version}\n⏱️ Uptime: ${uptime(online())}\n📜 Comandos: ${all.length}\n👑 Dono: +${config.get('BOT_OWNER')}\n📞 +5543920030769`,
         );
-      sections = [`👤 *Usuário:* ${clean(ctx.pushName || IDENTITY.developer)}`, `╭─── ❖ *COMANDOS* ❖ ───╮\n${sections.join('\n\n')}\n╰────────────────────╯`, `📖 _Use ${p}menu para retornar ao Menu Principal._`];
+      sections = [`👤 *Usuário:* ${clean(ctx.pushName || IDENTITY.developer)}`, `╭─── ❖ *COMANDOS* ❖ ───╮\n${sections.join('\n\n')}\n╰────────────────────╯`, `📖 _Digite ${p}menu para voltar ao Menu Principal._`];
     }
     return sock.sendMessage(ctx.jid, { text: frameMenu(title, sections) }, { quoted: ctx.msg });
   };
