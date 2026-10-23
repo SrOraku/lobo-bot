@@ -9,6 +9,8 @@
 
 ## 🐦 Pterodactyl
 
+Na Bronxys, use `node src/index.js` como comando de inicialização e Node 22.12 ou superior. Desde a versão 3.3.1, o libsignal é obtido como arquivo HTTPS do mesmo commit oficial, com integridade no lockfile, sem exigir dependências do tipo Git. Isso resolve `EALLOWGIT` em instalações com `allow-git=none`; mantenha `package.json` e `package-lock.json` atualizados juntos.
+
 1. Crie um servidor com Node.js 22 atualizado (mínimo 22.12; validado em 22.23.3)
 2. Configure o startup como: `node src/index.js`
 3. Faça upload do projeto completo ou conecte via GitHub. `package.json`, `package-lock.json` e a pasta `src/` precisam estar juntos na raiz do servidor, normalmente `/home/container`.

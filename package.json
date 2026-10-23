@@ -1,6 +1,6 @@
 {
   "name": "lobo-bot",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺",
   "main": "src/index.js",
   "type": "commonjs",
@@ -52,5 +52,8 @@
   ],
   "author": "🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺",
   "license": "MIT",
-  "displayName": "🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑"
+  "displayName": "🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑",
+  "overrides": {
+    "libsignal": "https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7"
+  }
 }
