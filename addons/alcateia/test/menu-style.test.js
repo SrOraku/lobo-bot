@@ -16,12 +16,8 @@ function config(prefix = '!') {
 }
 
 function assertIdentity(text) {
-  assert.ok(text.includes(BOT_NAME), 'o nome exato do bot deve aparecer no menu');
-  assert.ok(text.includes(BOT_DESCRIPTION), 'a descrição literal deve aparecer inteira no menu');
-  assert.ok(text.split('\n').includes(`║ ${BOT_DESCRIPTION}`), 'a descrição deve permanecer inteira em uma única linha');
-  assert.ok(text.includes(DEV_SIGNATURE), 'a assinatura exata do desenvolvedor deve aparecer no menu');
-  assert.ok(text.includes(`+${loadConfig({}).ownerNumber}`), 'o número do dono deve aparecer no menu');
-  assert.ok(!text.includes('び᭄꥓〭🐺'), 'a assinatura anterior não deve permanecer no menu');
+  for (const value of [BOT_NAME, BOT_DESCRIPTION, DEV_SIGNATURE])
+    assert.ok(!text.includes(value), 'menu deve omitir identidade repetida');
 }
 
 function assertFrame(text) {
@@ -68,7 +64,7 @@ test('formatMenu is pure, uses compact borders and keeps signature and command t
   for (const ornament of ['✦', '❖', '♆']) assert.ok(text.includes(ornament), `ornamento ausente: ${ornament}`);
   assert.ok(text.includes('!!profissoes'));
   assert.ok(text.includes('*?textobemvindo'));
-  assert.ok(text.includes(DEV_SIGNATURE), 'assinatura não deve ser cortada ou reescrita');
+  assert.ok(!text.includes(DEV_SIGNATURE), 'assinatura não deve ser cortada ou reescrita');
   assert.ok(text.split('\n').some(line => line.includes('disponíveis')));
 });
 
@@ -77,7 +73,7 @@ test('formatMenu accepts a string subtitle without splitting it into characters'
   assertFrame(text);
   assertIdentity(text);
   assert.match(text, /WOK Coin da alcateia/);
-  assert.ok(text.includes(DEV_SIGNATURE));
+  assert.ok(!text.includes(DEV_SIGNATURE));
 });
 
 test('legacy box decorations are replaced while section titles, prices and commands survive', () => {
@@ -93,7 +89,7 @@ test('legacy box decorations are replaced while section titles, prices and comma
   const text = decorateMenuText(legacy);
   assertFrame(text);
   assertIdentity(text);
-  for (const fragment of ['LOJA DA ALCATEIA', 'ITENS LUNARES', 'Catálogo especial da alcateia', 'Fúria Lunar', '!!comprar', DEV_SIGNATURE]) assert.ok(text.includes(fragment), fragment);
+  for (const fragment of ['LOJA DA ALCATEIA', 'ITENS LUNARES', 'Catálogo especial da alcateia', 'Fúria Lunar', '!!comprar']) assert.ok(text.includes(fragment), fragment);
   assert.match(text, /100\s+WOK\s+Coin/);
   assert.doesNotMatch(text, /╔═━━〔|║\s*[╔╠╚]/u, 'não deve manter a moldura antiga aninhada');
 });
@@ -107,10 +103,10 @@ test('decorating an already decorated menu does not duplicate commands or develo
   assertIdentity(first);
   assertIdentity(second);
   assert.equal(second.split('!!perfil').length - 1, 1);
-  assert.equal(second.split(DEV_SIGNATURE).length - 1, 1);
-  assert.equal(second.split(BOT_NAME).length - 1, 1);
-  assert.equal(second.split(BOT_DESCRIPTION).length - 1, 1);
-  assert.equal(second.split(`+${loadConfig({}).ownerNumber}`).length - 1, 1);
+  assert.equal(second.split(DEV_SIGNATURE).length - 1, 0);
+  assert.equal(second.split(BOT_NAME).length - 1, 0);
+  assert.equal(second.split(BOT_DESCRIPTION).length - 1, 0);
+  assert.equal(second.split(`+${loadConfig({}).ownerNumber}`).length - 1, 0);
 });
 
 test('game menu preserves current wolf and RP commands without restoring removed duel commands', () => {
@@ -120,7 +116,7 @@ test('game menu preserves current wolf and RP commands without restoring removed
     assertIdentity(text);
     assertCommands(text, prefix, [...GAME_COMMANDS, ...RP_COMMANDS]);
     for (const removed of ['duelo', 'aceitar', 'recusar']) assert.ok(!text.includes(`${prefix}${removed}`), removed);
-    assert.ok(text.includes(DEV_SIGNATURE));
+    assert.ok(!text.includes(DEV_SIGNATURE));
   }
 });
 
@@ -134,7 +130,7 @@ test('RP menu retains social, profession, inventory and bank command alternative
       assert.ok(text.includes(`${prefix}familia ${action}`), action);
     }
     assert.match(text, /WOK Coin/);
-    assert.ok(text.includes(DEV_SIGNATURE));
+    assert.ok(!text.includes(DEV_SIGNATURE));
   }
 });
 

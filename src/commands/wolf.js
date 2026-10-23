@@ -36,7 +36,7 @@ async function verEstrategia(sock, ctx) {
 ║  🐺 *ESTRATÉGIA DE BATALHA*  ║
 ╚══════════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 👤 *Guerreiro:* ${targetName}
 ${wolvesBar(strat.wolves_alive)}
@@ -91,14 +91,14 @@ async function mudarEstrategia(sock, ctx) {
 
   if (attack === undefined || defense === undefined || counter === undefined) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\n🐺 *Como usar:*\n\n*!mudar estrategia ataque:40 defesa:30 contra:30*\n\n_A soma deve ser sempre 100!_`
+      text: `❌ 🐺 *Como usar:*\n\n*!mudar estrategia ataque:40 defesa:30 contra:30*\n\n_A soma deve ser sempre 100!_`
     }, { quoted: msg });
   }
 
   const validation = validateStrategy(attack, defense, counter);
   if (!validation.valid) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\n🐺 *Estratégia inválida!*\n\n${validation.error}\n\n_Exemplo: !mudar estrategia ataque:40 defesa:35 contra:25_`
+      text: `❌ 🐺 *Estratégia inválida!*\n\n${validation.error}\n\n_Exemplo: !mudar estrategia ataque:40 defesa:35 contra:25_`
     }, { quoted: msg });
   }
 
@@ -111,7 +111,7 @@ async function mudarEstrategia(sock, ctx) {
 ║  ⚙️ *ESTRATÉGIA ATUALIZADA!*  ║
 ╚══════════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 🐺 *Sua matilha foi reorganizada!*
 
@@ -151,7 +151,7 @@ async function atacar(sock, ctx) {
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
   if (!mentioned) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\n🐺 Mencione seu oponente!\n\n_Exemplo:_ *!atacar @usuário*`
+      text: `❌ 🐺 Mencione seu oponente!\n\n_Exemplo:_ *!atacar @usuário*`
     }, { quoted: msg });
   }
 
@@ -159,7 +159,7 @@ async function atacar(sock, ctx) {
 
   if (defender === sender) {
     return sock.sendMessage(jid, {
-      text: `🐺 *[ ${BOT_NAME} ]*\n\nVocê não pode atacar a si mesmo, Lobo Tolo! 😂`
+      text: `🐺 Você não pode atacar a si mesmo, Lobo Tolo! 😂`
     }, { quoted: msg });
   }
 
@@ -170,7 +170,7 @@ async function atacar(sock, ctx) {
     const remaining = Math.ceil((BATTLE_TIMEOUT - (Date.now() - lastBattle) / 1000));
     if (remaining > 0) {
       return sock.sendMessage(jid, {
-        text: `⏳ *[ ${BOT_NAME} ]*\n\n🐺 Seus lobos estão descansando!\n\nAguarde *${remaining}s* para atacar novamente.`
+        text: `⏳ 🐺 Seus lobos estão descansando!\n\nAguarde *${remaining}s* para atacar novamente.`
       }, { quoted: msg });
     }
   }
@@ -192,12 +192,12 @@ async function atacar(sock, ctx) {
   // Checar lobos vivos
   if (atkStrat.wolves_alive <= 0) {
     return sock.sendMessage(jid, {
-      text: `💀 *[ ${BOT_NAME} ]*\n\nSeus lobos estão todos mortos! Use *!curarlobos* para ressuscitá-los.\n💰 Custo: *${CURE_COST} Gold*`
+      text: `💀 Seus lobos estão todos mortos! Use *!curarlobos* para ressuscitá-los.\n💰 Custo: *${CURE_COST} Gold*`
     }, { quoted: msg });
   }
   if (defStrat.wolves_alive <= 0) {
     return sock.sendMessage(jid, {
-      text: `💀 *[ ${BOT_NAME} ]*\n\n@${getNumber(defender)} não tem lobos vivos para lutar! Escolha outro oponente.`,
+      text: `💀 @${getNumber(defender)} não tem lobos vivos para lutar! Escolha outro oponente.`,
       mentions: [defender]
     }, { quoted: msg });
   }
@@ -211,7 +211,7 @@ async function atacar(sock, ctx) {
 
   // Anunciar batalha
   await sock.sendMessage(jid, {
-    text: `🌙 *[ ${BOT_NAME} ]*\n\n╔══════════════════════╗\n║  ⚔️ *BATALHA INICIADA!* ║\n╚══════════════════════╝\n\n🗡️ *Atacante:* @${getNumber(sender)}\n🛡️ *Defensor:* @${getNumber(defender)}\n\n_A lua cheia guia as matilhas..._\n_Que a batalha comece! 🐺_`,
+    text: `🌙 ╔══════════════════════╗\n║  ⚔️ *BATALHA INICIADA!* ║\n╚══════════════════════╝\n\n🗡️ *Atacante:* @${getNumber(sender)}\n🛡️ *Defensor:* @${getNumber(defender)}\n\n_A lua cheia guia as matilhas..._\n_Que a batalha comece! 🐺_`,
     mentions: [sender, defender]
   });
 
@@ -267,7 +267,7 @@ async function atacar(sock, ctx) {
 ║   ⚔️ *RESULTADO DA BATALHA*   ║
 ╚══════════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 🗡️ *@${getNumber(sender)}*
 ${wolvesBar(result.atkWolvesAfter)} 
@@ -306,7 +306,7 @@ async function meusLobos(sock, ctx) {
 ║    🐺 *MINHA MATILHA*    ║
 ╚══════════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 👤 *${pushName}*
 ${wolvesBar(strat.wolves_alive)}
@@ -345,7 +345,7 @@ async function rankLobos(sock, ctx) {
 ║   🌕 *RANKING 100 LOBISOMENS*  ║
 ╚══════════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 ${lines || '📭 Ainda não há batalhas registradas!'}
 
@@ -363,13 +363,13 @@ async function curarLobos(sock, ctx) {
 
   if (!strat || strat.wolves_alive >= 100) {
     return sock.sendMessage(jid, {
-      text: `🐺 *[ ${BOT_NAME} ]*\n\nSua matilha já está com todos os *100 lobos* vivos! Não precisa curar.`
+      text: `🐺 Sua matilha já está com todos os *100 lobos* vivos! Não precisa curar.`
     }, { quoted: msg });
   }
 
   if ((user?.gold || 0) < CURE_COST) {
     return sock.sendMessage(jid, {
-      text: `💸 *[ ${BOT_NAME} ]*\n\nVocê precisa de *${CURE_COST} Gold* para curar sua matilha!\n\nVocê tem: *${user?.gold || 0} Gold*\n\n_Use !daily para ganhar gold diariamente!_`
+      text: `💸 Você precisa de *${CURE_COST} Gold* para curar sua matilha!\n\nVocê tem: *${user?.gold || 0} Gold*\n\n_Use !daily para ganhar gold diariamente!_`
     }, { quoted: msg });
   }
 
@@ -377,7 +377,7 @@ async function curarLobos(sock, ctx) {
   db.updateWolvesAlive(sender, 100);
 
   await sock.sendMessage(jid, {
-    text: `✅ *[ ${BOT_NAME} ]*\n\n🐺 *Matilha Curada!*\n\nSeus 100 lobos foram ressuscitados!\n💰 Custo: *-${CURE_COST} Gold*\n\n_Uuuuuuwooooo! 🐺🌕_`
+    text: `✅ 🐺 *Matilha Curada!*\n\nSeus 100 lobos foram ressuscitados!\n💰 Custo: *-${CURE_COST} Gold*\n\n_Uuuuuuwooooo! 🐺🌕_`
   }, { quoted: msg });
 }
 
@@ -393,7 +393,7 @@ async function resetarLobos(sock, ctx) {
   db.upsertStrategy(target, 34, 33, 33);
 
   await sock.sendMessage(jid, {
-    text: `✅ *[ ${BOT_NAME} ]*\n\n🔄 Lobos de @${getNumber(target)} foram resetados para 100!`,
+    text: `✅ 🔄 Lobos de @${getNumber(target)} foram resetados para 100!`,
     mentions: [target]
   }, { quoted: msg });
 }
@@ -408,7 +408,7 @@ async function infoJogo(sock, ctx) {
 ║  🐺 *100 LOBISOMENS - GUIA*  ║
 ╚══════════════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 *📖 COMO JOGAR:*
 

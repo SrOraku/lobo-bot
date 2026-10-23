@@ -82,7 +82,9 @@ function createActivationHandler({
       } else if (args.length > 1) throw Error('Use apenas status.');
       const policy = repository.get(ctx.jid),
         categories = new Map();
+      let number = 0;
       for (const item of manager.getGroupFeatures(ctx.jid)) {
+        number++;
         const state = item.enabled
           ? (item.botAdminRequired && !actor.botAdmin) ||
             item.dependencies?.some((id) => !manager.isEnabled(ctx.jid, id))
@@ -90,18 +92,16 @@ function createActivationHandler({
             : '🟢'
           : '🔴';
         const lines = categories.get(item.category) || [];
-        lines.push(`${state} ${item.name} (${item.id})${item.mode ? ' • ' + item.mode : ''}`);
+        lines.push(`┃ *${number}.* ${state} ${item.name}${item.mode ? ' • ' + item.mode : ''}`);
         categories.set(item.category, lines);
       }
       const sections = [
         `👥 Grupo: ${group}\n🤖 Bot: ${policy.bot ? '🟢 ativo' : '🔴 pausado'}\n🟢 ativado • 🔴 desativado\n⚠️ requer administrador/permissão`,
       ];
       for (const [category, lines] of categories)
-        sections.push(`*${category.toUpperCase()}*\n${lines.join('\n')}`);
-      sections.push(
-        `⚙️ ${p}ativar RECURSO\n⚙️ ${p}desativar RECURSO\n⚙️ ${p}ativar tudo — funções seguras\n⚙️ ${p}desativar tudo — funções opcionais\n📊 ${p}ativacoes status\n👑 ${p}ativacoes delegar SETOR on/off\n👥 ${p}ativacoes SETOR membros/adm/dono\n🤖 ${p}ativacoes bot on/off`,
-        '🐾 As permissões dos comandos continuam obrigatórias. A proteção obrigatória contra abuso de comandos não é desligada.',
-      );
+        sections.push(`╭── ❖ *${category.toUpperCase()}* ❖ ──╮\n${lines.join('\n')}\n╰────────────────────╯`);
+      sections.push('🔢 _Envie o número da função para ativar ou desativar._\n_Em seguida: 1 confirma • 2 cancela._\n⏳ Seleção válida por 2 minutos.', '🛡️ As permissões e a proteção contra abuso continuam obrigatórias.');
+      require('../activations/interaction').interaction().open(ctx);
       return reply(frameMenu('🐺 ATIVAÇÕES DA ALCATEIA', sections));
     } catch (error) {
       require('../utils/helpers').logger.warn(

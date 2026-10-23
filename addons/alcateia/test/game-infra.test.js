@@ -115,7 +115,7 @@ test('anti-spam allows one command per second, with no owner exemption or denied
   assert.equal(consumeCommand(game, SECOND, 1_000).allowed, true);
   assert.match(ANTI_SPAM_MESSAGE, /ANTI-SPAM/);
   assert.match(ANTI_SPAM_MESSAGE, /Calma, lobo/);
-  assert.match(ANTI_SPAM_MESSAGE, /🌹 Dev:/);
+  assert.doesNotMatch(ANTI_SPAM_MESSAGE, /🌹 Dev:/);
 });
 
 test('anti-spam enforces a rolling 50-command hour and frees a slot at the exact boundary', () => {

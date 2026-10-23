@@ -30,7 +30,7 @@ async function verGold(sock, ctx) {
   const gold = user?.gold || 0;
 
   await sock.sendMessage(jid, {
-    text: `💰 *[ ${BOT_NAME} ]*\n\n🐺 *@${getNumber(target)}* possui:\n\n✨ *${formatNumber(gold)} Gold* ✨\n\n_Use !daily para ganhar gold diariamente!_\n_Use !loja para gastar seu gold!_`,
+    text: `💰 🐺 *@${getNumber(target)}* possui:\n\n✨ *${formatNumber(gold)} Gold* ✨\n\n_Use !daily para ganhar gold diariamente!_\n_Use !loja para gastar seu gold!_`,
     mentions: [target]
   }, { quoted: msg });
 }
@@ -45,7 +45,7 @@ async function enviarGold(sock, ctx) {
 
   if (!mentioned || !amount || amount <= 0) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\nUso: *!enviargold @usuário 100*`
+      text: `❌ Uso: *!enviargold @usuário 100*`
     }, { quoted: msg });
   }
 
@@ -55,7 +55,7 @@ async function enviarGold(sock, ctx) {
   const user = db.getUser(sender);
   if ((user?.gold || 0) < amount) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\nSaldo insuficiente!\n💰 Você tem: *${formatNumber(user?.gold || 0)} Gold*`
+      text: `❌ Saldo insuficiente!\n💰 Você tem: *${formatNumber(user?.gold || 0)} Gold*`
     }, { quoted: msg });
   }
 
@@ -64,7 +64,7 @@ async function enviarGold(sock, ctx) {
   db.logGoldTransaction(sender, target, amount, 'Transferência');
 
   await sock.sendMessage(jid, {
-    text: `💸 *[ ${BOT_NAME} ]*\n\n✅ Transferência realizada!\n\n👤 De: @${getNumber(sender)}\n👤 Para: @${getNumber(target)}\n💰 Valor: *${formatNumber(amount)} Gold*\n\n_A matilha cuida dos seus!_ 🐺`,
+    text: `💸 ✅ Transferência realizada!\n\n👤 De: @${getNumber(sender)}\n👤 Para: @${getNumber(target)}\n💰 Valor: *${formatNumber(amount)} Gold*\n\n_A matilha cuida dos seus!_ 🐺`,
     mentions: [sender, target]
   }, { quoted: msg });
 }
@@ -87,7 +87,7 @@ async function rankGold(sock, ctx) {
 ║  💰 *RANKING DE GOLD*  ║
 ╚══════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 ${lines || '📭 Nenhum usuário com gold ainda!'}
 
@@ -108,7 +108,7 @@ async function daily(sock, ctx) {
     const h = Math.floor(remaining / 3600);
     const m = Math.floor((remaining % 3600) / 60);
     return sock.sendMessage(jid, {
-      text: `⏰ *[ ${BOT_NAME} ]*\n\n⏳ Você já coletou seu daily hoje!\n\n_Próximo daily em: *${h}h ${m}m*_`
+      text: `⏰ ⏳ Você já coletou seu daily hoje!\n\n_Próximo daily em: *${h}h ${m}m*_`
     }, { quoted: msg });
   }
 
@@ -124,7 +124,7 @@ async function daily(sock, ctx) {
   await cache.set(cacheKey, Date.now(), DAILY_COOLDOWN);
 
   await sock.sendMessage(jid, {
-    text: `🌅 *[ ${BOT_NAME} ]*\n\n✅ *Daily coletado, ${pushName}!*\n\n💰 *+${formatNumber(goldAmount)} Gold*\n⭐ *+${xpAmount} XP*\n${isPremium ? '\n👑 Bônus Premium aplicado!' : ''}\n\n_Volte amanhã para mais recompensas!_\n_Uuuuuuwooooo! 🐺🌕_`
+    text: `🌅 ✅ *Daily coletado, ${pushName}!*\n\n💰 *+${formatNumber(goldAmount)} Gold*\n⭐ *+${xpAmount} XP*\n${isPremium ? '\n👑 Bônus Premium aplicado!' : ''}\n\n_Volte amanhã para mais recompensas!_\n_Uuuuuuwooooo! 🐺🌕_`
   }, { quoted: msg });
 }
 
@@ -142,7 +142,7 @@ async function loja(sock, ctx) {
 ║   🏪 *LOJA DA MATILHA*  ║
 ╚══════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 ${items}
 
@@ -162,14 +162,14 @@ async function comprar(sock, ctx) {
 
   if (!item) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\nItem inválido! Use *!loja* para ver os itens disponíveis.`
+      text: `❌ Item inválido! Use *!loja* para ver os itens disponíveis.`
     }, { quoted: msg });
   }
 
   const user = db.getUser(sender);
   if ((user?.gold || 0) < item.price) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\nGold insuficiente!\n💰 Você tem: *${formatNumber(user?.gold || 0)} Gold*\n💸 Precisa: *${formatNumber(item.price)} Gold*`
+      text: `❌ Gold insuficiente!\n💰 Você tem: *${formatNumber(user?.gold || 0)} Gold*\n💸 Precisa: *${formatNumber(item.price)} Gold*`
     }, { quoted: msg });
   }
 
@@ -200,14 +200,14 @@ async function comprar(sock, ctx) {
   }
 
   await sock.sendMessage(jid, {
-    text: `✅ *[ ${BOT_NAME} ]*\n\n🛒 *Compra realizada!*\n\n📦 ${item.name}\n💰 *-${formatNumber(item.price)} Gold*\n\n${effectMsg}\n\n_A matilha agradece! 🐺_`
+    text: `✅ 🛒 *Compra realizada!*\n\n📦 ${item.name}\n💰 *-${formatNumber(item.price)} Gold*\n\n${effectMsg}\n\n_A matilha agradece! 🐺_`
   }, { quoted: msg });
 }
 
 async function premiumInfo(sock, ctx) {
   const { jid, msg } = ctx;
   await sock.sendMessage(jid, {
-    text: `👑 *[ ${BOT_NAME} ]*\n\n*VANTAGENS PREMIUM:*\n\n• ⭐ XP dobrado por mensagem\n• 💰 Daily dobrado (500 gold)\n• 🐺 Título especial no perfil\n• ⚡ Acesso a comandos exclusivos\n\n_Compre na !loja por apenas 2000 Gold!_`
+    text: `👑 *VANTAGENS PREMIUM:*\n\n• ⭐ XP dobrado por mensagem\n• 💰 Daily dobrado (500 gold)\n• 🐺 Título especial no perfil\n• ⚡ Acesso a comandos exclusivos\n\n_Compre na !loja por apenas 2000 Gold!_`
   }, { quoted: msg });
 }
 

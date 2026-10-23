@@ -18,7 +18,7 @@ function money(value) {
 function frame(title, lines) {
   const contents = lines.filter(value => value !== undefined && value !== null);
   if (!contents.some(value => value.includes('WOK Coin'))) contents.push('💰 Economia compartilhada: WOK Coin.');
-  return `${header(title)}\n${contents.join('\n')}\n${DEV_SIGNATURE}`;
+  return `${header(title)}\n${contents.join('\n')}`;
 }
 
 function nameOf(value, fallback = 'jogador') {
@@ -77,7 +77,7 @@ export function rpMenu(config = {}) {
   return formatMenu({ title: 'MENU RP DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
     ownerNumber: config.ownerNumber, subtitle: [
     '🌹 Viva sua história. Honre sua família.', '💰 A carteira WOK Coin é a mesma dos lobisomens.',
-  ], signature: DEV_SIGNATURE, sections: [
+  ], signature: '', sections: [
     { title: '🐺 SUA NOVA JORNADA', lines: [
       `🌙 ${p}rp iniciar — criar personagem`, `👤 ${p}rp perfil — painel do RP`, `📜 ${p}rp menu — abrir este menu`,
     ] },
@@ -128,7 +128,7 @@ function jobsText(result, config) {
   if (!lines.length) lines.push('🐺 Nenhuma profissão encontrada para esse filtro.');
   return formatMenu({ title: 'PROFISSÕES RP', botName: config?.botName, botDescription: config?.botDescription,
     ownerNumber: config?.ownerNumber,
-    subtitle: '⭐ Talento, respeito e influência', signature: DEV_SIGNATURE,
+    subtitle: '⭐ Talento, respeito e influência', signature: '',
     sections: [{ title: '📚 CARREIRAS DA CIDADE', lines },
       { title: '🧭 ESCOLHA SEU CAMINHO', lines: [...pageFooter('profissoes', result, prefix),
         `⭐ Escolha: ${prefix}profissao ID ou nome.`, '💰 Pagamentos em WOK Coin.'] }] });
@@ -144,7 +144,7 @@ function shopText(result, config) {
   if (!lines.length) lines.push('🐺 Nenhum item nessa página.');
   return formatMenu({ title: 'LOJA RP', botName: config?.botName, botDescription: config?.botDescription,
     ownerNumber: config?.ownerNumber,
-    subtitle: '🌹 Elegância, conforto e prestígio', signature: DEV_SIGNATURE,
+    subtitle: '🌹 Elegância, conforto e prestígio', signature: '',
     sections: [{ title: '🛍️ VITRINE DA ALCATEIA', lines },
       { title: '💳 ESCOLHA SEU TESOURO', lines: [...pageFooter('rploja', result, prefix),
         `💰 Comprar: ${prefix}rpcomprar ITEM [quantidade].`] }] });

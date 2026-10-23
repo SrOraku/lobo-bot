@@ -39,7 +39,7 @@ async function tiktok(sock, ctx) {
   await sock.sendMessage(
     jid,
     {
-      text: `📱 *[ ${BOT_NAME} ]*\n\n⏬ Baixando TikTok sem marca d'água...\n_Aguarde..._`,
+      text: `📱 ⏬ Baixando TikTok sem marca d'água...\n_Aguarde..._`,
     },
     { quoted: msg },
   );
@@ -64,7 +64,7 @@ async function tiktok(sock, ctx) {
       jid,
       {
         video: Buffer.from(buf.data),
-        caption: `🎵 *${data.title || 'TikTok'}*\n👤 @${data.author?.unique_id || 'autor'}\n❤️ ${data.digg_count?.toLocaleString() || 0} curtidas\n\n🌹 *[ ${BOT_NAME} ]*`,
+        caption: `🎵 *${data.title || 'TikTok'}*\n👤 @${data.author?.unique_id || 'autor'}\n❤️ ${data.digg_count?.toLocaleString() || 0} curtidas\n\n`,
         mimetype: 'video/mp4',
       },
       { quoted: msg },
@@ -94,7 +94,7 @@ async function instagram(sock, ctx) {
   await sock.sendMessage(
     jid,
     {
-      text: `📸 *[ ${BOT_NAME} ]*\n\n⏬ Baixando do Instagram...\n_Aguarde..._`,
+      text: `📸 ⏬ Baixando do Instagram...\n_Aguarde..._`,
     },
     { quoted: msg },
   );
@@ -124,7 +124,7 @@ async function instagram(sock, ctx) {
         jid,
         {
           video: Buffer.from(buf.data),
-          caption: `📹 *Instagram*\n\n🌹 *[ ${BOT_NAME} ]*`,
+          caption: `📹 *Instagram*\n\n`,
           mimetype: 'video/mp4',
         },
         { quoted: msg },
@@ -134,7 +134,7 @@ async function instagram(sock, ctx) {
         jid,
         {
           image: Buffer.from(buf.data),
-          caption: `📸 *Instagram*\n\n🌹 *[ ${BOT_NAME} ]*`,
+          caption: `📸 *Instagram*\n\n`,
         },
         { quoted: msg },
       );
@@ -160,7 +160,7 @@ async function spotify(sock, ctx) {
   await sock.sendMessage(
     jid,
     {
-      text: `🎧 *[ ${BOT_NAME} ]*\n\n🎵 *Busca Spotify:* ${query}\n\n🔗 https://open.spotify.com/search/${encodeURIComponent(query)}\n\n_Para download de áudio, use ${PREFIX}ytmp3 ${query}_`,
+      text: `🎧 🎵 *Busca Spotify:* ${query}\n\n🔗 https://open.spotify.com/search/${encodeURIComponent(query)}\n\n_Para download de áudio, use ${PREFIX}ytmp3 ${query}_`,
     },
     { quoted: msg },
   );

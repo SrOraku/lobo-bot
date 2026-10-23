@@ -18,7 +18,7 @@ function createPing({
     return sock.sendMessage(ctx.jid, {
       text: frameMenu('PING DA MATILHA', [
         `🌹 Prefixo: ${p}\n⭐ Versão: ${version}\n⏱️ Uptime: ${elapsed}\n🏓 Ping interno: ${latency} ms\n💚 Status: online\n📜 Comandos: ${count} (sem aliases)`,
-      ]),
+      ], { identity: true }),
     }, { quoted: ctx.msg });
   };
 }

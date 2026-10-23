@@ -35,7 +35,7 @@ async function handleXP(sock, msg, { jid, sender, body, user }) {
 ║   ⬆️ *LEVEL UP!* ⬆️      
 ╚══════════════════════╝
 
-🐺 *[ ${BOT_NAME} ]*
+
 
 🎉 *@${sender.split('@')[0]}* subiu de nível!
 

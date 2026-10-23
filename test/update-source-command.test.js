@@ -24,7 +24,7 @@ function commandFixture({ sender = `${OWNER}@s.whatsapp.net`, mapping = null } =
 
 test('update help includes current bot identity and all literal-prefix commands', async () => {
   const f = commandFixture(); await f.handler(f.sock, f.ctx); const text = f.replies[0];
-  for (const value of [config.BOT_NAME, config.BOT_DESCRIPTION, config.DEVELOPER_NAME, '!!atualizar bot', '!!atualizar baileys', '!!atualizar status']) assert.ok(text.includes(value), value);
+  for (const value of ['!!atualizar bot', '!!atualizar baileys', '!!atualizar status']) assert.ok(text.includes(value), value);
   assert.ok(text.startsWith('🌹╔═══❖♆❖═══╗') && text.endsWith('╚═══❖♆❖═══╝🐺')); assert.equal(f.calls.length, 0);
 });
 

@@ -26,7 +26,7 @@ function createMenu({
     if (!category) {
       title = 'MENU PRINCIPAL DA MATILHA';
       sections = [
-        `👤 *Usuário:* ${clean(ctx.pushName || IDENTITY.developer)}`,
+        `👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}`,
         `╭─── ❖ *CATEGORIAS* ❖ ───╮\n${categoryLines.join('\n')}\n╰────────────────────╯`,
         `📖 _Use ${p}menu + categoria para visualizar seus comandos._`,
       ];
@@ -77,7 +77,7 @@ function createMenu({
         sections.push(
           `⭐ Versão: ${version}\n⏱️ Uptime: ${uptime(online())}\n📜 Comandos: ${all.length}\n👑 Dono: +${config.get('BOT_OWNER')}\n📞 +5543920030769`,
         );
-      sections = [`👤 *Usuário:* ${clean(ctx.pushName || IDENTITY.developer)}`, `╭─── ❖ *COMANDOS* ❖ ───╮\n${sections.join('\n\n')}\n╰────────────────────╯`, `📖 _Digite ${p}menu para voltar ao Menu Principal._`];
+      sections = [`👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}`, `╭─── ❖ *COMANDOS* ❖ ───╮\n${sections.join('\n\n')}\n╰────────────────────╯`, `📖 _Digite ${p}menu para voltar ao Menu Principal._`];
     }
     return sock.sendMessage(ctx.jid, { text: frameMenu(title, sections) }, { quoted: ctx.msg });
   };

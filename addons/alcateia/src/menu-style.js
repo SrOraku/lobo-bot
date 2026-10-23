@@ -1,4 +1,4 @@
-import { BOT_NAME, BOT_DESCRIPTION, OWNER_NUMBER } from './game/constants.js';
+import { BOT_NAME, BOT_DESCRIPTION, OWNER_NUMBER, DEV_SIGNATURE } from './game/constants.js';
 
 const RULE = '═══✦════❖════♆════❖════✦═══';
 const CONTENT_WIDTH = 34;
@@ -26,9 +26,7 @@ function bodyRows(value) { return linesOf(value).flatMap(line => wrap(line).map(
 /** Shared text-only presentation; this helper never interprets a command. */
 export function formatMenu({ title = 'MENU DA ALCATEIA', botName = BOT_NAME, botDescription = BOT_DESCRIPTION, ownerNumber = OWNER_NUMBER,
   subtitle = [], sections = [], signature = '' } = {}) {
-  const description = botDescription || BOT_DESCRIPTION;
-  const output = [`🌹╔${RULE}╗`, ...bodyRows(botName), `║ ${description}`, ...bodyRows(`👑 Dono: +${ownerNumber}`),
-    ...bodyRows(`👑 ♆ ${title} ♆`), ...bodyRows(subtitle)];
+  const output = [`🌹╔${RULE}╗`, ...bodyRows(`🐺 ${title}`), ...bodyRows(subtitle)];
   for (const section of sections) {
     if (section.title) {
       const [heading, ...continuation] = wrap(section.title, 26);
@@ -36,9 +34,7 @@ export function formatMenu({ title = 'MENU DA ALCATEIA', botName = BOT_NAME, bot
     } else output.push(`╠${RULE}╣`);
     output.push(...bodyRows(section.lines || []));
   }
-  if (signature && !sections.some(section => linesOf(section.lines).includes(signature))) {
-    output.push(`╠${RULE}╣`, ...bodyRows(signature));
-  }
+
   output.push(`╚${RULE}╝🐺`);
   return output.join('\n');
 }
@@ -68,6 +64,7 @@ export function decorateMenuText(text, { title = 'MENU DA ALCATEIA', botName = B
     if (/^[═━─╣╗╝]+$/u.test(row)) continue;
     const contents = row.replace(/^║\s?/u, '');
     if (contents === botName || contents === botDescription || contents === `👑 Dono: +${ownerNumber}`) continue;
+    if (contents === DEV_SIGNATURE || (signature && contents === signature)) continue;
     current.lines.push(contents);
   }
   if (current.lines.length || current.title) sections.push(current);

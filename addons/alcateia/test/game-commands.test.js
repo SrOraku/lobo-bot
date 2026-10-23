@@ -139,7 +139,7 @@ test('profile includes all player fields and only currently active boosts', asyn
   assert.match(text, /batalha/i);
   assert.match(text, /20%/);
   assert.doesNotMatch(text, /30%/);
-  assert.match(text, new RegExp(DEV_SIGNATURE));
+  assert.doesNotMatch(text, new RegExp(DEV_SIGNATURE));
 });
 
 test('formation response displays its three caps and used total', async () => {
@@ -195,7 +195,7 @@ test('service validation errors and rate limits produce themed feedback without 
   await limited.handler(limited.ctx);
   assert.match(limited.text(), /ANTI-SPAM/);
   assert.match(limited.text(), /Calma, lobo/);
-  assert.ok(limited.text().includes(DEV_SIGNATURE));
+  assert.ok(!limited.text().includes(DEV_SIGNATURE));
 });
 
 test('known game errors stay readable and unexpected failures do not expose raw error details', async () => {
@@ -338,7 +338,7 @@ test('game menu follows the configured prefix and retains text commands for all 
   for (const name of ['start', 'perfil', 'treino', 'ataque', 'formacao', 'rank', 'loja', 'clan', 'evento', 'comprar']) assert.ok(text.includes(`!!${name}`), name);
   for (const name of ['duelo', 'aceitar', 'recusar']) assert.ok(!text.includes(`!!${name}`), name);
   assert.match(text, /MENU DA ALCATEIA/);
-  assert.ok(text.includes(DEV_SIGNATURE));
+  assert.ok(!text.includes(DEV_SIGNATURE));
 });
 
 test('game handler dispatches RP responses through the shared interface and wallet', async () => {

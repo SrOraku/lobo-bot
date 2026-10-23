@@ -40,7 +40,7 @@ async function dado(sock, ctx) {
   const result = Math.floor(Math.random() * clampedFaces) + 1;
 
   await sock.sendMessage(jid, {
-    text: `🎲 *[ ${BOT_NAME} ]*\n\n🎲 Dado de *D${clampedFaces}* rolado!\n\n*Resultado: ${result}*\n\n_${result === clampedFaces ? '🎉 Resultado máximo! A lua sorriu!' : result === 1 ? '💀 Resultado mínimo! Os lobos riem de você!' : '🐺 A sorte falou!'}_`
+    text: `🎲 🎲 Dado de *D${clampedFaces}* rolado!\n\n*Resultado: ${result}*\n\n_${result === clampedFaces ? '🎉 Resultado máximo! A lua sorriu!' : result === 1 ? '💀 Resultado mínimo! Os lobos riem de você!' : '🐺 A sorte falou!'}_`
   }, { quoted: msg });
 }
 
@@ -51,7 +51,7 @@ async function moeda(sock, ctx) {
   const { jid, msg } = ctx;
   const result = Math.random() < 0.5 ? '🟡 CARA' : '⚫ COROA';
   await sock.sendMessage(jid, {
-    text: `🪙 *[ ${BOT_NAME} ]*\n\n🪙 A moeda foi jogada...\n\n*Resultado: ${result}*`
+    text: `🪙 🪙 A moeda foi jogada...\n\n*Resultado: ${result}*`
   }, { quoted: msg });
 }
 
@@ -67,7 +67,7 @@ async function bola8(sock, ctx) {
   const resposta = OITO_BALL[Math.floor(Math.random() * OITO_BALL.length)];
 
   await sock.sendMessage(jid, {
-    text: `🎱 *[ ${BOT_NAME} ]*\n\n❓ *${pergunta}*\n\n🎱 *${resposta}*\n\n_A bola de cristal dos lobos falou! 🐺_`
+    text: `🎱 ❓ *${pergunta}*\n\n🎱 *${resposta}*\n\n_A bola de cristal dos lobos falou! 🐺_`
   }, { quoted: msg });
 }
 
@@ -78,7 +78,7 @@ async function piada(sock, ctx) {
   const { jid, msg } = ctx;
   const p = PIADAS[Math.floor(Math.random() * PIADAS.length)];
   await sock.sendMessage(jid, {
-    text: `😂 *[ ${BOT_NAME} ]*\n\n🎭 *Piada do Lobo:*\n\n❓ ${p.pergunta}\n\n😂 ${p.resposta}`
+    text: `😂 🎭 *Piada do Lobo:*\n\n❓ ${p.pergunta}\n\n😂 ${p.resposta}`
   }, { quoted: msg });
 }
 
@@ -89,7 +89,7 @@ async function fato(sock, ctx) {
   const { jid, msg } = ctx;
   const f = FATOS[Math.floor(Math.random() * FATOS.length)];
   await sock.sendMessage(jid, {
-    text: `📚 *[ ${BOT_NAME} ]*\n\n🐺 *Fato Lobo do Dia:*\n\n${f}`
+    text: `📚 🐺 *Fato Lobo do Dia:*\n\n${f}`
   }, { quoted: msg });
 }
 
@@ -106,7 +106,7 @@ async function sorteio(sock, ctx) {
 
   const result = Math.floor(Math.random() * (max - min + 1)) + min;
   await sock.sendMessage(jid, {
-    text: `🎰 *[ ${BOT_NAME} ]*\n\n🎯 Sorteio entre *${min}* e *${max}*:\n\n🎉 *Número sorteado: ${result}*`
+    text: `🎰 🎯 Sorteio entre *${min}* e *${max}*:\n\n🎉 *Número sorteado: ${result}*`
   }, { quoted: msg });
 }
 
@@ -123,7 +123,7 @@ async function azar(sock, ctx) {
              '💀 Hoje não é seu dia, lobo!';
 
   await sock.sendMessage(jid, {
-    text: `🍀 *[ ${BOT_NAME} ]*\n\n🔮 *Seu nível de azar hoje:*\n\n${pct}% de sorte\n\n${msg2}`
+    text: `🍀 🔮 *Seu nível de azar hoje:*\n\n${pct}% de sorte\n\n${msg2}`
   }, { quoted: msg });
 }
 
@@ -140,7 +140,7 @@ async function escolher(sock, ctx) {
   }
   const chosen = options[Math.floor(Math.random() * options.length)].trim();
   await sock.sendMessage(jid, {
-    text: `🎯 *[ ${BOT_NAME} ]*\n\n🐺 Os lobos escolheram:\n\n*"${chosen}"*\n\n_A matilha decidiu! Sem discussão! 🐺_`
+    text: `🎯 🐺 Os lobos escolheram:\n\n*"${chosen}"*\n\n_A matilha decidiu! Sem discussão! 🐺_`
   }, { quoted: msg });
 }
 
@@ -166,7 +166,7 @@ async function ship(sock, ctx) {
                   '💔 Os lobos preveem tempestade!';
 
   await sock.sendMessage(jid, {
-    text: `💘 *[ ${BOT_NAME} ]*\n\n💞 *COMPATIBILIDADE LOBO*\n\n👤 @${p1.split('@')[0]}\n❤️ + ❤️\n👤 @${p2.split('@')[0]}\n\n${bar}\n\n*${compat}%* de compatibilidade!\n\n${comment}`,
+    text: `💘 💞 *COMPATIBILIDADE LOBO*\n\n👤 @${p1.split('@')[0]}\n❤️ + ❤️\n👤 @${p2.split('@')[0]}\n\n${bar}\n\n*${compat}%* de compatibilidade!\n\n${comment}`,
     mentions: [p1, p2]
   }, { quoted: msg });
 }

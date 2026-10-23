@@ -1,0 +1,38 @@
+'use strict';
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const Database = require('better-sqlite3');
+const { runMigrations } = require('../src/config/migrations');
+const { createPolicyStore } = require('../src/activations/store');
+const { createInteraction } = require('../src/activations/interaction');
+test('seleção numérica confirma, cancela, isola grupos e revalida permissões', async t => {
+  const db = new Database(':memory:'); t.after(() => db.close()); runMigrations(db);
+  const store = createPolicyStore(db); let clock = 100, admin = true, botAdmin = true, event = 0;
+  const ui = createInteraction({ store, now: () => clock, resolveActor: async () => ({ admin, botAdmin, phone: '5511999999999@s.whatsapp.net' }) });
+  const sent = [], sock = { sendMessage: async (_, c) => sent.push(c.text) };
+  const ctx = { jid: '120000@g.us', sender: '5511999999999@s.whatsapp.net', msg: { key: { id: 'open' } } };
+  const reply = value => { ctx.msg = { key: { id: String(++event) } }; return ui.handle(sock, ctx, value); };
+  ui.open(ctx); await reply('1'); assert.equal(store.get(ctx.jid).features.antilink, false);
+  await reply('2'); assert.equal(store.get(ctx.jid).features.antilink, false);
+  ui.open(ctx); await reply('1'); await reply('1'); assert.equal(store.get(ctx.jid).features.antilink, true);
+  assert.equal(store.get('130000@g.us').features.antilink, false);
+  ui.open(ctx); await reply('1'); admin = false; await reply('1'); assert.equal(store.get(ctx.jid).features.antilink, true);
+  admin = true; ui.open(ctx); clock += 120001; await reply('1'); assert.ok(sent.at(-1).includes('expirada'));
+  assert.equal(await reply('1'), false);
+  ui.open(ctx); assert.equal(await ui.handle(sock, { ...ctx, sender: 'other' }, '1'), false);
+  assert.equal(await ui.handle(sock, { ...ctx, jid: '130000@g.us' }, '1'), false);
+});
+test('número inválido, mensagem repetida e falta de admin do bot não alteram estado', async t => {
+  const db = new Database(':memory:'); t.after(() => db.close()); runMigrations(db);
+  const store = createPolicyStore(db);
+  const ui = createInteraction({ store, resolveActor: async () => ({ admin: true, botAdmin: false, phone: 'admin' }) });
+  const sent = [], sock = { sendMessage: async (_, c) => sent.push(c.text) };
+  const ctx = { jid: '120000@g.us', sender: 'user', msg: { key: { id: 'open' } } };
+  ui.open(ctx); ctx.msg.key.id = 'bad'; await ui.handle(sock, ctx, '999');
+  assert.ok(sent.at(-1).includes('inválido'));
+  ctx.msg.key.id = 'choice'; await ui.handle(sock, ctx, '1');
+  await ui.handle(sock, ctx, '1'); assert.equal(store.get(ctx.jid).features.antilink, false);
+  ctx.msg.key.id = 'confirm'; await ui.handle(sock, ctx, '1');
+  assert.equal(store.get(ctx.jid).features.antilink, false);
+  assert.ok(sent.at(-1).includes('administrador'));
+});

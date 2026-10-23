@@ -70,3 +70,7 @@ module.exports.warn = (title, body) => frameNotice('⚠️ ' + title, [body]);
 module.exports.info = (title, body) => frameNotice('📋 ' + title, [body]);
 module.exports.noPermission = (needed) => frameNotice('🔒 SEM PERMISSÃO', [`_Você precisa ser ${needed} para usar este comando._`]);
 module.exports.usage = (command, example, description = '') => frameNotice('📋 USO CORRETO', [`*${command}*`, `💡 _Exemplo: ${example}_`, description].filter(Boolean));
+
+module.exports.wolf = (title, body) => frameNotice('🐺 ' + title, [body]);
+module.exports.ranking = (title, lines) => require('../menus/render').frameMenu('🏆 ' + title, lines);
+module.exports.devFooter = () => '';

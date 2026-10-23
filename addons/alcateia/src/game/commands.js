@@ -20,7 +20,7 @@ function line(value, fallback = 'nenhum') {
   return String(value ?? fallback).replace(/[\r\n]+/g, ' ').slice(0, 100);
 }
 
-function frame(title, lines) { return `${header(title)}\n${lines.join('\n')}\n${DEV_SIGNATURE}`; }
+function frame(title, lines) { return `${header(title)}\n${lines.join('\n')}${title === 'BEM-VINDO À ALCATEIA' ? '\n' + DEV_SIGNATURE : ''}`; }
 
 function duration(milliseconds) {
   const seconds = Math.max(1, Math.ceil(milliseconds / 1000));
@@ -62,7 +62,7 @@ export function gameMenu(config) {
   const game = formatMenu({ title: 'MENU DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
     ownerNumber: config.ownerNumber, subtitle: [
     '🌹100 LOBISOMENS ESTRATÉGIA🌹', '⚔️ Treine • lute • conquiste 🐺',
-  ], signature: DEV_SIGNATURE, sections: [
+  ], signature: '', sections: [
     { title: '🐺 JORNADA DO LOBO', lines: [
       `🌙 ${p}start — entrar na alcateia`, `👤 ${p}perfil — ficha e progresso`, `💪 ${p}treino — fortalecer a matilha`,
       `🧠 ${p}formacao A/D/C qtd — estratégia`, `⚔️ ${p}ataque @user — batalha PVP`, `🏆 ${p}rank — top 10 jogadores`,
@@ -82,7 +82,7 @@ export function gameMenu(config) {
 function shopText(items, config) {
   return formatMenu({ title: 'LOJA DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
     ownerNumber: config.ownerNumber,
-    subtitle: '💰 Tesouros e vantagens de batalha', signature: DEV_SIGNATURE,
+    subtitle: '💰 Tesouros e vantagens de batalha', signature: '',
     sections: [{ title: '🛍️ ARSENAL LUNAR', lines: items.map(item => {
     const effect = item.type === 'training' ? 'um treino extra imediato' :
       `${BOOST_NAMES[item.type] || line(item.type)} +${Math.round(item.value * 100)}% por 1 hora`;

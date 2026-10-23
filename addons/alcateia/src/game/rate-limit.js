@@ -4,7 +4,7 @@ const SECOND = 1_000;
 const HOUR = 3_600_000;
 const HOURLY_LIMIT = 50;
 
-export const ANTI_SPAM_MESSAGE = `${header('ANTI-SPAM')}\n🐺 Calma, lobo.\n⏳ Aguarde antes de usar outro comando.\n${DEV_SIGNATURE}`;
+export const ANTI_SPAM_MESSAGE = `${header('ANTI-SPAM')}\n🐺 Calma, lobo.\n⏳ Aguarde antes de usar outro comando.`;
 
 // Call this inside the same game transaction used by the command. Quotas are
 // global to the trusted player JID and survive restarts with the game state.

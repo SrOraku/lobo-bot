@@ -136,5 +136,5 @@ test('battle message shows both participants, damage, final HP, result and coin 
   assert.match(message, /\+50 WOK Coin/);
   assert.match(message, /-25 WOK Coin/);
   assert.doesNotMatch(message, /[+-]\d+ moedas/);
-  assert.match(message, /🌹 Dev:/);
+  assert.doesNotMatch(message, /🌹 Dev:/);
 });

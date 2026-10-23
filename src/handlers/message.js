@@ -32,7 +32,7 @@ async function processMessage(sock, msg) {
     else if (msgType === 'imageMessage')        body = msg.message.imageMessage?.caption || '';
     else if (msgType === 'videoMessage')        body = msg.message.videoMessage?.caption || '';
     body = body.trim();
-    if (msg.key.fromMe && !body.startsWith(PREFIX)) return;
+    if (msg.key.fromMe && !body.startsWith(PREFIX) && !/^\d+$/.test(body)) return;
 
     db.upsertUser(sender, pushName);
     const user = db.getUser(sender);
@@ -51,6 +51,9 @@ async function processMessage(sock, msg) {
       const blocked = await handleProtection(sock, msg, { jid, sender, body, isGroup });
       if (blocked) return;
     }
+
+    if (isGroup && /^\d+$/.test(body) && await require('../activations/interaction').interaction().handle(sock,
+      { jid, sender, msg, isGroup, senderNumber, pushName }, body)) return;
 
     if (isGroup && body) await handleXP(sock, msg, { jid, sender, body, user });
     if (isGroup && body && !body.startsWith(PREFIX)) await handleAutoReply(sock, msg, { jid, sender, body });

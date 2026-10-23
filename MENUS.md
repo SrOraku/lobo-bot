@@ -109,3 +109,10 @@ Nos jogos, envie somente o comando ou `status` para rever a partida; `parar`, `s
 O Akinator antigo deixou de sortear uma resposta sem relação com o jogador. Agora filtra 18 personagens catalogados com perguntas de atributos e pede confirmação da hipótese; respostas desconhecidas são aceitas como `talvez`. Sua sessão passa a persistir como as dos novos jogos. O comando e o cancelamento `parar/stop` foram preservados. Partidas antigas desse simulador existiam apenas em memória e não eram recuperáveis após reinício.
 
 O evento lunar ganhou cinco cenas de exploração associadas às recompensas existentes, preservando os valores, limites e cooldowns. Nenhum comando anterior foi removido. As ativações do setor Jogos controlam também os novos comandos.
+
+
+## Edição v1.1.0 — ativações por número e menus leves
+
+Abra `!ativacoes` no grupo. Todos os recursos e setores são numerados automaticamente, em sequência. Envie somente o número desejado: o bot mostra o estado atual e pede confirmação. Responda `1` para confirmar a mudança ou `2` para cancelar. A seleção e a confirmação expiram em dois minutos cada. A interação pertence ao remetente e ao grupo que abriram o painel, revalida permissões antes de gravar e ignora reenvios da mesma mensagem. Uma confirmação pendente é descartada ao reiniciar; configurações já confirmadas persistem normalmente. Comandos diretos anteriores continuam funcionando.
+
+Nome completo do bot, assinatura e lema deixam de aparecer nos menus, lojas, respostas de jogos, avisos e conexão. Permanecem no `!ping`, boas-vindas e despedidas. A identidade configurada não foi alterada. A ausência desses textos nos menus é intencional, conforme a preferência mais recente do dono.

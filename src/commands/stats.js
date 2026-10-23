@@ -22,7 +22,7 @@ async function verLevel(sock, ctx) {
 ║   ⭐ *SISTEMA DE LEVEL*  ║
 ╚══════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 👤 *${user.name || getNumber(target)}*
 ${user.premium ? '👑 *PREMIUM*' : ''}
@@ -59,7 +59,7 @@ async function perfil(sock, ctx) {
 ║   🐺 *FICHA DO GUERREIRO*  ║
 ╚══════════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 👤 *Nome:* ${user.name || getNumber(target)}
 🏆 *Rank:* ${user.rank}
@@ -104,7 +104,7 @@ async function rankGeral(sock, ctx) {
 ║   🏆 *RANKING GERAL*   ║
 ╚══════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 ${lines || '📭 Nenhum usuário no ranking!'}
 
@@ -139,7 +139,7 @@ async function estatisticasGrupo(sock, ctx) {
 ║  📊 *ESTATÍSTICAS DO GRUPO*  ║
 ╚══════════════════════════╝
 
-🌹 *[ ${BOT_NAME} ]*
+
 
 👥 *Membros:* ${members}
 👑 *Admins:* ${admins}

@@ -50,12 +50,12 @@ async function criarSticker(sock, ctx) {
   const media = await getQuotedMedia(sock, msg) || await getDirectMedia(sock, msg);
   if (!media) {
     return sock.sendMessage(jid, {
-      text: `🎭 *[ ${BOT_NAME} ]*\n\nEnvie ou responda uma imagem/vídeo com *!sticker*!\n\n_Opções:_\n• !sticker - Criar figurinha normal\n• !s - Atalho`
+      text: `🎭 Envie ou responda uma imagem/vídeo com *!sticker*!\n\n_Opções:_\n• !sticker - Criar figurinha normal\n• !s - Atalho`
     }, { quoted: msg });
   }
 
   await sock.sendMessage(jid, {
-    text: `⏳ *[ ${BOT_NAME} ]*\n\n🎭 Criando figurinha...\n_Aguarde!_`
+    text: `⏳ 🎭 Criando figurinha...\n_Aguarde!_`
   }, { quoted: msg });
 
   try {
@@ -111,12 +111,12 @@ async function criarStickerAnimado(sock, ctx) {
   const media = await getQuotedMedia(sock, msg) || await getDirectMedia(sock, msg);
   if (!media || media.type !== 'videoMessage') {
     return sock.sendMessage(jid, {
-      text: `🎭 *[ ${BOT_NAME} ]*\n\nEnvie ou responda um *vídeo* com *!stickeranim* para criar um sticker animado!`
+      text: `🎭 Envie ou responda um *vídeo* com *!stickeranim* para criar um sticker animado!`
     }, { quoted: msg });
   }
 
   await sock.sendMessage(jid, {
-    text: `⏳ *[ ${BOT_NAME} ]*\n\n🎭 Criando sticker animado...\n_Pode demorar um pouco!_`
+    text: `⏳ 🎭 Criando sticker animado...\n_Pode demorar um pouco!_`
   }, { quoted: msg });
 
   try {
@@ -178,7 +178,7 @@ async function stickerParaImagem(sock, ctx) {
 
     await sock.sendMessage(jid, {
       image: buffer,
-      caption: `🖼️ *[ ${BOT_NAME} ]*\n\n_Sticker convertido para imagem!_`
+      caption: `🖼️ _Sticker convertido para imagem!_`
     }, { quoted: msg });
   } catch (err) {
     await sock.sendMessage(jid, { text: `❌ Erro ao converter sticker!\n_${err.message}_` }, { quoted: msg });

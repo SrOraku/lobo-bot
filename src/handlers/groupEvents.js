@@ -3,6 +3,7 @@ const db = require('../utils/database');
 const fs = require('node:fs');
 const path = require('node:path');
 const welcomeImage = path.join(__dirname, '../assets/bem-vindo.jpg');
+const { IDENTITY } = require('../menus/render');
 const { BOT_NAME, cleanJid, getNumber, logger } = require('../utils/helpers');
 
 async function processGroupParticipantsUpdate(sock, update) {
@@ -28,7 +29,7 @@ async function processGroupParticipantsUpdate(sock, update) {
             db.upsertStrategy(jid, 34, 33, 33);
           }
 
-          const caption = `🌙 *[ ${BOT_NAME} ]*\n\n╔══════════════════════╗\n║   🐾 *BEM-VINDO!* 🐾   ║\n╚══════════════════════╝\n\n🐺 @${number} entrou na matilha!\n\n💰 Você ganhou *${goldStart} Gold* de boas-vindas!\n🐺 Seus *100 Lobos* estão prontos!\n\n📖 Use *!infolobos* para aprender o jogo\n📋 Use *!menu* para ver todos os comandos\n\n_A matilha te recebe com uivos! 🐺🌕_`;
+          const caption = `🌙 *[ ${BOT_NAME} ]*\n\n╔══════════════════════╗\n║   🐾 *BEM-VINDO!* 🐾   ║\n╚══════════════════════╝\n\n🐺 @${number} entrou na matilha!\n\n💰 Você ganhou *${goldStart} Gold* de boas-vindas!\n🐺 Seus *100 Lobos* estão prontos!\n\n📖 Use *!infolobos* para aprender o jogo\n📋 Use *!menu* para ver todos os comandos\n\n_A matilha te recebe com uivos! 🐺🌕_\n\n🌹 Dev: ${IDENTITY.developer}\n${IDENTITY.motto}`;
           try {
             await sock.sendMessage(id, {
               image: fs.readFileSync(welcomeImage), caption, mentions: [jid]
@@ -42,7 +43,7 @@ async function processGroupParticipantsUpdate(sock, update) {
       } else if (action === 'remove') {
         if (require('../activations/manager').manager.isEnabled(id,'despedida')) {
           await sock.sendMessage(id, {
-            text: `🌑 *[ ${BOT_NAME} ]*\n\n😢 *@${number}* deixou a matilha...\n\n_Os lobos uivam em sua despedida. 🐺_`,
+            text: `🌑 *[ ${BOT_NAME} ]*\n\n😢 *@${number}* deixou a matilha...\n\n_Os lobos uivam em sua despedida. 🐺_\n\n🌹 Dev: ${IDENTITY.developer}\n${IDENTITY.motto}`,
             mentions: [jid]
           });
         }

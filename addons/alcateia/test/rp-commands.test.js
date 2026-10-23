@@ -38,7 +38,7 @@ async function render(result, prefix = '!') {
     assert.ok(f.text().endsWith('🐺'));
     assert.match(f.text(), /🌹╔═/);
   } else assert.match(f.text(), /🌹═══\[/);
-  assert.ok(f.text().includes(DEV_SIGNATURE));
+  assert.ok(!f.text().includes(DEV_SIGNATURE));
   assert.match(f.text(), /WOK Coin/);
   return f;
 }
@@ -57,7 +57,7 @@ test('RP menu follows the configured prefix and remains available in text', asyn
   for (const command of ['rp', 'profissoes', 'profissao', 'trabalhar', 'acao', 'carteira', 'transferir', 'rploja', 'rpcomprar', 'usar', 'inventario', 'familia']) {
     assert.ok(text.includes(`!!${command}`), command);
   }
-  assert.ok(text.includes(DEV_SIGNATURE));
+  assert.ok(!text.includes(DEV_SIGNATURE));
   const f = await render({ type: 'rp-menu' }, '!!');
   assert.equal(f.text(), text);
 });

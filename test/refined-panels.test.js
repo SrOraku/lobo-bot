@@ -10,13 +10,13 @@ test('menus mantêm título recuado e bordas na margem esquerda', () => {
   for (const line of text.split('\n'))
     if (line.trim().startsWith('╚') || line.trim().startsWith('╭') || line.trim().startsWith('╰'))
       assert.equal(line, line.trimStart());
-  for (const value of Object.values(IDENTITY)) assert.ok(text.includes(value));
+  for (const value of Object.values(IDENTITY)) assert.ok(!text.includes(value));
 });
 test('aviso usa dois divisores, título em negrito e ícone fora do negrito', () => {
   const text = frameNotice('👑 ATUALIZAÇÃO INICIADA', ['⚙️ Aguarde a verificação e instalação.']);
   const divider = '┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈';
   assert.equal(text.split(divider).length - 1, 2);
   assert.ok(text.includes('\n👑 *ATUALIZAÇÃO INICIADA*\n'));
-  assert.ok(text.startsWith('🌹╔═══❖♆❖═══╗\n*' + IDENTITY.name + '*'));
+  assert.ok(text.startsWith('🌹╔═══❖♆❖═══╗'));
   assert.ok(text.endsWith('╚═══❖♆❖═══╝🐺'));
 });

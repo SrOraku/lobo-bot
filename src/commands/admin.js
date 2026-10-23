@@ -11,7 +11,7 @@ function requireOwner(fn) {
     const isBotAdm = db.isBotAdmin(ctx.sender);
     if (!isOwner && !isBotAdm) {
       return sock.sendMessage(ctx.jid, {
-        text: `🚫 *[ ${BOT_NAME} ]*\n\n_Apenas o dono do bot pode usar este comando!_ 🐺`
+        text: `🚫 _Apenas o dono do bot pode usar este comando!_ 🐺`
       }, { quoted: ctx.msg });
     }
     return fn(sock, ctx);
@@ -30,7 +30,7 @@ const addAdmin = requireOwner(async (sock, ctx) => {
   db.addBotAdmin(target);
 
   await sock.sendMessage(jid, {
-    text: `✅ *[ ${BOT_NAME} ]*\n\n👑 *@${getNumber(target)}* foi adicionado como *Admin do Bot*!`,
+    text: `✅ 👑 *@${getNumber(target)}* foi adicionado como *Admin do Bot*!`,
     mentions: [target]
   }, { quoted: msg });
 });
@@ -47,7 +47,7 @@ const removeAdmin = requireOwner(async (sock, ctx) => {
   db.removeBotAdmin(target);
 
   await sock.sendMessage(jid, {
-    text: `✅ *[ ${BOT_NAME} ]*\n\n👤 *@${getNumber(target)}* foi removido dos admins!`,
+    text: `✅ 👤 *@${getNumber(target)}* foi removido dos admins!`,
     mentions: [target]
   }, { quoted: msg });
 });
@@ -63,14 +63,14 @@ const broadcast = requireOwner(async (sock, ctx) => {
   const groups = db.db.prepare(`SELECT jid FROM groups`).all();
 
   await sock.sendMessage(jid, {
-    text: `📡 *[ ${BOT_NAME} ]*\n\n📤 Enviando broadcast para *${groups.length}* grupos...\n_Aguarde..._`
+    text: `📡 📤 Enviando broadcast para *${groups.length}* grupos...\n_Aguarde..._`
   }, { quoted: msg });
 
   let sent = 0;
   for (const g of groups) {
     try {
       await sock.sendMessage(g.jid, {
-        text: `📢 *[ ${BOT_NAME} ]*\n\n*COMUNICADO DA MATILHA:*\n\n${message}`
+        text: `📢 *COMUNICADO DA MATILHA:*\n\n${message}`
       });
       sent++;
       await sleep(500);
@@ -78,7 +78,7 @@ const broadcast = requireOwner(async (sock, ctx) => {
   }
 
   await sock.sendMessage(jid, {
-    text: `✅ *[ ${BOT_NAME} ]*\n\n📡 Broadcast enviado para *${sent}/${groups.length}* grupos!`
+    text: `✅ 📡 Broadcast enviado para *${sent}/${groups.length}* grupos!`
   }, { quoted: msg });
 });
 
@@ -94,7 +94,7 @@ const agendarMensagem = requireOwner(async (sock, ctx) => {
 
   if (!cronExpr || !message) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\nUso: *!agendarmensagem "cron" mensagem*\n\nExemplos de cron:\n• "0 8 * * *" = Todo dia às 8h\n• "0 */6 * * *" = A cada 6 horas\n• "0 20 * * 1" = Segunda às 20h`
+      text: `❌ Uso: *!agendarmensagem "cron" mensagem*\n\nExemplos de cron:\n• "0 8 * * *" = Todo dia às 8h\n• "0 */6 * * *" = A cada 6 horas\n• "0 20 * * 1" = Segunda às 20h`
     }, { quoted: msg });
   }
 
@@ -102,7 +102,7 @@ const agendarMensagem = requireOwner(async (sock, ctx) => {
     const jobId = `job_${jid}_${Date.now()}`;
     const job = new CronJob(cronExpr, async () => {
       await sock.sendMessage(jid, {
-        text: `⏰ *[ ${BOT_NAME} ]*\n\n*📅 MENSAGEM AGENDADA:*\n\n${message}`
+        text: `⏰ *📅 MENSAGEM AGENDADA:*\n\n${message}`
       });
     }, null, true, 'America/Sao_Paulo');
 
@@ -110,7 +110,7 @@ const agendarMensagem = requireOwner(async (sock, ctx) => {
     db.db.prepare(`INSERT INTO scheduled_messages (group_id, message, cron_expr) VALUES (?, ?, ?)`).run(jid, message, cronExpr);
 
     await sock.sendMessage(jid, {
-      text: `✅ *[ ${BOT_NAME} ]*\n\n⏰ Mensagem agendada!\n\n📅 Cron: *${cronExpr}*\n💬 Mensagem: *${message}*\n🆔 ID: ${jobId}`
+      text: `✅ ⏰ Mensagem agendada!\n\n📅 Cron: *${cronExpr}*\n💬 Mensagem: *${message}*\n🆔 ID: ${jobId}`
     }, { quoted: msg });
   } catch (err) {
     await sock.sendMessage(jid, { text: `❌ Erro ao agendar!\n_Cron inválido: ${err.message}_` }, { quoted: msg });
@@ -129,14 +129,14 @@ async function addAutoReply(sock, ctx) {
 
   if (!trigger?.trim() || !response) {
     return sock.sendMessage(jid, {
-      text: `❌ *[ ${BOT_NAME} ]*\n\nUso: *!autoreply gatilho | resposta*\n\nEx: !autoreply oi | Olá! Bem-vindo à matilha! 🐺`
+      text: `❌ Uso: *!autoreply gatilho | resposta*\n\nEx: !autoreply oi | Olá! Bem-vindo à matilha! 🐺`
     }, { quoted: msg });
   }
 
   db.addAutoReply(ctx.isGroup ? jid : null, trigger.trim(), response);
 
   await sock.sendMessage(jid, {
-    text: `✅ *[ ${BOT_NAME} ]*\n\n🤖 Auto-reply adicionado!\n\n🎯 Gatilho: *${trigger.trim()}*\n💬 Resposta: *${response}*`
+    text: `✅ 🤖 Auto-reply adicionado!\n\n🎯 Gatilho: *${trigger.trim()}*\n💬 Resposta: *${response}*`
   }, { quoted: msg });
 }
 
@@ -150,7 +150,7 @@ async function removeAutoReply(sock, ctx) {
 
   db.removeAutoReply(id, jid);
   await sock.sendMessage(jid, {
-    text: `✅ *[ ${BOT_NAME} ]*\n\n🗑️ Auto-reply *#${id}* removida!`
+    text: `✅ 🗑️ Auto-reply *#${id}* removida!`
   }, { quoted: msg });
 }
 
@@ -173,7 +173,7 @@ async function uptime(sock, ctx) {
   const memMB = Math.round(memUsage.heapUsed / 1024 / 1024);
 
   await sock.sendMessage(jid, {
-    text: `🐺 *[ ${BOT_NAME} ]*\n\n⏱️ *UPTIME:* ${h}h ${m}m ${s}s\n💾 *Memória:* ${memMB}MB\n🟢 *Status:* Online\n\n_A matilha nunca dorme! 🌕_`
+    text: `🐺 ⏱️ *UPTIME:* ${h}h ${m}m ${s}s\n💾 *Memória:* ${memMB}MB\n🟢 *Status:* Online\n\n_A matilha nunca dorme! 🌕_`
   }, { quoted: msg });
 }
 
@@ -194,7 +194,7 @@ async function plugins(sock, ctx) {
       text: [
         '🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹',
         '',
-        `*[ ${BOT_NAME} ]*`,
+        '',
         '',
         '🔌 *Nenhum plugin carregado!*',
         '',
@@ -213,15 +213,15 @@ async function plugins(sock, ctx) {
     text: [
       '🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹',
       '',
-      `*[ ${BOT_NAME} ]*`,
+      '',
       '',
       '🔌 *PLUGINS ATIVOS:*',
       '',
       lines,
       '',
       '━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      `👨‍💻 _Dev: *${DEV_NAME}*_`,
-      `📞 _${DEV_TEL}_`,
+      '',
+      '',
       '',
       '🌹🐺✦❀🌹🐺✦❀🌹',
     ].join('\n')

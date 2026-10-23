@@ -36,7 +36,7 @@ for (const category of ['', ...Object.keys(CATEGORIES)]) {
     const text = await render(category ? [category] : []);
     assert.ok(text.startsWith('🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗\n'));
     assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐾❖═══╝🐺'));
-    for (const value of Object.values(IDENTITY)) assert.ok(text.includes(value));
+    for (const value of Object.values(IDENTITY)) assert.ok(!text.includes(value));
     assert.ok(text.includes('!!menu'));
     assert.ok(!text.includes('!menu ') || text.includes('!!menu '));
     assert.ok(text.length < 6000);
@@ -143,8 +143,8 @@ test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async ()
 
 test('principal usa moldura oficial sem espaços nas bordas', async () => {
   const text = await render([], '!');
-  assert.ok(text.startsWith('🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗\n*' + IDENTITY.name + '*'));
+  assert.ok(text.startsWith('🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗'));
   assert.ok(text.includes('┃ 🎮 *!menu jogos*'));
-  assert.ok(text.includes('🌹 *Dev:* ' + IDENTITY.developer));
+  assert.ok(!text.includes(IDENTITY.developer));
   assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐾❖═══╝🐺'));
 });
