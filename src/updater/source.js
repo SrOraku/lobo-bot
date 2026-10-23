@@ -5,7 +5,7 @@ const { createHash } = require('node:crypto');
 const REPOSITORY = 'SrOraku/lobo-bot';
 const API = `https://api.github.com/repos/${REPOSITORY}`;
 const ROOT_FILES = new Set(['package.json', 'package-lock.json', 'README.md', 'DEPLOY.md',
-  'MENUS.md', 'MODERNIZACAO.md', 'eslint.config.js', 'ATALHOS.md', 'ATIVACOES.md', 'ISOLAMENTO.md', 'SECURITY.md', '.dockerignore', 'Dockerfile', 'docker-compose.yml', 'ecosystem.config.js', '.gitignore', '.env.example', 'INICIAR-AQUI.txt']);
+  'MENUS.md', 'BRONXYS.md', 'MODERNIZACAO.md', 'eslint.config.js', 'ATALHOS.md', 'ATIVACOES.md', 'ISOLAMENTO.md', 'SECURITY.md', '.dockerignore', 'Dockerfile', 'docker-compose.yml', 'ecosystem.config.js', '.gitignore', '.env.example', 'INICIAR-AQUI.txt']);
 const ROOT_DIRS = ['src', 'scripts', 'plugins', 'addons', 'test'];
 const BLOCKED = new Set(['.git', '.env', 'node_modules', 'data', 'sessions', 'auth', 'storage', 'logs', 'backups', 'updates']);
 

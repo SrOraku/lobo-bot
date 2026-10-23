@@ -144,6 +144,7 @@ function loadAllCommands() {
     if (existing && !['antilink','antifake','anticontato','antimarcacao','antiinatividade'].includes(feature.id)) continue;
     r({...existing,replace:true,name:feature.id,activationControl:true,aliases:[...new Set([...(existing?.aliases||[]),...feature.aliases.filter(alias=>!commands.has(alias))])],description:feature.description,category:'adm',groupOnly:true,minLevel:LEVELS.USER,usage:'!'+feature.id+(['antilink','antilinkgrupo','antilinkexterno'].includes(feature.id)?' on/off/delete/warn/kick':' on/off'),handler:activation.createActivationHandler({featureId:feature.id})});
   }
+  require('../integrations/bronxys/register').registerBronxys(r,commands);
   commandsLoaded=true;
 }
 

@@ -2,6 +2,10 @@
 
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
+## API Bronxys
+
+Downloads, pesquisas, IA e efeitos do catálogo fornecido foram integrados. Consulte [configuração privada, comandos e limites](BRONXYS.md). Nenhuma chave é publicada no GitHub.
+
 ## Edição atual
 
 A versão oficial é definida em [package.json](package.json) e exibida dinamicamente por `!ping`. Consulte [a modernização e seus limites](MODERNIZACAO.md).

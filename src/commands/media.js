@@ -25,6 +25,10 @@ const play = createPlay({ audio: playMp3, video: playMp4 });
 
 // ── TikTok ────────────────────────────────────────────────────
 async function tiktok(sock, ctx) {
+  if(require('../integrations/bronxys/key').getKey()) {
+    const {definitions,queuedHandler}=require('../integrations/bronxys/handler');
+    return queuedHandler(definitions.find(def=>def.name==='tiktok_video'))(sock,ctx);
+  }
   const { jid, msg, args } = ctx;
   const url = args[0];
   if (!url || !url.includes('tiktok'))
@@ -80,6 +84,10 @@ async function tiktok(sock, ctx) {
 
 // ── Instagram ─────────────────────────────────────────────────
 async function instagram(sock, ctx) {
+  if(require('../integrations/bronxys/key').getKey()) {
+    const {definitions,queuedHandler}=require('../integrations/bronxys/handler');
+    return queuedHandler(definitions.find(def=>def.name==='instagram'))(sock,ctx);
+  }
   const { jid, msg, args } = ctx;
   const url = args[0];
   if (!url || !url.includes('instagram'))
@@ -146,6 +154,10 @@ async function instagram(sock, ctx) {
 
 // ── Spotify ───────────────────────────────────────────────────
 async function spotify(sock, ctx) {
+  if(require('../integrations/bronxys/key').getKey() && /^https?:\/\//i.test((ctx.args||[]).join(' '))) {
+    const {definitions,queuedHandler}=require('../integrations/bronxys/handler');
+    return queuedHandler(definitions.find(def=>def.name==='spotify'))(sock,ctx);
+  }
   const { jid, msg, args } = ctx;
   if (!args.length)
     return sock.sendMessage(

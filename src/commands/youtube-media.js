@@ -142,6 +142,10 @@ function createMediaHandler(
     const reply = (text) => sock.sendMessage(ctx.jid, { text }, { quoted: ctx.msg });
     const query = (ctx.args || []).join(' ').trim();
     if (!query) return reply(`🌹 Informe nome ou link: ${p}${command} nome ou link 🐺`);
+    if (!ytdl && require('../integrations/bronxys/key').getKey()) {
+      const {definitions,queuedHandler}=require('../integrations/bronxys/handler');
+      return queuedHandler(definitions.find(def=>def.name===(kind==='audio'?'play':'play_video')))(sock,ctx);
+    }
     let directory;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);

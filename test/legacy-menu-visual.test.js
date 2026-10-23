@@ -89,7 +89,9 @@ test('alcateia não despeja RP e categorias vazias não inventam funções', asy
   const text = await render(['alcateia']);
   assert.ok(!text.includes('!!familia'));
   assert.ok(!text.includes('!!rp iniciar'));
-  for (const c of ['ia', 'ferramentas']) assert.match(await render([c]), /Nenhum comando/);
+  assert.ok((await render(['ia'])).includes('!!pergunta'));
+  assert.ok((await render(['ferramentas'])).includes('!!logos'));
+  assert.ok(!(await render(['ia'])).includes('Nenhum comando'));
   assert.ok(!(await render(['midia'])).includes('!!sticker'));
   assert.ok((await render(['midia'])).includes('!!play '));
 });

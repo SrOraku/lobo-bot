@@ -20,6 +20,7 @@ vm.runInNewContext(
       if (id === '../core/commandRegistry') return { register, registry };
       if (id === '../middlewares/permissions')
         return { LEVELS: { USER: 0, GROUP_ADMIN: 1, BOT_ADMIN: 2, OWNER: 3 } };
+      if (id === '../integrations/bronxys/register') return require('../src/integrations/bronxys/register');
       if (id === '../menus/catalog') return { CATEGORIES };
       if (id === '../activations/registry') return require('../src/activations/registry');
       if (id === '../commands/sectors') return { sectors: Object.assign(async () => {}, {auditFile:'src/commands/sectors.js',auditExport:'sectors'}) };
