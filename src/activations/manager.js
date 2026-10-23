@@ -92,6 +92,7 @@ function createManager(store) {
       return states(jid).map(f => ({ id: f.id, name: f.name, enabled: f.enabled,
         issues: [
           ...(typeof f.handler !== 'function' ? ['HANDLER_AUSENTE'] : []),
+          ...(f.enabled && f.isConfigured && !f.isConfigured() ? ['CONFIGURACAO_INCOMPLETA'] : []),
           ...(f.enabled && f.botAdminRequired && !botAdmin ? ['BOT_NAO_ADMIN'] : []),
           ...(f.enabled ? (f.dependencies || []).filter(id => !registry.feature(id) || !isEnabled(jid, id)).map(id => 'DEPENDENCIA:' + id) : []),
           ...(f.enabled ? (f.incompatibilities || []).filter(id => isEnabled(jid, id)).map(id => 'INCOMPATIVEL:' + id) : []),

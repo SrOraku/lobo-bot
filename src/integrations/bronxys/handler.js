@@ -99,5 +99,5 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
   } finally {clearTimeout(timer);controller.abort();if(directory)await fs.rm(directory,{recursive:true,force:true});}
  };
 }
-function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,()=>handler(sock,ctx)).catch(()=>sock.sendMessage(ctx.jid,{text:'🌹 Aguarde os downloads pendentes deste chat. 🐺'},{quoted:ctx.msg}));}
+function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,async()=>{if(options?.shouldRun&&!await options.shouldRun(ctx))return;return handler(sock,ctx);}).catch(()=>sock.sendMessage(ctx.jid,{text:'🌹 Aguarde os downloads pendentes deste chat. 🐺'},{quoted:ctx.msg}));}
 module.exports={createHandler,queuedHandler,definitions,formatJSON,safeText};

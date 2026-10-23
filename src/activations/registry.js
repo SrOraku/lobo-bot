@@ -111,6 +111,12 @@ add('level', 'Aviso de nível', 'sistemas', (...a) => require('../handlers/xp').
   bulkSafe: true,
   dependencies: ['xp'],
 });
+add('autodownload', 'Download automático de redes sociais', 'sistemas',
+  (...args) => require('../handlers/autoDownload').handleAutoDownload(...args), {
+    default: false, bulkSafe: false, aliases: ['autodl', 'autobaixar'],
+    description: 'Baixa links públicos das redes suportadas pela API Bronxys.',
+    isConfigured: () => !!require('../integrations/bronxys/key').getKey(),
+  });
 for (const id of [
   'jogos',
   'alcateia',

@@ -59,3 +59,22 @@ Testes reais com a chave fornecida: consulta de CEP e endpoint play retornando a
 Os demais endpoints foram integrados a partir dos contratos do CASES.js e testados com respostas controladas quando aplicável; não foram todos consumidos em produção. Disponibilidade, saldo, limites e mudanças de formato dependem da Bronxys. O bot trata respostas inesperadas sem fingir sucesso. Algumas APIs de download podem demorar, estar indisponíveis ou recusar conteúdo privado.
 
 Nenhuma migration de banco ou atualização de dependências foi necessária para esta integração. Atualização pelo GitHub não altera chaves de instalações existentes; configure uma vez pelo comando privado ou pelo ambiente.
+
+
+## Download automático — v1.5.1
+
+Abra `!ativacoes`, selecione **22 — Download automático de redes sociais** e responda **1** para confirmar ou **2** para cancelar. O número vem do Registry; plugins/alterações futuras podem mudar a listagem, então confira o painel. Também funciona `!autodownload on/off`, `!autodl on/off` ou `!ativar autodownload`. Administradores e donos podem configurar; membros apenas enviam os links.
+
+A opção começa desligada, fica salva no SQLite por grupo e não entra em ativar tudo, porque consome a cota da API. Depende da chave Bronxys; o painel/diagnóstico sinaliza configuração incompleta se a chave estiver ausente.
+
+Redes reconhecidas: Instagram, Facebook, TikTok, Kwai, Threads, X/Twitter, YouTube, Spotify, SoundCloud e iFunny, usando os endpoints já integrados. Isso não significa suporte a toda rede existente: Pinterest, por exemplo, possui pesquisa de imagens nesta API e não foi anunciado como baixador de links.
+
+Ao receber um link público suportado em texto ou legenda, envia mídia pelo mesmo baixador, com fila, timeout, conversão e limpeza já existentes. YouTube é baixado em vídeo por padrão; Spotify e SoundCloud em áudio. Para formatos diferentes, continuam disponíveis os comandos manuais.
+
+Proteções executam antes do automático: link apagado/bloqueado pelo AntiLink não é baixado. Bot pausado, remetente silenciado/banido, mensagens do próprio bot e comandos com prefixo não disparam downloads automáticos. Não há processamento de histórico (o runtime recebe apenas eventos notify).
+
+Limites automáticos: primeiro link suportado por mensagem, intervalo de 30 segundos por usuário e 10 segundos por grupo, deduplicação do ID da mensagem durante 15 minutos e memória limitada. Mensagens descartadas por esses limites não entram em uma fila para execução posterior. A função é revalidada ao iniciar um download que aguardava na fila. Uma operação já em andamento pode terminar após desligar a opção.
+
+Sem chave configurada não consome a API nem baixa; use `!apibronxys status` para conferir a configuração local. As falhas do provedor são tratadas pelo baixador. URLs privadas, perfis sem postagem e domínios que apenas imitam uma rede conhecida não são tratados como posts suportados.
+
+Testes adicionais: reconhecimento das dez redes, domínios falsos, comandos/privado/silenciados/pausa/chave ausente, deduplicação, limites, isolamento entre grupos, um link por mensagem, confirmação numérica, persistência e ordenação de AntiLink antes do download.

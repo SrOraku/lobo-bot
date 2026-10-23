@@ -1,6 +1,6 @@
 {
   "name": "lobo-bot",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺",
   "main": "src/index.js",
   "type": "commonjs",
@@ -12,7 +12,7 @@
     "check:syntax": "node scripts/check-syntax.js",
     "check:startup": "node scripts/check-startup.js",
     "audit:commands": "node scripts/audit-commands.js",
-    "lint": "eslint src/services/economy.js src/core/keyed-queue.js src/core/plugin-contract.js src/middlewares/command-limits.js src/integrations/bronxys/*.js src/commands/bronxys-config.js",
+    "lint": "eslint src/services/economy.js src/core/keyed-queue.js src/core/plugin-contract.js src/middlewares/command-limits.js src/integrations/bronxys/*.js src/commands/bronxys-config.js src/handlers/autoDownload.js",
     "check": "npm run lint && npm run check:syntax && npm test && npm run check:startup",
     "security": "npm audit --omit=dev --audit-level=critical",
     "docs": "node scripts/audit-commands.js"

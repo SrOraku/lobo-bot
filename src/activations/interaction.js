@@ -45,7 +45,7 @@ function createInteraction({ now = Date.now, resolveActor, store, rateLimit } = 
         session.previous = manager.isEnabled(ctx.jid, feature.id);
         session.stage = 'confirm';
         session.expires = now() + 120000;
-        await reply(`*${feature.name}*\n${session.previous ? '🟢 Ativado → 🔴 Desativar' : '🔴 Desativado → 🟢 Ativar'}\n\nDeseja confirmar?\n*1* — Sim\n*2* — Não\n\n_Responda em até 2 minutos._`);
+        await reply(`*${feature.name}*\n${session.previous ? '🟢 Ativado → 🔴 Desativar' : '🔴 Desativado → 🟢 Ativar'}\n\n${feature.id === 'autodownload' ? 'Links de Instagram, Facebook, TikTok, Kwai, Threads, X/Twitter, YouTube, Spotify, SoundCloud e iFunny.\nUsa a cota da API Bronxys. Links bloqueados pelo AntiLink não são baixados.\n\n' : ''}Deseja confirmar?\n*1* — Sim\n*2* — Não\n\n_Responda em até 2 minutos._`);
       } else {
         if (!['1', '2'].includes(input)) { await reply('Responda *1* para confirmar ou *2* para cancelar.'); return true; }
         sessions.delete(id);

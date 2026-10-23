@@ -111,6 +111,7 @@ function createActivationHandler({
         number++;
         const state = item.enabled
           ? (item.botAdminRequired && !actor.botAdmin) ||
+            (item.isConfigured && !item.isConfigured()) ||
             item.dependencies?.some((id) => !manager.isEnabled(ctx.jid, id))
             ? '⚠️'
             : '🟢'
@@ -120,7 +121,7 @@ function createActivationHandler({
         categories.set(item.category, lines);
       }
       const sections = [
-        `👥 Grupo: ${group}\n🤖 Bot: ${policy.bot ? '🟢 ativo' : '🔴 pausado'}\n🟢 ativado • 🔴 desativado\n⚠️ requer administrador/permissão`,
+        `👥 Grupo: ${group}\n🤖 Bot: ${policy.bot ? '🟢 ativo' : '🔴 pausado'}\n🟢 ativado • 🔴 desativado\n⚠️ requer administrador, permissão ou configuração da API`,
       ];
       for (const [category, lines] of categories)
         sections.push(`╭── ❖ *${category.toUpperCase()}* ❖ ──╮\n${lines.join('\n')}\n╰────────────────────╯`);

@@ -31,6 +31,7 @@ async function processMessage(sock, msg) {
     else if (msgType === 'extendedTextMessage') body = msg.message.extendedTextMessage?.text || '';
     else if (msgType === 'imageMessage')        body = msg.message.imageMessage?.caption || '';
     else if (msgType === 'videoMessage')        body = msg.message.videoMessage?.caption || '';
+    if(!body)body=require('../activations/message-rules').inspect(msg.message).body;
     body = body.trim();
     if (msg.key.fromMe && !body.startsWith(PREFIX) && !/^\d+$/.test(body)) return;
 
@@ -56,6 +57,7 @@ async function processMessage(sock, msg) {
       { jid, sender, msg, isGroup, senderNumber, pushName }, body)) return;
 
     if (isGroup && body) await handleXP(sock, msg, { jid, sender, body, user });
+    if (isGroup && body && !body.startsWith(PREFIX) && await require('./autoDownload').handleAutoDownload(sock,msg,{jid,sender,body,isGroup,user,pushName,senderNumber})) return;
     if (isGroup && body && !body.startsWith(PREFIX)) await handleAutoReply(sock, msg, { jid, sender, body });
     if (!body.startsWith(PREFIX)) return;
 
