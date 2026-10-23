@@ -135,7 +135,7 @@ async function startBot() {
   if (!jaConectado) {
     await sleep(2000);
 
-    let numero = config.get('BOT_OWNER') || '';
+    let numero = config.get('PAIRING_NUMBER') || '';
     if (!numero) {
       numero = await askQuestion(`
 🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
@@ -151,6 +151,9 @@ async function startBot() {
     }
 
     numero = numero.replace(/\D/g, '');
+    while (!/^[1-9]\d{9,14}$/.test(numero)) {
+      numero = (await askQuestion('📱 Número inválido. Digite o WhatsApp do bot com DDI (ex.: 5543999999999): ')).replace(/\D/g, '');
+    }
 
     try {
       const code = await sock.requestPairingCode(numero);
