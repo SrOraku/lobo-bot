@@ -56,15 +56,19 @@ test('API registration keeps existing commands and groups art styles without col
 });
 test('API configuration rejects members and group key disclosure; owner confirmation never repeats key',async()=>{
  const vm=require('node:vm'),read=require('node:fs'),module={exports:{}};let writes=0;
- vm.runInNewContext(read.readFileSync(path.join(__dirname,'../src/commands/bronxys-config.js'),'utf8'),{module,require:name=>{
+ vm.runInNewContext(read.readFileSync(path.join(__dirname,'../src/commands/bronxys-config.js'),'utf8'),{module,process:{env:{}},require:name=>{
   if(name==='../menus/render')return {frameNotice:(title,lines)=>title+'\n'+lines.join('\n')};
   if(name==='../config')return {get:()=> '!'};
+  if(name==='../../package.json')return {version:'test-version'};
+  if(name==='../integrations/bronxys/client')return {createClient:()=>({json:async()=>({cep:'01001000'})})};
   if(name==='../utils/owners')return {ownerNumbers:()=> ['owner']};
   if(name==='./update')return {verifiedOwner:async(sock,ctx)=>ctx.sender==='trusted'};
   if(name==='../integrations/bronxys/key')return {getKey:()=> 'private-fixture',setKey:()=>writes++};
   throw Error(name);
  }});
  const sent=[],sock={sendMessage:async(jid,data)=>sent.push(data.text)};
- for(const [sender,jid]of [['member','1@s.whatsapp.net'],['trusted','123@g.us'],['trusted','1@s.whatsapp.net']])await module.exports.apiBronxys(sock,{sender,jid,args:['chave','private-fixture'],msg:{}});
+ for(const [sender,jid,args]of [['member','1@s.whatsapp.net'],['trusted','123@g.us'],['trusted','1@s.whatsapp.net'],['trusted','1@s.whatsapp.net',['status']],['trusted','1@s.whatsapp.net',['testar']]])await module.exports.apiBronxys(sock,{sender,jid,args:args||['chave','private-fixture'],msg:{}});
+ assert.ok(sent.some(text=>text.includes('test-version')));
+ assert.ok(sent.some(text=>text.includes('API respondeu')));
  assert.equal(writes,1);assert.ok(sent.every(text=>!text.includes('private-fixture')));
 });

@@ -132,6 +132,13 @@ function createMediaHandler(
     ytdl,
     download = downloadMedia,
     fallback,
+    api = {
+      configured: () => !!require('../integrations/bronxys/key').getKey(),
+      download: (kind, sock, ctx) => {
+        const {definitions,queuedHandler}=require('../integrations/bronxys/handler');
+        return queuedHandler(definitions.find(def=>def.name===(kind==='audio'?'play':'play_video')))(sock,ctx);
+      },
+    },
     timeout = 180000,
     tempRoot = os.tmpdir(),
   } = {},
@@ -142,9 +149,11 @@ function createMediaHandler(
     const reply = (text) => sock.sendMessage(ctx.jid, { text }, { quoted: ctx.msg });
     const query = (ctx.args || []).join(' ').trim();
     if (!query) return reply(`🌹 Informe nome ou link: ${p}${command} nome ou link 🐺`);
-    if (!ytdl && require('../integrations/bronxys/key').getKey()) {
-      const {definitions,queuedHandler}=require('../integrations/bronxys/handler');
-      return queuedHandler(definitions.find(def=>def.name===(kind==='audio'?'play':'play_video')))(sock,ctx);
+    let apiConfigured=false;
+    if(!ytdl) {
+      try {apiConfigured=api.configured();}
+      catch {return reply(`🌹 Não consegui ler a configuração da API. O dono pode verificar ${p}apibronxys status no privado. 🐺`);}
+      if(apiConfigured)return api.download(kind,sock,ctx);
     }
     let directory;
     const controller = new AbortController();
@@ -235,7 +244,7 @@ function createMediaHandler(
         TIMEOUT: 'O serviço demorou demais. Tente novamente.',
       };
       await reply(
-        `🌹 ⚠️ ${messages[error.message] || 'Não foi possível obter a mídia. O serviço pode estar indisponível; tente outro vídeo ou tente novamente mais tarde.'} 🐺`,
+        `🌹 ⚠️ ${messages[error.message] || (!ytdl && !apiConfigured ? `O baixador sem API falhou e a API Bronxys não está configurada nesta instalação. O dono deve usar ${p}apibronxys status e cadastrar a chave no privado com ${p}apibronxys chave SUA_CHAVE.` : 'Não foi possível obter a mídia. O serviço pode estar indisponível; tente outro vídeo ou tente novamente mais tarde.')} 🐺`,
       );
     } finally {
       clearTimeout(timer);

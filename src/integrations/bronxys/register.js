@@ -18,6 +18,6 @@ function registerBronxys(register,registry) {
   const aliases=def.aliases.filter(alias=>!registry.has(alias));
   add({name:def.name,aliases,category:def.category,description:def.description,usage:'!'+def.name+(def.parameter?' '+(def.parameter==='url'?'link':'texto') : ''),cost:5,rateLimit:{max:3,window:60000},handler:queuedHandler(def)});
  }
- add({name:'apibronxys',category:'dono',minLevel:3,ownerOnly:true,description:'Configurar a API Bronxys no privado',usage:'!apibronxys [status|chave SUA_CHAVE]',handler:require('../../commands/bronxys-config').apiBronxys});
+ add({name:'apibronxys',category:'dono',minLevel:3,ownerOnly:true,description:'Configurar a API Bronxys no privado',usage:'!apibronxys [status|testar|chave SUA_CHAVE]',handler:require('../../commands/bronxys-config').apiBronxys});
 }
 module.exports={registerBronxys};

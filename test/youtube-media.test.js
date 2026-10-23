@@ -246,3 +246,21 @@ test('script de assinatura usa interpretador isolado e retorna o resultado', asy
   assert.deepEqual(result, { sig: 'assinatura', n: 'teste' });
   await assert.rejects(evaluatePlayer({ output: null }), /PLAYER_SCRIPT_INVALID/);
 });
+test('configured API is used before the legacy YouTube client for both media types',async()=>{
+ for(const kind of ['audio','video']) {
+  let calls=0;
+  const handler=createMediaHandler(kind,{api:{configured:()=>true,download:async(type,sock,ctx)=>{calls++;assert.equal(type,kind);assert.deepEqual(ctx.args,['Música','Nome']);}},search:async()=>{throw Error('legacy must not run');}});
+  await handler({sendMessage:async()=>{throw Error('unexpected reply');}},{jid:'123@g.us',args:['Música','Nome'],msg:{}});
+  assert.equal(calls,1);
+ }
+});
+test('missing API key gives actionable setup guidance when free downloader fails',async()=>{
+ const sent=[];const handler=createMediaHandler('audio',{api:{configured:()=>false},search:async()=>{throw Error('legacy search failed');}});
+ await handler({sendMessage:async(jid,data)=>sent.push(data.text)},{jid:'123@g.us',args:['Nome'],msg:{}});
+ assert.ok(sent.at(-1).includes('apibronxys chave SUA_CHAVE'));assert.ok(sent.at(-1).includes('não está configurada'));
+});
+test('unreadable API configuration is handled without attempting free download',async()=>{
+ const sent=[];const handler=createMediaHandler('audio',{api:{configured:()=>{throw Error('private-path');}},search:async()=>{throw Error('must not run');}});
+ await handler({sendMessage:async(jid,data)=>sent.push(data.text)},{jid:'123@g.us',args:['Nome'],msg:{}});
+ assert.ok(sent[0].includes('apibronxys status'));assert.equal(sent[0].includes('private-path'),false);
+});

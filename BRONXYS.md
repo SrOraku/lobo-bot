@@ -78,3 +78,14 @@ Limites automáticos: primeiro link suportado por mensagem, intervalo de 30 segu
 Sem chave configurada não consome a API nem baixa; use `!apibronxys status` para conferir a configuração local. As falhas do provedor são tratadas pelo baixador. URLs privadas, perfis sem postagem e domínios que apenas imitam uma rede conhecida não são tratados como posts suportados.
 
 Testes adicionais: reconhecimento das dez redes, domínios falsos, comandos/privado/silenciados/pausa/chave ausente, deduplicação, limites, isolamento entre grupos, um link por mensagem, confirmação numérica, persistência e ordenação de AntiLink antes do download.
+
+
+## Diagnóstico de play — v1.5.3
+
+Se aparecer a mensagem antiga “Não foi possível obter a mídia. O serviço pode estar indisponível”, verifique a versão instalada em `!ping` e, como dono, execute `!apibronxys status` no privado. A versão atual informa a origem da configuração (ambiente/arquivo privado), versão instalada e se o play usará a API.
+
+Uma instalação pelo GitHub não recebe a chave privada do ZIP. Cadastre uma vez com `!apibronxys chave SUA_CHAVE` no privado, ou configure BRONXYS_API_KEY. Não é necessário reiniciar após salvar pelo comando. Não é necessário desligar/reconectar a sessão WhatsApp.
+
+`!apibronxys testar` faz uma consulta real de CEP para confirmar autenticação e resposta do provedor. É exclusivo do dono e consome uma requisição. Esse teste não garante que todo conteúdo de todas as redes esteja disponível.
+
+A falha do baixador antigo sem chave agora orienta a configuração em vez de mostrar somente erro genérico. Os testes confirmam que, com chave reconhecida, áudio e vídeo usam a API antes de acessar o cliente antigo. Uma nova consulta real de play por nome retornou MP3 válido durante esta correção; não houve acesso ao servidor Bronxys do usuário para confirmar a configuração local dele.
