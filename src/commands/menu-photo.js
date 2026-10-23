@@ -11,8 +11,8 @@ async function menuPhoto(sock,ctx) {
   const reply = text => sock.sendMessage(ctx.jid,{text:frameNotice('🖼️ CAPA DOS MENUS',[text])},{quoted:ctx.msg});
   if (!actor.owner) return reply('Somente donos cadastrados podem alterar a capa.');
   const settings = require('../security/settings'), p = require('../config').get('PREFIX');
-  if (ctx.args[0] === 'remover') {settings.set('menu-media',null,actor.phone);return reply('✅ Capa removida. Os menus continuam em texto.');}
-  if (ctx.args[0] === 'ver') return require('../menus/media').sendMenu(sock,ctx,'🖼️ Prévia da capa configurada.');
+  if (ctx.args[0] === 'remover') {settings.set('menu-media',null,actor.phone);settings.set('menu-default-disabled',true,actor.phone);return reply('✅ Capa removida. Os menus continuam em texto.');}
+  if (ctx.args[0] === 'ver') return require('../menus/media').sendMenu(sock,{...ctx,args:[]},'🖼️ Prévia da capa configurada.');
   const direct = require('../activations/message-rules').inspect(ctx.msg.message).message;
   const quoted = direct.extendedTextMessage?.contextInfo?.quotedMessage;
   const message = quoted ? require('../activations/message-rules').inspect(quoted).message : direct;

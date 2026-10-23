@@ -29,7 +29,7 @@ async function render(args = [], prefix = '!!', extra = {}) {
   );
   assert.equal(sent.length, 1);
   assert.equal(sent[0].options.quoted, msg);
-  return sent[0].content.text;
+  return sent[0].content.text ?? sent[0].content.caption;
 }
 for (const category of ['', ...Object.keys(CATEGORIES)]) {
   test(`menu ${category || 'principal'} preserva moldura, identidade e prefixo`, async () => {
