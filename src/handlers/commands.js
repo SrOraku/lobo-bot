@@ -15,7 +15,7 @@ const updater = require('../commands/update');
 function loadAllCommands() {
   const r = (def) => register(def);
 
-  r({name:'ativacoes',aliases:['ativações'],description:'Painel de setores e permissões do grupo',category:'adm',usage:'!ativacoes [setor modo]',handler:require('../commands/activations').activations,groupOnly:true});
+  r({name:'ativacoes',activationControl:true,aliases:['ativações'],description:'Painel de setores e permissões do grupo',category:'adm',usage:'!ativacoes [setor modo]',handler:require('../commands/activations').activations,groupOnly:true});
 
   // Menu
   r({name:'menu',    aliases:['ajuda','help'], description:'Menu principal',     category:'geral',  usage:'!menu [categoria]', example:'!menu gold', handler:menu.menu});
@@ -107,6 +107,16 @@ function loadAllCommands() {
   r({name:'ping',                               description:'Latência do bot',     category:'admin',  usage:'!ping',                                 example:'!ping',                       handler:admin.ping});
   r({name:'uptime',                             description:'Tempo online',        category:'admin',  usage:'!uptime',                               example:'!uptime',                     handler:admin.uptime});
   r({name:'plugins',                            description:'Listar plugins',      category:'admin',  usage:'!plugins',                              example:'!plugins',                    handler:admin.plugins});
+  const activation = require('../commands/activations');
+  r({name:'ativar',activationControl:true,description:'Ativar recurso do grupo',category:'adm',groupOnly:true,usage:'!ativar recurso',handler:activation.createActivationHandler({forcedAction:'enable'})});
+  r({name:'desativar',activationControl:true,description:'Desativar recurso do grupo',category:'adm',groupOnly:true,usage:'!desativar recurso',handler:activation.createActivationHandler({forcedAction:'disable'})});
+  const commands = require('../core/commandRegistry').registry;
+  for (const feature of require('../activations/registry').list()) {
+    if (feature.source==='sector') continue;
+    const existing=commands.get(feature.id);
+    if (existing && !['antilink','antifake','anticontato','antimarcacao','antiinatividade'].includes(feature.id)) continue;
+    r({...existing,name:feature.id,activationControl:true,aliases:[...new Set([...(existing?.aliases||[]),...feature.aliases.filter(alias=>!commands.has(alias))])],description:feature.description,category:'adm',groupOnly:true,minLevel:LEVELS.USER,usage:'!'+feature.id+' on/off',handler:activation.createActivationHandler({featureId:feature.id})});
+  }
 }
 
 module.exports = { loadAllCommands };

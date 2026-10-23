@@ -21,6 +21,11 @@ vm.runInNewContext(
       if (id === '../middlewares/permissions')
         return { LEVELS: { USER: 0, GROUP_ADMIN: 1, BOT_ADMIN: 2, OWNER: 3 } };
       if (id === '../menus/catalog') return { CATEGORIES };
+      if (id === '../activations/registry') return require('../src/activations/registry');
+      if (id === '../commands/activations') {
+        const handler=()=>Object.assign(async()=>{}, {auditFile:'src/commands/activations.js',auditExport:'activations'});
+        return {activations:handler(),createActivationHandler:handler};
+      }
       return new Proxy(
         {},
         {

@@ -4,8 +4,7 @@ const { BOT_NAME } = require('../utils/helpers');
 
 async function handleAutoReply(sock, msg, { jid, sender, body }) {
   try {
-    const group = db.getGroup(jid);
-    if (!group?.auto_reply) return;
+    if (!require('../activations/manager').manager.isEnabled(jid,'autoresposta')) return;
 
     const replies = db.getAutoReplies(jid);
     if (!replies?.length) return;

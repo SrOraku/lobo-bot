@@ -13,9 +13,10 @@ async function isGroupAdmin(sock, jid, senderJid) {
 
 async function isBotAdmin(sock, jid) {
   try {
-    const meta = await sock.groupMetadata(jid);
-    const bot = meta.participants.find(x => x.id.split(':')[0] === sock.user.id.split(':')[0]);
-    return bot?.admin === 'admin' || bot?.admin === 'superadmin';
+    const metadata=await sock.groupMetadata(jid);
+    const {IdentityResolver}=await import('../../addons/alcateia/src/identity.js');
+    const bot=await new IdentityResolver(sock,OWNER+'@s.whatsapp.net',metadata).member(sock.user?.id);
+    return bot?.isAdmin===true;
   } catch { return false; }
 }
 
@@ -204,62 +205,16 @@ const fecharGrupo = requireGroupAdmin(async (sock, ctx) => {
 // ============================
 // TOGGLES DE PROTEÇÃO
 // ============================
-const toggleAntilink = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg, args } = ctx;
-  const group = db.getGroup(jid);
-  const newVal = group?.antilink ? 0 : 1;
-  db.updateGroup(jid, 'antilink', newVal);
-  const mode = args[0] || 'delete';
-  if (newVal) db.updateGroup(jid, 'antilink_mode', mode);
-  await sock.sendMessage(jid, {
-    text: `🔗 *[ ${BOT_NAME} ]*\n\n*Anti-Link:* ${newVal ? `✅ *ATIVADO* (modo: ${mode})` : '❌ *DESATIVADO*'}`
-  }, { quoted: msg });
-});
-
-const toggleAntifake = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg } = ctx;
-  const group = db.getGroup(jid);
-  const newVal = group?.antifake ? 0 : 1;
-  db.updateGroup(jid, 'antifake', newVal);
-  await sock.sendMessage(jid, {
-    text: `🎭 *[ ${BOT_NAME} ]*\n\n*Anti-Fake:* ${newVal ? '✅ *ATIVADO*' : '❌ *DESATIVADO*'}`
-  }, { quoted: msg });
-});
-
-const toggleAnticontato = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg } = ctx;
-  const group = db.getGroup(jid);
-  const newVal = group?.anticontact ? 0 : 1;
-  db.updateGroup(jid, 'anticontact', newVal);
-  await sock.sendMessage(jid, {
-    text: `📞 *[ ${BOT_NAME} ]*\n\n*Anti-Contato:* ${newVal ? '✅ *ATIVADO*' : '❌ *DESATIVADO*'}`
-  }, { quoted: msg });
-});
-
-const toggleAntitag = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg } = ctx;
-  const group = db.getGroup(jid);
-  const newVal = group?.antitag ? 0 : 1;
-  db.updateGroup(jid, 'antitag', newVal);
-  await sock.sendMessage(jid, {
-    text: `🏷️ *[ ${BOT_NAME} ]*\n\n*Anti-Marcação:* ${newVal ? '✅ *ATIVADO*' : '❌ *DESATIVADO*'}`
-  }, { quoted: msg });
-});
-
-const toggleAntiInatividade = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg, args } = ctx;
-  const group = db.getGroup(jid);
-  const days = parseInt(args[0]) || 7;
-  const newVal = group?.antiinactivity ? 0 : 1;
-  db.updateGroup(jid, 'antiinactivity', newVal);
-  if (newVal) db.updateGroup(jid, 'inactivity_days', days);
-  await sock.sendMessage(jid, {
-    text: `😴 *[ ${BOT_NAME} ]*\n\n*Anti-Inatividade:* ${newVal ? `✅ *ATIVADO* (${days} dias)` : '❌ *DESATIVADO*'}`
-  }, { quoted: msg });
-});
+const featureCommand = id => require('./activations').createActivationHandler({featureId:id});
+const toggleAntilink = featureCommand('antilink');
+const toggleAntifake = featureCommand('antifake');
+const toggleAnticontato = featureCommand('anticontato');
+const toggleAntitag = featureCommand('antimarcacao');
+const toggleAntiInatividade = featureCommand('antiinatividade');
 
 const limparInatividade = requireGroupAdmin(async (sock, ctx) => {
   const { jid, msg } = ctx;
+  if (!require('../activations/manager').manager.isEnabled(jid,'antiinatividade')) return sock.sendMessage(jid,{text:'🌹 Ative antiinatividade antes de executar a limpeza manual. 🐺'},{quoted:msg});
   const group = db.getGroup(jid);
   const days = group?.inactivity_days || 7;
   const botAdm = await isBotAdmin(sock, jid);

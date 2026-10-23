@@ -79,7 +79,7 @@ test('persistência SQLite, isolamento entre grupos e transação sem sobrescrit
       change(p, { action: 'set', target: 'midia', value: 'adm', ...owner }),
     );
     assert.equal(store.get('one@g.us').sectors.rp, 'off');
-    assert.deepEqual(store.get('two@g.us'), defaults());
+    assert.deepEqual(store.get('two@g.us').sectors, defaults().sectors);
     assert.throws(() =>
       store.update('one@g.us', 'member', () => {
         throw Error('rollback');

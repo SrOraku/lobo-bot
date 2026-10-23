@@ -20,7 +20,13 @@ async function resolveActor(sock, ctx) {
     sender,
     alt,
   );
+  const bot = await new IdentityResolver(sock, owner + '@s.whatsapp.net', metadata).member(
+    sock.user?.id,
+  );
   return {
+    jid: sender,
+    groupName: metadata?.subject || key.remoteJid,
+    botAdmin: bot?.isAdmin === true,
     owner: require('../utils/owners')
       .ownerNumbers(config)
       .includes(actor?.phoneNumber?.split('@')[0]),

@@ -130,6 +130,25 @@ const migrations = [
       updated_at TEXT DEFAULT (datetime('now'))
     );`
   },
+  {
+    version: 5,
+    name: 'central_feature_activations',
+    up: `CREATE TABLE IF NOT EXISTS activation_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, group_jid TEXT NOT NULL,
+      feature TEXT NOT NULL, previous_state TEXT, new_state TEXT,
+      actor TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_activation_audit_group ON activation_audit(group_jid,created_at);
+    INSERT INTO group_activations(group_jid,policy,updated_by)
+      SELECT jid,'{"bot":true,"sectors":{},"delegates":{},"features":{}}','migration' FROM groups WHERE true
+      ON CONFLICT(group_jid) DO NOTHING;
+    UPDATE group_activations SET policy=json_set(policy,
+      '$.features',json_patch(COALESCE(json_extract(policy,'$.features'),'{}'),
+      COALESCE((SELECT json_object('antilink',antilink,'antifake',antifake,'anticontato',anticontact,
+      'antimarcacao',antitag,'antiinatividade',antiinactivity,'bemvindo',welcome,
+      'despedida',goodbye,'autoresposta',auto_reply,'level',level_up_msg) FROM groups WHERE jid=group_jid),'{}')));
+    `
+  },
 ];
 
 function runMigrations(db) {
@@ -149,8 +168,10 @@ function runMigrations(db) {
   let ran = 0;
   for (const m of migrations) {
     if (applied.has(m.version)) continue;
-    db.exec(m.up);
-    db.prepare(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`).run(m.version, m.name);
+    db.transaction(() => {
+      db.exec(m.up);
+      db.prepare(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`).run(m.version, m.name);
+    })();
     ran++;
     console.log(`  🌹 Migration v${m.version} "${m.name}" aplicada`);
   }

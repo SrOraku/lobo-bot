@@ -120,7 +120,7 @@ function buildCatalog(commands, pluginCommands = {}) {
       permission:
         c.name === 'atualizar'
           ? 'dono (identidade verificada)'
-          : c.name === 'ativacoes' ? 'dono/admin do grupo; controle delegado' : ['usuário', 'admin do grupo', 'admin do bot', 'dono'][c.minLevel || 0],
+          : c.activationControl ? 'dono/admin do grupo; controle delegado' : ['usuário', 'admin do grupo', 'admin do bot', 'dono'][c.minLevel || 0],
     }));
   const occupied = new Set(commands.flatMap((c) => [c.name, ...(c.aliases || [])]));
   for (const name of Object.keys(pluginCommands)) {

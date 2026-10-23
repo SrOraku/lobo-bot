@@ -47,7 +47,7 @@ async function handleMessage(sock, msg) {
 
     bus.emit(EVENTS.MESSAGE_RECEIVED, { sender, jid, isGroup, body });
 
-    if (isGroup && body) {
+    if (isGroup) {
       const blocked = await handleProtection(sock, msg, { jid, sender, body, isGroup });
       if (blocked) return;
     }

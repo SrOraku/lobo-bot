@@ -128,6 +128,7 @@ async function startBot() {
 
   // ── Carregar plugins após socket criado ──────────────────
   await loadAllPlugins(sock);
+  require('./activations/store').getStore().preload();
 
   // ============================================================
   // PAIR CODE — apenas na primeira vez

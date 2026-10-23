@@ -8,15 +8,15 @@ const { BOT_NAME, cleanJid, getNumber, logger } = require('../utils/helpers');
 async function handleGroupParticipantsUpdate(sock, update) {
   try {
     const { id, participants, action } = update;
-    const group = db.getGroup(id);
 
     for (const participant of participants) {
-      const jid = cleanJid(participant);
+      const jid = cleanJid(typeof participant === 'string' ? participant : participant?.id || participant?.phoneNumber || '');
+      if (!jid) continue;
       const number = getNumber(jid);
 
       if (action === 'add') {
         // Boas-vindas
-        if (group?.welcome !== 0) {
+        if (require('../activations/manager').manager.isEnabled(id,'bemvindo')) {
           db.upsertUser(jid, number);
 
           // Gold inicial
@@ -40,7 +40,7 @@ async function handleGroupParticipantsUpdate(sock, update) {
         }
 
       } else if (action === 'remove') {
-        if (group?.goodbye !== 0) {
+        if (require('../activations/manager').manager.isEnabled(id,'despedida')) {
           await sock.sendMessage(id, {
             text: `🌑 *[ ${BOT_NAME} ]*\n\n😢 *@${number}* deixou a matilha...\n\n_Os lobos uivam em sua despedida. 🐺_`,
             mentions: [jid]

@@ -211,3 +211,7 @@ Use `!ativacoes` dentro do grupo para consultar os setores. O dono pode usar `!a
 O dono permanece em `BOT_OWNER`; donos adicionais podem ser configurados em `BOT_OWNERS`, com números completos separados por vírgula. O número conectado não vira dono automaticamente. Se ele estiver na lista de donos, seus próprios comandos também são aceitos, sem processar as respostas normais do bot em loop. Administradores comuns não se tornam donos nem podem delegar controles, alterar o setor Dono ou conceder poderes administrativos a membros. Ligar um setor mantém as permissões, registros, saldos e cooldowns originais. Os administradores fixos dos jogos são preservados.
 
 Pausar o bot pelo painel de ativações bloqueia comandos de função para outros usuários naquele grupo; a navegação e o próprio painel continuam disponíveis para recuperação. A pausa não remove o bot, não fecha o grupo e não desliga as proteções automáticas de moderação nem os eventos de entrada/saída.
+
+## Ativações centralizadas — 3.6.0
+
+`!ativacoes status`, `!ativar recurso`, `!desativar recurso`, `!ativar tudo` e `!desativar tudo` usam o mesmo registro de 32 recursos por grupo. ON/OFF e 1/0 também são aceitos nos comandos de proteção e boas-vindas. Estados antigos são migrados para o SQLite existente, com cache e auditoria transacional. Veja [recursos, permissões, migração e limites da referência](ATIVACOES.md).

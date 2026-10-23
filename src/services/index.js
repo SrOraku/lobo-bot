@@ -172,6 +172,12 @@ const GroupService = {
   },
 
   toggle(jid, field) {
+    const feature=require('../activations/registry').list().find(f=>f.legacyColumn===field);
+    if(feature){
+      const store=require('../activations/store').getStore();
+      const next=store.update(jid,'internal:GroupService',policy=>{const value=!policy.features[feature.id];if(value&&feature.dependencies?.some(id=>!policy.features[id]))throw Error('Dependência de ativação ausente.');policy.features[feature.id]=value;return policy;});
+      return next.features[feature.id];
+    }
     const group = db.getGroup(jid);
     const newVal = group?.[field] ? 0 : 1;
     db.updateGroup(jid, field, newVal);
@@ -179,6 +185,17 @@ const GroupService = {
   },
 
   set(jid, field, value) {
+    const feature=require('../activations/registry').list().find(f=>f.legacyColumn===field);
+    if(feature){
+      if(![true,false,0,1].includes(value))throw Error('Estado de ativação inválido.');
+      require('../activations/store').getStore().update(jid,'internal:GroupService',policy=>{if(value&&feature.dependencies?.some(id=>!policy.features[id]))throw Error('Dependência de ativação ausente.');policy.features[feature.id]=!!value;return policy;});
+      return;
+    }
+    if(['antilink_mode','inactivity_days'].includes(field)){
+      if(field==='antilink_mode'&&!['delete','warn','kick'].includes(value)||field==='inactivity_days'&&(!Number.isInteger(value)||value<1||value>365))throw Error('Opção de ativação inválida.');
+      require('../activations/store').getStore().update(jid,'internal:GroupService',policy=>{policy.options[field]=value;return policy;});
+      return;
+    }
     db.updateGroup(jid, field, value);
   },
 };

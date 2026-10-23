@@ -3,7 +3,7 @@ const { CATEGORIES, CATEGORY_ALIASES, categoryOf, ADDON } = require('../menus/ca
 const SECTORS = ['bot', ...Object.keys(CATEGORIES)];
 const MODES = ['on', 'off', 'membros', 'adm', 'dono'];
 function defaults() {
-  return { bot: true, sectors: {}, delegates: {} };
+  return { bot: true, sectors: {}, delegates: {}, features: {} };
 }
 function sector(value) {
   const key = String(value || '').toLowerCase();
@@ -53,7 +53,12 @@ function allowed(policy, key, actor) {
   return mode !== 'adm' || actor.admin;
 }
 function commandSector(name, args = [], definition) {
-  if (name === 'menu' || definition?.menuShortcut || ['ativacoes', 'ativações'].includes(name))
+  if (
+    name === 'menu' ||
+    definition?.menuShortcut ||
+    definition?.activationControl ||
+    ['ativacoes', 'ativações', 'ativar', 'desativar'].includes(name)
+  )
     return null;
   if (name === 'alcateia') {
     const sub = String(args[0] || 'menu').toLowerCase();
