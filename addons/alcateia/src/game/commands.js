@@ -102,7 +102,14 @@ function eventText(reward) {
       reward.type === 'hp' ? `💎 Recompensa: +${reward.amount} HP` :
         reward.type === 'boost' ? `⭐ Recompensa: ${BOOST_NAMES[reward.boost?.type] || 'boost'} +${Math.round((reward.boost?.value || 0) * 100)}% por 1 hora` :
           '🌕 Hoje a lua não deixou uma recompensa.';
-  return frame('EVENTO LUNAR', ['🌕 A lua brilhou para você.', text, '🐺 A alcateia segue em frente.', '⏳ Volte amanhã.']);
+  const scenes = {
+    coins: '🌕 Você encontrou um cofre antigo nas ruínas da floresta.',
+    wolves: '🐾 Uma patrulha retornou com novos aliados para a matilha.',
+    hp: '💎 Uma fonte lunar restaurou parte das suas forças.',
+    boost: '⭐ O guardião da lua concedeu uma bênção temporária.',
+    none: '🌫️ A névoa cobriu a trilha. Você voltou ao refúgio em segurança.',
+  };
+  return frame('EVENTO LUNAR', [scenes[reward.type] || scenes.none, text, '🐺 A alcateia segue em frente.', '⏳ Volte amanhã.']);
 }
 
 export function isGameCommand(command, args = []) {

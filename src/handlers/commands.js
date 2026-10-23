@@ -95,6 +95,15 @@ function loadAllCommands() {
   r({name:'ship',                               description:'Compatibilidade',     category:'fun',    usage:'!ship @p1 @p2',                         example:'!ship @joao @maria',          handler:fun.ship});
   r({name:'akinator',                           description:'Akinator dos lobos',  category:'fun',    usage:'!akinator',                             example:'!akinator',                   handler:fun.akinator});
 
+  const arcade = require('../commands/arcade');
+  for (const [name, description, usage] of [
+    ['quiz','Quiz com 20 perguntas, rodadas de cinco e explicações','[1/2/3/4|status|parar]'],
+    ['forca','Descubra palavras com pistas; seis erros por partida','[letra|status|parar]'],
+    ['adivinhar','Encontre o número de 1 a 100 em sete tentativas','[número|status|parar]'],
+    ['aventura','Trilhas da Lua: aventura com escolhas e oito finais','[1/2/3|status|parar]'],
+    ['placarjogos','Top 10 e conquistas dos minijogos deste chat',''],
+  ]) r({name,description,category:'jogos',usage:'!'+name+(usage?' '+usage:''),handler:arcade.createArcadeCommand(name)});
+
   // Admin do bot
   // O handler confirma PN/LID do dono pelo Baileys; nunca usa senderNumber como autorização.
   r({name:'atualizar', description:'Atualizar bot e Baileys (dono)', category:'admin', usage:'!atualizar [status|bot|baileys]', example:'!atualizar status', handler:updater.update});

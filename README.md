@@ -2,15 +2,21 @@
 
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
-## Progresso independente por grupo — 3.7.0
+## Edição atual — v1.0.0
+
+A numeração pública foi ajustada para a série v1, mantendo todas as melhorias e os dados das edições anteriores. `!ping` exibe v1.0.0.
+
+O menu Jogos ganhou `!quiz`, `!forca`, `!adivinhar`, `!aventura` e `!placarjogos`. Partidas persistentes, conquistas e ranking são separados por chat. O Akinator agora utiliza respostas para filtrar 18 personagens em vez de sortear uma hipótese. O evento lunar ganhou cenas de exploração. Pontos dos minijogos não alteram Gold ou WOK Coin. Consulte [regras e comandos](MENUS.md).
+
+## Progresso independente por grupo
 
 Perfis, Gold, WOK Coin, níveis, rankings, lobos, RP, clãs, famílias e cooldowns agora são separados por chat. O progresso anterior é copiado como ponto de partida de cada grupo uma única vez, conforme autorizado; mudanças seguintes não atravessam os grupos. O privado também é independente. Veja [migração e funcionamento do isolamento](ISOLAMENTO.md).
 
-## Menus organizados — versão 3.4.1
+## Menus organizados
 
-`!menu` agora mostra apenas os dados do bot e 15 categorias. Use `!menu jogos`, `!menu alcateia`, `!menu midia`, `!menu adm`, `!menu dono`, `!menu util`, `!menu figurinhas`, `!menu pesquisa`, `!menu ia`, `!menu diversao`, `!menu grupo`, `!menu info`, `!menu ferramentas`, `!menu rp` ou `!menu economia`. Os nomes das categorias também funcionam como atalhos; as rotas antigas de RP e alcateia continuam disponíveis. `!play nome/link` envia MP3 diretamente; `!play video nome/link` envia MP4. Os demais comandos de áudio/vídeo são `!play_audio nome/link` e `!play_video nome/link`, preservando `!ytmp3` e `!ytmp4`. Veja a [auditoria, classificação e validação dos menus](MENUS.md).
+`!menu` mostra o usuário e 15 categorias; os dados técnicos ficam em `!ping`. Use `!menu jogos`, `!menu alcateia`, `!menu midia`, `!menu adm`, `!menu dono`, `!menu util`, `!menu figurinhas`, `!menu pesquisa`, `!menu ia`, `!menu diversao`, `!menu grupo`, `!menu info`, `!menu ferramentas`, `!menu rp` ou `!menu economia`. Os nomes das categorias também funcionam como atalhos; as rotas antigas de RP e alcateia continuam disponíveis. `!play nome/link` envia MP3 diretamente; `!play video nome/link` envia MP4. Os demais comandos de áudio/vídeo são `!play_audio nome/link` e `!play_video nome/link`, preservando `!ytmp3` e `!ytmp4`. Veja a [auditoria, classificação e validação dos menus](MENUS.md).
 
-## Atualização por comando — versão 3.3
+## Atualização por comando
 
 Somente o dono configurado pode usar `!atualizar status`, `!atualizar bot` e `!atualizar baileys` (respeitando o prefixo configurado). O primeiro mostra versões; o segundo busca este repositório em `main`; o terceiro verifica a versão mais recente publicada pelo projeto oficial WhiskeySockets/Baileys. A versão atual é `7.0.0-rc14`.
 

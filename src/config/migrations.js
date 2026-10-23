@@ -166,6 +166,12 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
     CREATE TABLE IF NOT EXISTS group_warnings(group_jid TEXT NOT NULL,user_jid TEXT NOT NULL,total INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(group_jid,user_jid));
     CREATE TABLE IF NOT EXISTS group_warning_events(id INTEGER PRIMARY KEY AUTOINCREMENT,group_jid TEXT NOT NULL,user_jid TEXT NOT NULL,actor TEXT NOT NULL,reason TEXT,event_id TEXT NOT NULL,created_at TEXT DEFAULT (datetime('now')),UNIQUE(group_jid,event_id));
   ` },
+  { version: 9, name: 'arcade_games', up: `
+    CREATE TABLE arcade_sessions(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,game TEXT NOT NULL,state TEXT,updated_at INTEGER NOT NULL,available_at INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(chat_jid,user_jid,game));
+    CREATE TABLE arcade_scores(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,name TEXT,points INTEGER NOT NULL DEFAULT 0,wins INTEGER NOT NULL DEFAULT 0,played INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(chat_jid,user_jid));
+    CREATE TABLE arcade_events(chat_jid TEXT NOT NULL,event_id TEXT NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,event_id));
+    CREATE INDEX arcade_event_date ON arcade_events(created_at);
+  ` },
 ];
 
 function runMigrations(db) {

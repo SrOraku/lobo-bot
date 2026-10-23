@@ -172,68 +172,8 @@ async function ship(sock, ctx) {
 }
 
 // ============================
-// AKINATOR (simulado)
+// AKINATOR: respostas filtram candidatos reais; partida persistente por chat.
 // ============================
-const akinatorSessions = new Map();
-const AKINATOR_CHARS = [
-  'Naruto Uzumaki', 'Goku', 'Batman', 'Harry Potter', 'Elon Musk',
-  'Michael Jackson', 'Lionel Messi', 'Neymar', 'Cristiano Ronaldo',
-  'Eminem', 'Luffy (One Piece)', 'Sasuke Uchiha', 'Vegeta', 'Superman',
-  'Albert Einstein', 'Freddie Mercury', 'Bob Marley', 'Spider-Man',
-];
-
-async function akinator(sock, ctx) {
-  const { jid, sender, msg, args } = ctx;
-  const sessionKey = `aki_${sender}_${jid}`;
-
-  if (args[0] === 'parar' || args[0] === 'stop') {
-    akinatorSessions.delete(sessionKey);
-    return sock.sendMessage(jid, {
-      text: `🔮 *[ ${BOT_NAME} ]*\n\n❌ Akinator encerrado!\n_Os lobos já sabiam a resposta... 🐺_`
-    }, { quoted: msg });
-  }
-
-  const session = akinatorSessions.get(sessionKey);
-
-  if (!session) {
-    // Nova sessão
-    const character = AKINATOR_CHARS[Math.floor(Math.random() * AKINATOR_CHARS.length)];
-    const questions = [
-      'O seu personagem é *humano*? (sim/não)',
-      'O seu personagem é *real* (não fictício)? (sim/não)',
-      'O seu personagem é *famoso no esporte*? (sim/não)',
-      'O seu personagem é *do mundo da música*? (sim/não)',
-      'O seu personagem é *do mundo dos animes*? (sim/não)',
-    ];
-
-    akinatorSessions.set(sessionKey, {
-      character,
-      questions,
-      currentQ: 0,
-      answers: []
-    });
-
-    return sock.sendMessage(jid, {
-      text: `🔮 *[ ${BOT_NAME} ]*\n\n🧞 *AKINATOR DO LOBO*\n\nPense em um personagem famoso!\n\nVou fazer perguntas para adivinhar...\n\n*Pergunta 1:*\n${questions[0]}\n\n_Responda: sim, não ou talvez_\n_!akinator parar para cancelar_`
-    }, { quoted: msg });
-  }
-
-  const answer = args.join(' ').toLowerCase();
-  session.answers.push(answer);
-  session.currentQ++;
-
-  if (session.currentQ >= session.questions.length || answer.includes('sim') || session.currentQ >= 3) {
-    akinatorSessions.delete(sessionKey);
-    const confidence = Math.floor(75 + Math.random() * 25);
-    return sock.sendMessage(jid, {
-      text: `🔮 *[ ${BOT_NAME} ]*\n\n🧞 *AKINATOR ADIVINHOU!*\n\n✨ Você pensou em:\n\n👤 *${session.character}*\n\n_Confiança: ${confidence}%_\n\n${confidence >= 90 ? '🎯 Acertei de primeira! Os lobos são oniscientes!' : '🤔 Tenho quase certeza... era esse?'}`
-    }, { quoted: msg });
-  }
-
-  const nextQ = session.questions[session.currentQ];
-  await sock.sendMessage(jid, {
-    text: `🔮 *[ ${BOT_NAME} ]*\n\n*Pergunta ${session.currentQ + 1}:*\n${nextQ}`
-  }, { quoted: msg });
-}
+const akinator = require('./arcade').createArcadeCommand('akinator');
 
 module.exports = { dado, moeda, bola8, piada, fato, sorteio, azar, escolher, ship, akinator };

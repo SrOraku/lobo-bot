@@ -90,3 +90,22 @@ Esta revisão não anuncia funções ausentes como se existissem: IA, OCR, remo�
 Configurações dos dois AntiLinks são independentes; o modo inicial é delete. As advertências são compartilhadas entre ações manuais e links do mesmo participante no mesmo grupo, persistem no SQLite e não expiram automaticamente. Eventos repetidos não contam duas vezes. Links que acionam mais de uma regra somam somente uma advertência. Donos e administradores ficam isentos; o bot precisa ser administrador. Sem número resolvido, o bot apaga o link sem advertir. Nenhum histórico anterior de cache é inventado durante a migração.
 
 Referência consultada: árvore pública de Salientekill/ESDEATH-RUST. A implementação das ativações/moderação não está exposta como fonte nessa distribuição; nenhuma paridade integral é prometida e nenhum executável da referência é executado. A implementação acima pertence à arquitetura JavaScript do Lobo Bot.
+
+
+## Edição v1.0.0 — expansão de jogos
+
+A numeração pública foi corrigida para v1.0.0 a pedido do dono. Isso não reverte código nem o histórico de migrações: o banco avança para a migração 9 e os dados anteriores permanecem. O ZIP mantém o nome Lobo-bot-v1.
+
+Novos comandos disponíveis em `!menu jogos`:
+
+- `!quiz`: cinco rodadas sorteadas sem repetição entre 20 perguntas, quatro alternativas e explicação das respostas. Use `!quiz 1`, `2`, `3` ou `4`.
+- `!forca`: 16 palavras com pistas, letras normalizadas e limite de seis erros. Use `!forca a`.
+- `!adivinhar`: número secreto de 1 a 100, pistas com intervalo atualizado e sete tentativas. Use `!adivinhar 50`.
+- `!aventura`: Trilhas da Lua, três escolhas por cena, três rotas iniciais e oito finais. Use `!aventura 1`, `2` ou `3`.
+- `!placarjogos`: dez melhores do chat, partidas, vitórias e conquistas Iniciante/Aprendiz/Explorador/Lenda Lunar.
+
+Nos jogos, envie somente o comando ou `status` para rever a partida; `parar`, `sair` e `cancelar` encerram. Partidas ficam salvas por usuário, chat e jogo e expiram após 24 horas sem interação. Há espera de 60 segundos após terminar/cancelar. Os pontos são exclusivos do placar de minijogos e não são moeda; Gold e WOK Coin continuam com suas regras anteriores. Conclusões e pontuações são gravadas na mesma transação; reenvios da mesma mensagem são deduplicados.
+
+O Akinator antigo deixou de sortear uma resposta sem relação com o jogador. Agora filtra 18 personagens catalogados com perguntas de atributos e pede confirmação da hipótese; respostas desconhecidas são aceitas como `talvez`. Sua sessão passa a persistir como as dos novos jogos. O comando e o cancelamento `parar/stop` foram preservados. Partidas antigas desse simulador existiam apenas em memória e não eram recuperáveis após reinício.
+
+O evento lunar ganhou cinco cenas de exploração associadas às recompensas existentes, preservando os valores, limites e cooldowns. Nenhum comando anterior foi removido. As ativações do setor Jogos controlam também os novos comandos.
