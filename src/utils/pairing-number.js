@@ -2,35 +2,36 @@
 
 function pairingPrompt(error = '') {
   return `
-🌹╔═══❖♆❖═══╗
-📱 ESCOLHA DO WHATSAPP
-╚═══❖♆❖═══╝🐺
+🌹═══[ CONECTAR WHATSAPP ]═══🐺
 
-╭── ❖ NOVO PAREAMENTO ❖ ──╮
-┃ 1. Escolha a conta do WhatsApp.
-┃ 2. Informe o número com DDI e DDD.
-┃ 3. Aguarde o código de conexão.
-╰────────────────────────╯
+📱 Digite o número que será conectado ao bot.
 
-📋 COMO PREENCHER
-• Brasil: 55 + DDD + número.
-• Exemplo: 5511987654321
-• Também aceita: +55 (11) 98765-4321
-• Outros países: DDI + número completo.
-• Não coloque letras ou o dígito 0 de operadora.
+🌐 Formato:
+DDI + DDD + NÚMERO
 
-🛡️ PERMISSÕES E SESSÃO
-• O número conectado não recebe poderes de dono.
-• O dono configurado permanece o mesmo.
-• Tenha acesso ao WhatsApp desse número.
-• Uma sessão válida será reutilizada nos reinícios.
+📌 Exemplo:
+5543999999999
 
-🔑 DEPOIS DE RECEBER O CÓDIGO
-WhatsApp → Aparelhos conectados
-→ Conectar aparelho → Conectar com número.
+╭─── 📋 ───╮
+55 → DDI
+43 → DDD
+999999999 → Número
+╰───────────╯
 
-${error ? `⚠️ ${error}\nDigite novamente, sem precisar pressionar Enter antes.\n\n` : ''}📱 Digite o número do WhatsApp que será conectado:
-➤ `;
+⚠️ Use somente números, sem:
+• +
+• espaços
+• traços
+• parênteses
+
+✅ Exemplo correto:
+5543999999999
+
+🐺 Após validar o número, o sistema continuará automaticamente.
+
+${error ? `❌ ${error}\n\n` : ''}🌹═══[ AGUARDANDO NÚMERO ]═══🐺
+`;
+
 }
 
 async function choosePairingNumber(ask) {
@@ -38,7 +39,7 @@ async function choosePairingNumber(ask) {
   while (true) {
     const answer = await ask(pairingPrompt(error));
     const text = String(answer || '').trim();
-    const number = text.replace(/[+\s().-]/g, '');
+    const number = text;
     if (/^[1-9]\d{9,14}$/.test(number)) return number;
     error = 'Número inválido. Informe de 10 a 15 dígitos, incluindo o DDI.';
   }
