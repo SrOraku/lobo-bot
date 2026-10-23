@@ -21,3 +21,15 @@ test('não gera alvo vazio ou inválido e solicita novamente', async () => {
   assert.equal(await choosePairingNumber(async () => replies.shift()), '5511987654321');
   assert.equal(replies.length, 0);
 });
+
+
+test('painel apresenta etapas, exemplo e permissões e repete a pergunta diretamente após erro', async () => {
+  const prompts = [], answers = ['texto inválido', '5511987654321'];
+  const result = await choosePairingNumber(async question => { prompts.push(question); return answers.shift(); });
+  assert.equal(result,'5511987654321');
+  assert.equal(prompts.length,2);
+  for (const value of ['ESCOLHA DO WHATSAPP','NOVO PAREAMENTO','5511987654321','não recebe poderes de dono','Aparelhos conectados'])
+    assert.ok(prompts[0].includes(value));
+  assert.ok(prompts[1].includes('Número inválido'));
+  assert.ok(prompts[1].endsWith('➤ '));
+});
