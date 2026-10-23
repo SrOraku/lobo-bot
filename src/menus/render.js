@@ -15,6 +15,10 @@ function uptime(seconds) {
   return `${Math.floor(n / 3600)}h ${Math.floor((n % 3600) / 60)}m ${n % 60}s`;
 }
 function frameMenu(title, sections) {
+  if (title === 'MENU PRINCIPAL DA MATILHA') {
+    const displayName = IDENTITY.name.replace(/^🌹/, '🌹 ');
+    return `🌹╔══❖♆❖══🐺 ══❖♆❖══╗🌹\n\n${displayName}\n\n╭──── 🌹 ⚜️🐺 ⚜️ 🌹 ───╮\n*${title}*\n╰──────────────────╯\n\n${sections.join('\n\n')}\n\n┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈\n\n🌹 Dev: ${IDENTITY.developer}\n${IDENTITY.motto}\n╚═══❖🌹❖═══♆═══❖🐺 ❖═══╝`;
+  }
   return `🌹╔═══❖♆❖═══🐾═══❖♆❖═══╗\n${IDENTITY.name}\n\n╭──── 🌹 ⚜️ 🐾 ⚜️ 🌹 ────╮\n*${title}*\n╰──────────────────────╯\n\n${sections.join('\n\n')}\n\n┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈\n🌹 Dev: ${IDENTITY.developer}\n${IDENTITY.motto}\n╚═══❖🌹❖═══♆═══❖🐾❖═══╝🐺`;
 }
 module.exports = { IDENTITY, clean, uptime, frameMenu };

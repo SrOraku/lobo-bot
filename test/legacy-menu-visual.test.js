@@ -35,8 +35,9 @@ for (const category of ['', ...Object.keys(CATEGORIES)]) {
   test(`menu ${category || 'principal'} preserva moldura, identidade e prefixo`, async () => {
     const text = await render(category ? [category] : []);
     assert.ok(text.startsWith('🌹'));
-    assert.ok(text.endsWith('🐺'));
-    for (const value of Object.values(IDENTITY)) assert.ok(text.includes(value));
+    assert.ok(text.endsWith(category ? '🐺' : '╝'));
+    for (const [key, value] of Object.entries(IDENTITY))
+      assert.ok(text.includes(!category && key === 'name' ? value.replace(/^🌹/, '🌹 ') : value));
     assert.match(text, /╔.*❖.*♆/u);
     assert.match(text, /╚.*🌹/u);
     assert.ok(text.includes('!!menu'));
@@ -141,4 +142,12 @@ test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async ()
   await execute('teste_permissao_menu', sock, ctx('5543920030769@s.whatsapp.net', true));
   assert.equal(calls, 2);
   assert.ok(sent.length >= 2);
+});
+
+test('principal usa exatamente a nova moldura solicitada', async () => {
+  const text = await render([], '!');
+  assert.ok(text.startsWith('🌹╔══❖♆❖══🐺 ══❖♆❖══╗🌹\n\n🌹 ᵇᵒᵗ'));
+  assert.ok(text.includes('╭──── 🌹 ⚜️🐺 ⚜️ 🌹 ───╮\n*MENU PRINCIPAL DA MATILHA*\n╰──────────────────╯'));
+  assert.ok(text.includes('┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈\n\n🌹 Dev:'));
+  assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐺 ❖═══╝'));
 });
