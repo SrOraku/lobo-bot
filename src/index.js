@@ -230,7 +230,29 @@ async function startBot() {
       const ownerJid = config.get('BOT_OWNER');
       if (ownerJid) {
         await sock.sendMessage(`${ownerJid}@s.whatsapp.net`, {
-          text: `🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹\n\n*${BOT_NAME}*\n\n✅ *Bot conectado com sucesso!*\n🐺 Matilha pronta para batalha!\n\n_Uuuuuuwooooo! 🐺🌕_\n\n👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺\n📞 +5543920030769\n\n🌹🐺✦❀🌹🐺✦❀🌹`
+          text: `🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
+
+      *${BOT_NAME}*
+   〘 SISTEMA OPERACIONAL ATIVO 〙
+
+✅ *Bot conectado com sucesso!*
+🐺 Matilha pronta para batalha!
+
+╭━━⪻ 🌕 *STATUS DO SISTEMA* 🌕 ⪼━━╮
+┃ 📡 *Conexão:* Estável e Sincronizada
+┃ 🛡️ *Blindagem:* Protocolos Ativos
+┃ ⚙️ *Módulos:* 100% Carregados
+┃ ⚔️ *Modo Operacional:* Prontidão Total
+╰━━━━━━━━━━━━━━━━━━━━━━━╯
+
+_Uuuuuuwooooo! 🐺🌕_
+
+╭━━⪻ 👑 *REGISTRO DE COMANDO* 👑 ⪼━━╮
+┃ 👨‍💻 *Dev:* 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
+┃ 📞 *Contato:* +5543920030769
+╰━━━━━━━━━━━━━━━━━━━━━━━╯
+
+🌹🐺✦❀🌹🐺✦❀🌹`
         }).catch(() => {});
       }
     }
