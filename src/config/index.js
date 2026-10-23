@@ -7,7 +7,6 @@
 
 const DEFAULTS = {
   BOT_OWNER:             '5543920030769',
-  PAIRING_NUMBER:        '',
   BOT_NAME:              '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
   BOT_DESCRIPTION:       '🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺',
   DEVELOPER_NAME:        '🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺',
@@ -28,7 +27,6 @@ const DEFAULTS = {
 };
 
 const SCHEMA = {
-  PAIRING_NUMBER: { required: false, type: 'phone', desc: 'WhatsApp do bot; vazio para escolher no console' },
   BOT_OWNER:             { required: true,  type: 'phone',  desc: 'Número do dono (ex: 5543999999999)' },
   BOT_NAME:              { required: false, type: 'string', desc: 'Nome do bot' },
   BOT_DESCRIPTION:       { required: false, type: 'string', desc: 'Descrição do bot' },

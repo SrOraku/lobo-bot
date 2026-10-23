@@ -135,25 +135,8 @@ async function startBot() {
   if (!jaConectado) {
     await sleep(2000);
 
-    let numero = config.get('PAIRING_NUMBER') || '';
-    if (!numero) {
-      numero = await askQuestion(`
-🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
-
-   🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📱 Digite o número do WhatsApp do bot
-   (com código do país, sem + ou espaços)
-   Exemplo: 5543999999999
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-→ `);
-    }
-
-    numero = numero.replace(/\D/g, '');
-    while (!/^[1-9]\d{9,14}$/.test(numero)) {
-      numero = (await askQuestion('📱 Número inválido. Digite o WhatsApp do bot com DDI (ex.: 5543999999999): ')).replace(/\D/g, '');
-    }
+    // Sempre escolher no console: o dono e configurações antigas não são o alvo.
+    const numero = await require('./utils/pairing-number').choosePairingNumber(askQuestion);
 
     try {
       const code = await sock.requestPairingCode(numero);
@@ -171,6 +154,9 @@ async function startBot() {
            ✨  ${fmt}  ✨
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 WhatsApp escolhido para conectar: +${numero}
+👑 Dono do bot: +5543920030769
+
 📱 Como usar no WhatsApp:
    1. Abra o WhatsApp
    2. Configurações → Aparelhos Conectados
@@ -183,7 +169,7 @@ async function startBot() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
-📞 +5543920030769
+📞 Contato do desenvolvedor: +5543920030769
 
 🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹
 `);
