@@ -2,9 +2,9 @@
 
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
-## Menus organizados — versão 3.4
+## Menus organizados — versão 3.4.1
 
-`!menu` agora mostra apenas os dados do bot e 15 categorias. Use `!menu jogos`, `!menu alcateia`, `!menu midia`, `!menu adm`, `!menu dono`, `!menu util`, `!menu figurinhas`, `!menu pesquisa`, `!menu ia`, `!menu diversao`, `!menu grupo`, `!menu info`, `!menu ferramentas`, `!menu rp` ou `!menu economia`. Os nomes das categorias também funcionam como atalhos; as rotas antigas de RP e alcateia continuam disponíveis. Os comandos de áudio/vídeo são `!play_audio nome/link` e `!play_video nome/link`, preservando `!ytmp3` e `!ytmp4`. Veja a [auditoria, classificação e validação dos menus](MENUS.md).
+`!menu` agora mostra apenas os dados do bot e 15 categorias. Use `!menu jogos`, `!menu alcateia`, `!menu midia`, `!menu adm`, `!menu dono`, `!menu util`, `!menu figurinhas`, `!menu pesquisa`, `!menu ia`, `!menu diversao`, `!menu grupo`, `!menu info`, `!menu ferramentas`, `!menu rp` ou `!menu economia`. Os nomes das categorias também funcionam como atalhos; as rotas antigas de RP e alcateia continuam disponíveis. `!play nome/link` envia MP3 diretamente; `!play video nome/link` envia MP4. Os demais comandos de áudio/vídeo são `!play_audio nome/link` e `!play_video nome/link`, preservando `!ytmp3` e `!ytmp4`. Veja a [auditoria, classificação e validação dos menus](MENUS.md).
 
 ## Atualização por comando — versão 3.3
 

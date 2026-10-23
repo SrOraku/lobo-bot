@@ -173,3 +173,76 @@ test('pipeline real converte áudio com FFmpeg e rejeita stream quebrado', async
     await fs.rm(dir, { recursive: true, force: true });
   }
 });
+
+test('play baixa MP3 por padrão e encaminha vídeo sem modificar os argumentos originais', async () => {
+  const { createPlay } = require('../src/commands/media');
+  const calls = [];
+  const play = createPlay({
+    audio: async (s, c) => calls.push(['audio', c.args]),
+    video: async (s, c) => calls.push(['video', c.args]),
+  });
+  const args = ['video', 'nome', 'da', 'música'];
+  await play({}, { args: ['nome', 'da', 'música'] });
+  await play({}, { args });
+  await play({}, { args: ['MP3', URL] });
+  assert.deepEqual(calls, [
+    ['audio', ['nome', 'da', 'música']],
+    ['video', ['nome', 'da', 'música']],
+    ['audio', [URL]],
+  ]);
+  assert.equal(args[0], 'video');
+});
+test('música de 14 minutos é aceita e falha de metadados usa outro cliente', async () => {
+  const primary = {
+    validateURL: () => true,
+    getInfo: async () => {
+      throw Error('DECIPHER_FAILED');
+    },
+  };
+  const secondary = {
+    getInfo: async () => ({ videoDetails: { title: 'Música', lengthSeconds: 852 } }),
+  };
+  const f = fixture('audio', { ytdl: primary, fallback: async () => secondary });
+  await f.run([URL]);
+  assert.ok(f.sent.some((c) => c.audio));
+});
+test('erro no stream principal tenta outro cliente e envia o arquivo', async () => {
+  let attempts = 0;
+  const f = fixture('video', {
+    fallback: async () => ({
+      getInfo: async () => ({ videoDetails: { title: 'Vídeo', lengthSeconds: 20 }, raw: {} }),
+    }),
+    download: async ({ destination }) => {
+      attempts++;
+      if (attempts === 1) throw Error('HTTP_403');
+      await fs.writeFile(destination, 'video');
+    },
+  });
+  await f.run();
+  assert.equal(attempts, 2);
+  assert.ok(f.sent.some((c) => c.video));
+});
+test('cliente alternativo entrega stream de mídia em vez de link', async () => {
+  const { createYoutubeiAdapter } = require('../src/commands/youtube-provider');
+  const { Readable } = require('node:stream');
+  const adapter = await createYoutubeiAdapter({
+    create: async () => ({
+      getBasicInfo: async () => ({
+        basic_info: { title: 'Teste', duration: 20 },
+        download: async () => Readable.toWeb(Readable.from([Buffer.from('media-real')])),
+      }),
+    }),
+  });
+  const info = await adapter.getInfo(URL);
+  const parts = [];
+  for await (const chunk of adapter.downloadFromInfo(info, { filter: 'audioonly' }))
+    parts.push(chunk);
+  assert.equal(Buffer.concat(parts).toString(), 'media-real');
+});
+
+test('script de assinatura usa interpretador isolado e retorna o resultado', async () => {
+  const { evaluatePlayer } = require('../src/commands/youtube-script');
+  const result = await evaluatePlayer({ output: '({sig: "assinatura", n: "teste"})' });
+  assert.deepEqual(result, { sig: 'assinatura', n: 'teste' });
+  await assert.rejects(evaluatePlayer({ output: null }), /PLAYER_SCRIPT_INVALID/);
+});

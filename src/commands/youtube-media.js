@@ -127,7 +127,14 @@ async function downloadMedia({ url, info, kind, destination, ytdl, signal }) {
 }
 function createMediaHandler(
   kind,
-  { search, ytdl, download = downloadMedia, timeout = 120000, tempRoot = os.tmpdir() } = {},
+  {
+    search,
+    ytdl,
+    download = downloadMedia,
+    fallback,
+    timeout = 180000,
+    tempRoot = os.tmpdir(),
+  } = {},
 ) {
   return async (sock, ctx) => {
     const p = config.get('PREFIX'),
@@ -144,9 +151,18 @@ function createMediaHandler(
         ytdl: ytdl || require('@distube/ytdl-core'),
       };
       const url = await bounded(resolveVideo(query, deps), Math.min(timeout, 30000));
-      const info = await bounded(deps.ytdl.getInfo(url), Math.min(timeout, 30000));
+      let info;
+      const alternative =
+        fallback || (!ytdl ? require('./youtube-provider').createYoutubeiAdapter : null);
+      try {
+        info = await bounded(deps.ytdl.getInfo(url), Math.min(timeout, 30000));
+      } catch (error) {
+        if (!alternative || controller.signal.aborted) throw error;
+        deps.ytdl = await bounded(alternative(), 30000);
+        info = await bounded(deps.ytdl.getInfo(url), 30000);
+      }
       const duration = Number(info.videoDetails?.lengthSeconds),
-        max = kind === 'audio' ? 600 : 300;
+        max = kind === 'audio' ? 1800 : 600;
       if (!Number.isFinite(duration) || duration <= 0 || duration > max)
         throw new Error('DURATION_LIMIT');
       if (controller.signal.aborted) throw new Error('TIMEOUT');
@@ -154,17 +170,36 @@ function createMediaHandler(
       directory = await fs.mkdtemp(path.join(tempRoot, 'lobo-media-'));
       const ext = kind === 'audio' ? 'mp3' : 'mp4',
         file = path.join(directory, 'media.' + ext);
-      await bounded(
-        download({
-          url,
-          info,
-          kind,
-          destination: file,
-          ytdl: deps.ytdl,
-          signal: controller.signal,
-        }),
-        timeout,
-      );
+      const transfer = () =>
+        bounded(
+          download({
+            url,
+            info,
+            kind,
+            destination: file,
+            ytdl: deps.ytdl,
+            signal: controller.signal,
+          }),
+          timeout,
+        );
+      try {
+        await transfer();
+      } catch (error) {
+        if (
+          !alternative ||
+          controller.signal.aborted ||
+          ['SIZE_LIMIT', 'DURATION_LIMIT'].includes(error.message) ||
+          info.raw
+        )
+          throw error;
+        await fs.rm(file, { force: true });
+        deps.ytdl = await bounded(alternative(), 30000);
+        info = await bounded(deps.ytdl.getInfo(url), 30000);
+        const seconds = Number(info.videoDetails?.lengthSeconds);
+        if (!Number.isFinite(seconds) || seconds <= 0 || seconds > max)
+          throw Error('DURATION_LIMIT');
+        await transfer();
+      }
       const stat = await fs.stat(file);
       if (!stat.size || stat.size > MAX_BYTES) throw new Error('SIZE_LIMIT');
       const buffer = await fs.readFile(file);
@@ -189,7 +224,7 @@ function createMediaHandler(
         URL_INVALID: 'Use um link válido do YouTube ou o nome da mídia.',
         QUERY_LIMIT: 'Pesquisa muito longa.',
         NOT_FOUND: 'Nenhum resultado encontrado.',
-        DURATION_LIMIT: `Máximo: ${kind === 'audio' ? '10' : '5'} minutos.`,
+        DURATION_LIMIT: `Máximo: ${kind === 'audio' ? '30' : '10'} minutos.`,
         SIZE_LIMIT: 'A mídia excede o limite de 32 MB.',
         FORMAT_UNAVAILABLE:
           'Não há MP4 com áudio disponível neste vídeo. Tente outro vídeo ou o áudio.',

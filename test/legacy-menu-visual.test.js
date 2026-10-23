@@ -93,7 +93,7 @@ test('alcateia não despeja RP e categorias vazias não inventam funções', asy
   assert.ok(!text.includes('!!rp iniciar'));
   for (const c of ['ia', 'ferramentas']) assert.match(await render([c]), /Nenhum comando/);
   assert.ok(!(await render(['midia'])).includes('!!sticker'));
-  assert.ok((await render(['pesquisa'])).includes('!!play '));
+  assert.ok((await render(['midia'])).includes('!!play '));
 });
 test('atalhos não concedem permissões e usuário não injeta linhas no menu', async () => {
   const handler = registry.registry.get('midia').handler,

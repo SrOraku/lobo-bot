@@ -19,7 +19,7 @@ Os handlers e registro de comandos, carregador e comandos dos dois plugins, rend
 - **Jogos:** Akinator simplificado e atalhos para 100 Lobisomens e Cidade RP.
 - **Alcateia:** registro, perfil, formação, treino, ataque, ranking, boosts, compras, clãs e evento do novo jogo; estratégia, ataque, cura, informações e ranking dos lobos originais em subseção própria. Não despeja o RP. Reset privilegiado fica em ADM; administração dos jogos fica em Dono.
 - **Mídia:** MP3, MP4, TikTok e Instagram. `play_audio`/`play_video` são aliases reais de `ytmp3`/`ytmp4`; `playmp3`/`playmp4` permanecem.
-- **Pesquisa:** `play` (resultado de busca YouTube) e `spotify` (link de busca; não promete download Spotify).
+- **Pesquisa:** `spotify` (link de busca; não promete download Spotify).
 - **Figurinhas:** `sticker`, `stickeranim`, `toimg` e aliases.
 - **ADM:** moderação, proteções, marcações, reset dos lobos, agendamento e respostas automáticas, com níveis originais.
 - **Dono:** atualização, administradores do bot, broadcast e `admin` dos jogos com todos os subcomandos reais. Os donos fixos do jogo continuam os mesmos; mostrar o menu não concede acesso.
@@ -34,7 +34,7 @@ Antes, `resetarlobos`, `addadmin`, `removeadmin`, `broadcast`, `agendarmensagem`
 
 ## Mídia
 
-Áudio: MP3, `audio/mpeg`, até 10 minutos. Vídeo: MP4 com áudio, até 5 minutos e até 720p quando disponível. Limite de 32 MiB, obtenção de metadados/busca com timeout, cancelamento de streams/conversão, nomes de arquivos seguros, diretório temporário único por pedido e limpeza em sucesso ou falha. Vídeo seleciona os formatos MP4 combinados disponíveis; se não houver, orienta tentar outra mídia ou áudio. Links externos disfarçados de YouTube são rejeitados; falhas não expõem caminhos, tokens ou stack traces.
+Áudio: MP3, `audio/mpeg`, até 30 minutos. Vídeo: MP4 com áudio, até 10 minutos e até 720p quando disponível. Limite de 32 MiB, obtenção de metadados/busca com timeout, cancelamento de streams/conversão, nomes de arquivos seguros, diretório temporário único por pedido e limpeza em sucesso ou falha. Vídeo seleciona os formatos MP4 combinados disponíveis; se não houver, orienta tentar outra mídia ou áudio. Links externos disfarçados de YouTube são rejeitados; falhas não expõem caminhos, tokens ou stack traces.
 
 Foram preservados os nomes antigos e corrigidos os aliases ausentes `play_audio` e `play_video`, tratamento de erro do stream de vídeo, ausência de timeout/limite de tamanho e temporários deixados em falhas. Busca, obtenção e entrega ainda dependem da disponibilidade do YouTube e dos serviços externos. Testes locais não equivalem a envio real pelo WhatsApp.
 
@@ -55,3 +55,11 @@ Modificados: `src/commands/menu.js`, `src/commands/media.js`, `src/core/commandR
 Criados: `src/menus/catalog.js`, `src/menus/render.js`, `src/commands/youtube-media.js`, `scripts/audit-commands.js`, `test/youtube-media.test.js` e este relatório.
 
 Resultado: 292 testes aprovados no Node 22.23.3 e 292 no Node 24.19.0; diagnóstico de inicialização aprovado em ambos. Nenhuma conexão de teste ao WhatsApp real foi realizada. Não se afirma disponibilidade permanente de YouTube, TikTok ou Instagram.
+
+## Ajuste de reprodução — 3.4.1
+
+`!play nome ou link` agora baixa e envia MP3 diretamente. `!play video nome ou link` envia MP4; `!play audio`, `!play mp3` e `!play mp4` também selecionam o formato. `ytmp3`, `ytmp4`, `play_audio` e `play_video` permanecem. O comando `play` foi movido de Pesquisa para Mídia. Não é mais uma busca que devolve apenas um link.
+
+O limite de áudio aumentou para 30 minutos e o de vídeo para 10 minutos, mantendo 32 MiB por mídia. Foi adicionado um cliente alternativo YouTube.js quando o ytdl-core falha nos metadados ou no stream. A interpretação de assinaturas usa Jinter em worker separado com prazo e limite de memória. Não utiliza programas Python.
+
+297 testes passaram no Node 22.23.3 e 297 no Node 24.19.0, além dos diagnósticos de inicialização. Um teste de acesso real ao YouTube retornou HTTP 403 neste ambiente; isso impede afirmar que um download externo completo foi validado. Restrições de IP, conteúdo privado ou bloqueios da plataforma podem impedir o download no servidor.

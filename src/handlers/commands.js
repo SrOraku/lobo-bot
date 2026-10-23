@@ -69,7 +69,7 @@ function loadAllCommands() {
   r({name:'marcartodos',aliases:['todos','all'],description:'Marcar todos',      category:'mod',    usage:'!marcartodos [msg]',                     example:'!marcartodos Atenção!',       handler:mod.marcarTodos,      minLevel:LEVELS.GROUP_ADMIN, groupOnly:true});
 
   // Mídia
-  r({name:'play',                              description:'Buscar música',       category:'midia',  usage:'!play [nome/url]',                      example:'!play Shape of You',          handler:media.play});
+  r({name:'play',                              description:'Baixar MP3; use play video para MP4',       category:'midia',  usage:'!play [audio|video] nome/url',                      example:'!play Shape of You',          handler:media.play});
   r({name:'ytmp3',    aliases:['playmp3','play_audio'],     description:'Baixar MP3',          category:'midia',  usage:'!ytmp3 [nome/url]',                     example:'!ytmp3 Bohemian Rhapsody',    handler:media.playMp3});
   r({name:'ytmp4',    aliases:['playmp4','play_video'],     description:'Baixar MP4',          category:'midia',  usage:'!ytmp4 [nome/url]',                     example:'!ytmp4 tutorial Node.js',     handler:media.playMp4});
   r({name:'tiktok',   aliases:['tk'],          description:'Baixar TikTok',       category:'midia',  usage:'!tiktok [url]',                         example:'!tiktok https://vm.tiktok.com/...',handler:media.tiktok});
