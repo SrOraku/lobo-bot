@@ -13,14 +13,21 @@ class UpdateError extends Error {
 }
 
 function describeFailure(error, stage) {
+  stage = error.updateStage || stage;
   const text = String(error.stderr || '') + ' ' + String(error.message || '');
   const code = ['EALLOWREMOTE', 'EALLOWGIT', 'ENOSPC', 'EACCES', 'EPERM', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'ENOMEM'].find(c => text.includes(c)) ||
-    (['ENOSPC','EACCES','EPERM','ENOTFOUND','ETIMEDOUT','ECONNRESET','ENOMEM'].includes(error.code) ? error.code : null);
+    (/^[A-Z][A-Z0-9_]{1,48}$/.test(String(error.code || '')) ? error.code : null);
   const status = error.response?.status;
   let reason = 'Não consegui concluir esta etapa.';
   if (code === 'EALLOWREMOTE' || code === 'EALLOWGIT') reason = 'A hospedagem bloqueou o download de uma dependência. Solicite ao suporte a liberação da dependência oficial do Baileys (libsignal).';
   else if (code === 'ENOSPC') reason = 'Falta espaço em disco para preparar a atualização e o backup.';
   else if (['EACCES','EPERM'].includes(code)) reason = 'O processo não tem permissão para gravar nos arquivos da instalação.';
+  else if (code === 'BACKUP_SYMLINK') reason = 'Há um link simbólico dentro da sessão ou dos dados. O backup foi interrompido para não copiar arquivos externos. Verifique os volumes e atalhos da instalação.';
+  else if (code === 'SQLITE_BUSY' || code === 'SQLITE_LOCKED') reason = 'O banco de dados está ocupado. Aguarde alguns segundos e tente novamente; confira se há outra instância do bot usando o mesmo banco.';
+  else if (code === 'SQLITE_CANTOPEN') reason = 'O SQLite não conseguiu abrir o banco ou criar sua cópia de segurança. Confira as permissões dos volumes.';
+  else if (code === 'ENOENT') reason = 'Um arquivo necessário não foi encontrado durante a operação. Confira o console e o estado da instalação.';
+  else if (code === 'EXDEV' || code === 'EBUSY') reason = 'A hospedagem não permitiu trocar o diretório de dependências. Ele pode estar em um volume separado ou em uso.';
+  else if (code === 'EROFS') reason = 'A instalação ou um volume está somente para leitura.';
   else if (code === 'ENOMEM') reason = 'Memória insuficiente para instalar as dependências.';
   else if (status === 403 || status === 429) reason = 'O GitHub limitou ou recusou o acesso deste servidor. Aguarde e tente novamente.';
   else if (status === 404) reason = 'O GitHub não encontrou um arquivo ou referência necessário à atualização.';
@@ -212,10 +219,12 @@ class UpdateService {
     const removed = result.action === 'bot' ? (previous?.files || []).filter(name => managedPath(name) && !incoming.has(name)) : [];
     const names = [...incoming, ...removed];
     const backup = path.join(this.directory, `backup-${Date.now()}-${randomUUID()}`);
-    await fs.mkdir(backup, { mode: 0o700 });
-    await require('./data-backup').backupData(this.root, path.join(backup, 'protected-data'));
+    try {
+      await fs.mkdir(backup, { mode: 0o700 });
+      await require('./data-backup').backupData(this.root, path.join(backup, 'protected-data'));
+    } catch (error) { error.updateStage = 'backup dos dados e sessão'; throw error; }
     const saved = [];
-    let oldModules = false, newModules = false;
+    let oldModules = false, newModules = false, applyStep = 'backup dos arquivos de código';
     const modules = await safeTarget(this.root, 'node_modules');
     try {
       for (const name of names) {
@@ -229,18 +238,22 @@ class UpdateService {
         saved.push({ name, present, mode: present ? (await fs.stat(target)).mode & 0o777 : 0o644 });
       }
       if (!result.reuseDependencies) {
+        applyStep = 'troca de dependências';
         if (await exists(modules)) { await fs.rename(modules, path.join(backup, 'node_modules')); oldModules = true; }
         await fs.rename(path.join(stage, 'node_modules'), modules); newModules = true;
       }
+      applyStep = 'aplicação dos arquivos de código';
       for (const file of files) {
         await atomicWrite(await safeTarget(this.root, file.path), await fs.readFile(path.join(stage, file.path)), file.mode === '100755' ? 0o755 : 0o644);
       }
       for (const name of removed) await fs.rm(await safeTarget(this.root, name), { force: true });
+      applyStep = 'registro da atualização';
       const state = { ...result, at: new Date().toISOString(), backup: path.basename(backup),
         sha: result.sha || previous?.sha || null,
         files: result.action === 'bot' ? [...incoming] : previous?.files || [] };
       await atomicWrite(path.join(this.directory, 'state.json'), JSON.stringify(state));
     } catch (error) {
+      error.updateStage = applyStep;
       try {
         for (const { name, present, mode } of saved) {
           const target = await safeTarget(this.root, name);

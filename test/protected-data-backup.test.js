@@ -34,3 +34,20 @@ test('backup recusa links em sessão e interrompe sem alterar a origem', async (
   await assert.rejects(backupData(root, path.join(root, 'backup')), /link/);
   assert.equal(await fs.readFile(path.join(root, 'secret'), 'utf8'), 'fixture');
 });
+
+
+test('backup repete SQLITE_BUSY sem alterar o banco original e fecha a conexão', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'lobo-busy-backup-'));
+  t.after(() => fs.rm(root, { recursive:true, force:true }));
+  await fs.mkdir(path.join(root,'data'));
+  await fs.writeFile(path.join(root,'data/lobo.db'), 'SQLite format 3\0');
+  let tries = 0, closed = false, waits = 0;
+  await backupData(root,path.join(root,'backup'), {
+    openDatabase: () => ({
+      backup: async target => { if (++tries < 3) throw Object.assign(Error('busy'), {code:'SQLITE_BUSY'}); await fs.writeFile(target,'snapshot'); },
+      close: () => { closed = true; },
+    }), wait: async () => { waits++; },
+  });
+  assert.equal(tries,3); assert.equal(waits,2); assert.ok(closed);
+  assert.equal(await fs.readFile(path.join(root,'data/lobo.db'),'utf8'),'SQLite format 3\0');
+});
