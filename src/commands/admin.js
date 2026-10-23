@@ -157,16 +157,7 @@ async function removeAutoReply(sock, ctx) {
 // ============================
 // PING
 // ============================
-async function ping(sock, ctx) {
-  const { jid, msg } = ctx;
-  const start = Date.now();
-  const sentMsg = await sock.sendMessage(jid, { text: `🏓 *[ ${BOT_NAME} ]*\n\n_Calculando ping..._` }, { quoted: msg });
-  const latency = Date.now() - start;
-
-  await sock.sendMessage(jid, {
-    text: `🏓 *[ ${BOT_NAME} ]*\n\n⚡ *Pong!*\n\n📡 Latência: *${latency}ms*\n${latency < 200 ? '🟢 Excelente!' : latency < 500 ? '🟡 Boa' : '🔴 Alta latência'}`
-  }, { quoted: msg });
-}
+const { ping } = require('./ping');
 
 // ============================
 // UPTIME

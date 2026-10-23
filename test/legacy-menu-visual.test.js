@@ -46,13 +46,13 @@ for (const category of ['', ...Object.keys(CATEGORIES)]) {
       assert.ok(text.includes('!!' + command.name), command.name);
   });
 }
-test('principal compacto só mostra categorias e dados, sem despejar comandos', async () => {
+test('principal compacto só mostra usuário e categorias, sem dados técnicos', async () => {
   const text = await render();
   for (const c of Object.keys(CATEGORIES)) assert.ok(text.includes('!!menu ' + c));
   for (const name of ['ban', 'treino', 'trabalhar', 'sticker', 'ytmp3'])
     assert.ok(!text.includes('!!' + name));
+  assert.ok(text.includes('👤 Usuário: Teste'));
   for (const label of [
-    'Usuário:',
     'Prefixo:',
     'Versão:',
     'Uptime:',
@@ -60,7 +60,7 @@ test('principal compacto só mostra categorias e dados, sem despejar comandos', 
     'Status:',
     'Comandos:',
   ])
-    assert.ok(text.includes(label));
+    assert.ok(!text.includes(label));
   assert.ok(text.length < 2400);
 });
 test('categoria inválida apresenta só categorias válidas e aliases antigos continuam', async () => {

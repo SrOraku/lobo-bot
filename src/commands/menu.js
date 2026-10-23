@@ -13,11 +13,9 @@ function createMenu({
   catalog = getCatalog,
   prefix = () => config.get('PREFIX'),
   online = () => process.uptime(),
-  now = () => performance.now(),
 } = {}) {
   return async function menu(sock, ctx) {
-    const start = now(),
-      p = prefix(),
+    const p = prefix(),
       all = catalog();
     const raw = String(ctx.args?.[0] || '').toLowerCase();
     const category = CATEGORY_ALIASES[raw] || raw;
@@ -28,7 +26,7 @@ function createMenu({
     if (!category) {
       title = 'MENU PRINCIPAL DA MATILHA';
       sections = [
-        `👤 Usuário: ${clean(ctx.pushName || ctx.senderNumber || 'Lobo')}\n🌹 Prefixo: ${clean(p)}\n⭐ Versão: ${version}\n⏱️ Uptime: ${uptime(online())}\n🏓 Ping interno: ${Math.max(0, now() - start).toFixed(1)} ms\n💚 Status: online\n📜 Comandos: ${all.length} (sem aliases)`,
+        `👤 Usuário: ${clean(ctx.pushName || ctx.senderNumber || 'Lobo')}`,
         categoryLines.join('\n'),
         `📖 Use ${p}menu + categoria para visualizar seus comandos.`,
       ];

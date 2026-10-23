@@ -4,7 +4,7 @@
 
 🌹 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
 
-`!menu` apresenta somente usuário, prefixo, versão, uptime, latência interna de renderização, status, quantidade de comandos e categorias. A latência interna não é um teste de rede com o WhatsApp.
+`!menu` apresenta somente usuário, as 15 categorias e a instrução de navegação, mantendo a moldura e a identidade oficial. `!ping` apresenta prefixo, versão, uptime, ping interno, status e quantidade de comandos sem aliases. Os valores são dinâmicos. O ping interno mede processamento local, não latência de rede com o WhatsApp.
 
 Categorias oficiais: jogos, alcateia, midia, adm, dono, util, figurinhas, pesquisa, ia, diversao, grupo, info, ferramentas, rp, economia. Use `!menu categoria` ou o atalho `!categoria`. Os atalhos antigos `!rp` e `!alcateia` mantêm seus subcomandos de jogo. `!ajuda` e `!help` continuam funcionando. Categorias desconhecidas exibem apenas as opções válidas. Maiúsculas e minúsculas são aceitas.
 
