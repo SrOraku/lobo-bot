@@ -1,6 +1,6 @@
 {
   "name": "lobo-bot",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺",
   "main": "src/index.js",
   "type": "commonjs",
@@ -64,5 +64,12 @@
   "displayName": "🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑",
   "overrides": {
     "libsignal": "https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7"
+  },
+  "allowScripts": {
+    "@ffmpeg-installer/linux-x64@4.1.0": true,
+    "baileys@7.0.0-rc14": true,
+    "better-sqlite3@12.4.1": true,
+    "protobufjs@7.6.6": true,
+    "sharp@0.33.5": true
   }
 }

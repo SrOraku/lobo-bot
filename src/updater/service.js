@@ -225,7 +225,9 @@ class UpdateService {
     const backup = path.join(this.directory, `backup-${Date.now()}-${randomUUID()}`);
     try {
       await fs.mkdir(backup, { mode: 0o700 });
-      await require('./data-backup').backupData(this.root, path.join(backup, 'protected-data'));
+      const report=await require('./data-backup').backupData(this.root, path.join(backup, 'protected-data'));
+      result={...result,protectedBackup:{complete:report.complete,links:report.links.length}};
+      if(!report.complete)this.logger.warn?.({code:'BACKUP_LINKS_RECORDED',links:report.links.length},'Atalhos externos/quebrados registrados no backup sem copiar destinos; os dados originais não são alterados.');
     } catch (error) { error.updateStage = 'backup dos dados e sessão'; throw error; }
     const saved = [];
     let oldModules = false, newModules = false, applyStep = 'backup dos arquivos de código';

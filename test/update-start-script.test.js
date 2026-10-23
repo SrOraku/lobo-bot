@@ -8,3 +8,8 @@ test('up-to-date code does not download again',async()=>{const f=options({check:
 test('network failure starts preserved local version after recovery',async()=>{const f=options({check:async()=>{throw Error('network');}});assert.equal((await boot(f.args)).updated,false);assert.deepEqual(f.calls,['recover','prepare','recover','start']);});
 test('unsafe updater state never starts runtime',async()=>{for(const code of ['BUSY','STALE_LOCK','ROLLBACK_FAILED']){const f=options({update:async()=>{throw Object.assign(Error('failed'),{code});}});await assert.rejects(boot(f.args),error=>error.code===code);assert.ok(!f.calls.includes('start'));}});
 test('failed recovery, dependencies or incompatible Node prevents startup',async()=>{for(const extra of [{recover:()=>{throw Error('RECOVERY_HASH_MISMATCH');}},{prepare:()=>false},{nodeVersion:'20.0.0'}]){const f=options(extra);await assert.rejects(boot(f.args));assert.ok(!f.calls.includes('start'));}});
+test('partial protected backup is reported before starting preserved session',async()=>{
+ const warnings=[];const f=options({update:async()=>({protectedBackup:{complete:false,links:1}}),log:{log(){},warn:message=>warnings.push(message)}});
+ assert.equal((await boot(f.args)).updated,true);assert.ok(f.calls.includes('start'));
+ assert.equal(warnings.length,1);assert.match(warnings[0],/Backup parcial/);
+});

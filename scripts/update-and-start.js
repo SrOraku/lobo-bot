@@ -27,7 +27,11 @@ async function boot({
   try {
     log.log('🌹 Verificando atualização do Lobo Bot… 🐺');
     const snapshot=await check();
-    if(snapshot){await update(snapshot);updated=true;log.log('✅ Atualização aplicada. Iniciando o bot com a sessão existente.');}
+    if(snapshot){
+      const result=await update(snapshot);updated=true;
+      if(result?.protectedBackup?.complete===false)log.warn('⚠️ Backup parcial: atalhos externos/quebrados foram registrados sem copiar seus destinos. Preserve o backup dos volumes externos.');
+      log.log('✅ Atualização aplicada. Iniciando o bot com a sessão existente.');
+    }
     else log.log('✅ Código já atualizado. Iniciando o bot.');
   } catch(error) {
     // These states cannot safely start a second runtime or partially restored code.

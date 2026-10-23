@@ -89,3 +89,12 @@ Uma instalação pelo GitHub não recebe a chave privada do ZIP. Cadastre uma ve
 `!apibronxys testar` faz uma consulta real de CEP para confirmar autenticação e resposta do provedor. É exclusivo do dono e consome uma requisição. Esse teste não garante que todo conteúdo de todas as redes esteja disponível.
 
 A falha do baixador antigo sem chave agora orienta a configuração em vez de mostrar somente erro genérico. Os testes confirmam que, com chave reconhecida, áudio e vídeo usam a API antes de acessar o cliente antigo. Uma nova consulta real de play por nome retornou MP3 válido durante esta correção; não houve acesso ao servidor Bronxys do usuário para confirmar a configuração local dele.
+
+### Correção 1.5.4 — backup e scripts do npm
+
+O backup não interrompe mais a atualização apenas por encontrar um link simbólico.
+Links internos para `sessions`, `auth`, `data`, `storage` ou `.env` são copiados como conteúdo comum. Links externos, quebrados ou cíclicos não são seguidos: ficam registrados no arquivo privado `backup-links.json`, com `complete: false`. Os destinos originais não são alterados. Esse relatório indica um backup parcial; faça backup separado de volumes externos. Falhas reais de leitura/escrita continuam interrompendo a atualização.
+
+O `package.json` autoriza scripts de instalação somente nas versões explicitamente revisadas de SQLite, Sharp, FFmpeg Linux x64, Baileys e protobufjs. Não habilite scripts de todos os pacotes indiscriminadamente. O suporte a `allowScripts` depende da versão do npm da hospedagem.
+
+Se a instalação antiga falha com `BACKUP_SYMLINK`, ela ainda usa o atualizador antigo. Para receber esta correção pela primeira vez, extraia o ZIP novo na raiz do bot, substituindo somente os arquivos do código. Preserve `.env`, `sessions/`, `auth/`, `data/` e `storage/`. Depois use `bash atualizar.sh` com a instalação de módulos habilitada. O ZIP configurado contém uma chave privada de API: não publique nem compartilhe esse pacote.
