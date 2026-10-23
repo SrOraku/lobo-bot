@@ -12,6 +12,24 @@ class UpdateError extends Error {
   constructor(message, code = 'UPDATE_FAILED') { super(message); this.code = code; }
 }
 
+function describeFailure(error, stage) {
+  const text = String(error.stderr || '') + ' ' + String(error.message || '');
+  const code = ['EALLOWREMOTE', 'EALLOWGIT', 'ENOSPC', 'EACCES', 'EPERM', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'ENOMEM'].find(c => text.includes(c)) ||
+    (['ENOSPC','EACCES','EPERM','ENOTFOUND','ETIMEDOUT','ECONNRESET','ENOMEM'].includes(error.code) ? error.code : null);
+  const status = error.response?.status;
+  let reason = 'Não consegui concluir esta etapa.';
+  if (code === 'EALLOWREMOTE' || code === 'EALLOWGIT') reason = 'A hospedagem bloqueou o download de uma dependência. Solicite ao suporte a liberação da dependência oficial do Baileys (libsignal).';
+  else if (code === 'ENOSPC') reason = 'Falta espaço em disco para preparar a atualização e o backup.';
+  else if (['EACCES','EPERM'].includes(code)) reason = 'O processo não tem permissão para gravar nos arquivos da instalação.';
+  else if (code === 'ENOMEM') reason = 'Memória insuficiente para instalar as dependências.';
+  else if (status === 403 || status === 429) reason = 'O GitHub limitou ou recusou o acesso deste servidor. Aguarde e tente novamente.';
+  else if (status === 404) reason = 'O GitHub não encontrou um arquivo ou referência necessário à atualização.';
+  else if (['ENOTFOUND','ETIMEDOUT','ECONNRESET'].includes(code)) reason = 'Falha de rede ao acessar o GitHub ou o registro npm.';
+  else if (stage === 'instalação de dependências') reason = 'O npm não conseguiu instalar as dependências. Consulte o erro npm no console da hospedagem.';
+  else if (stage === 'verificação de inicialização') reason = 'A versão preparada falhou na verificação de inicialização; ela não foi aplicada.';
+  return { stage, code: code || (status ? 'HTTP_' + status : 'UPDATE_FAILED'), reason };
+}
+
 async function exists(file) { try { await fs.lstat(file); return true; } catch (e) { if (e.code === 'ENOENT') return false; throw e; } }
 async function readJSON(file, fallback = null) {
   try { return JSON.parse(await fs.readFile(file, 'utf8')); } catch (e) { if (e.code === 'ENOENT') return fallback; throw e; }
@@ -71,7 +89,7 @@ class UpdateService {
     if (this.running) throw new UpdateError('Já existe uma atualização em andamento.', 'BUSY');
     if (this.needsRestart) throw new UpdateError('Reinicie o bot pelo painel antes de outra atualização.', 'RESTART_REQUIRED');
     this.running = true;
-    let lock, stage;
+    let lock, stage, phase = 'preparação';
     const lockPath = path.join(this.directory, 'update.lock');
     try {
       if (!semver.satisfies(this.nodeVersion, '>=22.12.0')) throw new UpdateError('Configure Node.js 22.12 ou superior no painel do servidor.');
@@ -91,10 +109,12 @@ class UpdateService {
       stage = await fs.mkdtemp(path.join(this.directory, 'stage-'));
       let files, sha = null, targetVersion;
       if (action === 'bot') {
+        phase = 'consulta ao GitHub';
         const source = await this.snapshot(); sha = source.sha;
         const previous = await readJSON(path.join(this.directory, 'state.json'));
         if (previous?.sha === sha) return { already: true, action, version: (await this.status()).version };
         files = source.files;
+        phase = 'download dos arquivos';
         let bytes = 0, cursor = 0;
         const downloads = await Promise.allSettled(Array.from({ length: 4 }, async () => {
           while (cursor < files.length) {
@@ -131,15 +151,20 @@ class UpdateService {
       if (!lockfile?.packages?.['']) throw new UpdateError('A atualização não contém um lockfile válido.');
       for (const value of Object.values(lockfile.packages)) if (value.resolved?.startsWith('git+ssh://git@github.com/')) value.resolved = value.resolved.replace('git+ssh://git@github.com/', 'git+https://github.com/');
       await atomicWrite(path.join(stage, 'package-lock.json'), JSON.stringify(lockfile, null, 2) + '\n');
+      phase = 'instalação de dependências';
       await this._run('npm', ['ci', '--omit=dev', '--no-audit', '--no-fund'], stage);
+      phase = 'verificação de inicialização';
       await this._run(process.execPath, ['scripts/check-startup.js'], stage);
+      phase = 'backup e aplicação';
       const result = await this._apply(stage, files, { action, sha, version: targetVersion || pkg.version });
       this.needsRestart = true;
       return result;
     } catch (error) {
       if (error instanceof UpdateError) throw error;
-      this.logger.error?.({ error: error.message }, 'Falha na atualização do bot.');
-      throw new UpdateError('A atualização falhou. Consulte o log do servidor; os arquivos anteriores foram preservados.');
+      const diagnostic = describeFailure(error, phase);
+      this.logger.error?.(diagnostic, 'Falha na atualização do bot.');
+      await atomicWrite(path.join(this.directory, 'last-error.json'), JSON.stringify({ ...diagnostic, at: new Date().toISOString() }), 0o600).catch(() => {});
+      throw new UpdateError(`Etapa: ${diagnostic.stage}. Código: ${diagnostic.code}. ${diagnostic.reason} Os arquivos anteriores foram preservados.`, diagnostic.code);
     } finally {
       if (stage) await fs.rm(stage, { recursive: true, force: true }).catch(() => {});
       if (lock) { await lock.close().catch(() => {}); await fs.rm(lockPath, { force: true }).catch(() => {}); }
@@ -215,4 +240,4 @@ class UpdateService {
     return { ...result, backup: path.basename(backup), needsRestart: true };
   }
 }
-module.exports = { UpdateService, UpdateError, safeTarget, githubRepository };
+module.exports = { UpdateService, UpdateError, safeTarget, githubRepository, describeFailure };
