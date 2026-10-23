@@ -12,7 +12,9 @@ const admin = require('../commands/admin');
 const menu  = require('../commands/menu');
 const updater = require('../commands/update');
 
+let commandsLoaded=false;
 function loadAllCommands() {
+  if(commandsLoaded) return;
   const r = (def) => register(def);
 
   r({name:'ativacoes',activationControl:true,aliases:['ativações'],description:'Painel de setores e permissões do grupo',category:'adm',usage:'!ativacoes [setor modo]',handler:require('../commands/activations').activations,groupOnly:true});
@@ -46,6 +48,9 @@ function loadAllCommands() {
   r({name:'loja',     aliases:['shop'],        description:'Loja da matilha',    category:'gold',   usage:'!loja',                                  example:'!loja',                       handler:gold.loja});
   r({name:'comprar',  aliases:['buy'],         description:'Comprar item',       category:'gold',   usage:'!comprar [ID]',                           example:'!comprar 2',                  handler:gold.comprar});
   r({name:'premiun',  aliases:['premium'],     description:'Info premium',       category:'gold',   usage:'!premiun',                               example:'!premiun',                    handler:gold.premiumInfo});
+
+  r({name:'titulos',description:'Seus títulos adquiridos',category:'gold',handler:gold.titulos});
+  r({name:'titulo',description:'Equipar um título adquirido',category:'gold',usage:'!titulo usar ID',handler:gold.titulo});
 
   // Stats
   r({name:'level',    aliases:['lvl','xp'],    description:'Ver nível e XP',     category:'stats',  usage:'!level [@usuário]',                      example:'!level',                      handler:stats.verLevel});
@@ -128,7 +133,7 @@ function loadAllCommands() {
   r({name:'donos',description:'Cadastrar e consultar donos autorizados',category:'dono',minLevel:LEVELS.OWNER,usage:'!donos [lista|adicionar número|remover número]',handler:require('../commands/owners').owners});
   r({name:'fotomenu',description:'Definir foto ou GIF da capa dos menus',category:'dono',minLevel:LEVELS.OWNER,usage:'!fotomenu [ver|remover]',handler:require('../commands/menu-photo').menuPhoto});
   r({name:'doarwok',aliases:['doacaowok'],description:'Doar WOK Coin com autorização e histórico',category:'dono',minLevel:LEVELS.OWNER,usage:'!doarwok @usuário quantidade',handler:require('../commands/wok-donation').donate});
-  r({name:'adm',description:'Permissões e proteção das informações do grupo',category:'adm',usage:'!adm perm [on|off|permitir @usuário|revogar @usuário]',handler:require('../commands/group-permissions').groupPermissions});
+  r({name:'adm',replaceMenu:true,description:'Permissões e proteção das informações do grupo',category:'adm',usage:'!adm perm [on|off|permitir @usuário|revogar @usuário]',handler:require('../commands/group-permissions').groupPermissions});
   const activation = require('../commands/activations');
   r({name:'ativar',activationControl:true,description:'Ativar recurso do grupo',category:'adm',groupOnly:true,usage:'!ativar recurso',handler:activation.createActivationHandler({forcedAction:'enable'})});
   r({name:'desativar',activationControl:true,description:'Desativar recurso do grupo',category:'adm',groupOnly:true,usage:'!desativar recurso',handler:activation.createActivationHandler({forcedAction:'disable'})});
@@ -137,8 +142,9 @@ function loadAllCommands() {
     if (feature.source==='sector') continue;
     const existing=commands.get(feature.id);
     if (existing && !['antilink','antifake','anticontato','antimarcacao','antiinatividade'].includes(feature.id)) continue;
-    r({...existing,name:feature.id,activationControl:true,aliases:[...new Set([...(existing?.aliases||[]),...feature.aliases.filter(alias=>!commands.has(alias))])],description:feature.description,category:'adm',groupOnly:true,minLevel:LEVELS.USER,usage:'!'+feature.id+(['antilink','antilinkgrupo','antilinkexterno'].includes(feature.id)?' on/off/delete/warn/kick':' on/off'),handler:activation.createActivationHandler({featureId:feature.id})});
+    r({...existing,replace:true,name:feature.id,activationControl:true,aliases:[...new Set([...(existing?.aliases||[]),...feature.aliases.filter(alias=>!commands.has(alias))])],description:feature.description,category:'adm',groupOnly:true,minLevel:LEVELS.USER,usage:'!'+feature.id+(['antilink','antilinkgrupo','antilinkexterno'].includes(feature.id)?' on/off/delete/warn/kick':' on/off'),handler:activation.createActivationHandler({featureId:feature.id})});
   }
+  commandsLoaded=true;
 }
 
 module.exports = { loadAllCommands };

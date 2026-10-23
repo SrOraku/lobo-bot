@@ -1,12 +1,6 @@
 'use strict';
 const db = require('../utils/database');
-const { BOT_NAME, formatNumber, cleanJid, getNumber, OWNER } = require('../utils/helpers');
-const cache = require('../utils/cache');
-
-const DAILY_BASE = 200;
-const DAILY_PREMIUM = 500;
-const DAILY_COOLDOWN = 24 * 60 * 60; // 24h em segundos
-
+const { formatNumber, cleanJid, getNumber } = require('../utils/helpers');
 const SHOP_ITEMS = [
   { id: 1, name: '💎 Premium 7 dias', price: 2000, description: 'XP dobrado por 7 dias' },
   { id: 2, name: '🐺 Cure Total de Lobos', price: 200, description: 'Restaura todos os 100 lobos' },
@@ -41,7 +35,8 @@ async function verGold(sock, ctx) {
 async function enviarGold(sock, ctx) {
   const { jid, sender, msg, args } = ctx;
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-  const amount = parseInt(args.find(a => /^\d+$/.test(a)) || args[1] || args[0]);
+  const token = args.find(a => /^\d+$/.test(a));
+  const amount = token ? Number(token) : NaN;
 
   if (!mentioned || !amount || amount <= 0) {
     return sock.sendMessage(jid, {
@@ -52,16 +47,8 @@ async function enviarGold(sock, ctx) {
   const target = cleanJid(mentioned);
   if (target === sender) return sock.sendMessage(jid, { text: `❌ Você não pode enviar gold para si mesmo!` }, { quoted: msg });
 
-  const user = db.getUser(sender);
-  if ((user?.gold || 0) < amount) {
-    return sock.sendMessage(jid, {
-      text: `❌ Saldo insuficiente!\n💰 Você tem: *${formatNumber(user?.gold || 0)} Gold*`
-    }, { quoted: msg });
-  }
-
-  db.addGold(sender, -amount);
-  db.addGold(target, amount);
-  db.logGoldTransaction(sender, target, amount, 'Transferência');
+  try { require('../services/economy').economy().transfer(sender,target,amount,msg.key?.id); }
+  catch(error) { return sock.sendMessage(jid,{text:'❌ '+error.message},{quoted:msg}); }
 
   await sock.sendMessage(jid, {
     text: `💸 ✅ Transferência realizada!\n\n👤 De: @${getNumber(sender)}\n👤 Para: @${getNumber(target)}\n💰 Valor: *${formatNumber(amount)} Gold*\n\n_A matilha cuida dos seus!_ 🐺`,
@@ -100,28 +87,11 @@ _Quem é o mais rico da matilha? 🐺_`
 // ============================
 async function daily(sock, ctx) {
   const { jid, sender, msg, pushName } = ctx;
-  const cacheKey = `daily_${sender}`;
-  const last = await cache.get(cacheKey);
-
-  if (last) {
-    const remaining = DAILY_COOLDOWN - Math.floor((Date.now() - last) / 1000);
-    const h = Math.floor(remaining / 3600);
-    const m = Math.floor((remaining % 3600) / 60);
-    return sock.sendMessage(jid, {
-      text: `⏰ ⏳ Você já coletou seu daily hoje!\n\n_Próximo daily em: *${h}h ${m}m*_`
-    }, { quoted: msg });
-  }
-
-  const user = db.getUser(sender);
-  const isPremium = user?.premium;
-  const goldAmount = isPremium ? DAILY_PREMIUM : DAILY_BASE;
-  const xpAmount = isPremium ? 100 : 50;
-
-  db.addGold(sender, goldAmount);
-  db.addXP(sender, xpAmount);
-  db.logGoldTransaction('daily', sender, goldAmount, 'Recompensa diária');
-
-  await cache.set(cacheKey, Date.now(), DAILY_COOLDOWN);
+  let result;
+  try { result = require('../services/economy').economy().daily(sender,msg.key?.id); }
+  catch(error) { return sock.sendMessage(jid,{text:'❌ '+error.message},{quoted:msg}); }
+  if(!result.success) return sock.sendMessage(jid,{text:`⏳ Próximo daily em ${Math.ceil(result.remaining/60)} minutos.`},{quoted:msg});
+  const {premium:isPremium,gold:goldAmount,xp:xpAmount}=result;
 
   await sock.sendMessage(jid, {
     text: `🌅 ✅ *Daily coletado, ${pushName}!*\n\n💰 *+${formatNumber(goldAmount)} Gold*\n⭐ *+${xpAmount} XP*\n${isPremium ? '\n👑 Bônus Premium aplicado!' : ''}\n\n_Volte amanhã para mais recompensas!_\n_Uuuuuuwooooo! 🐺🌕_`
@@ -157,7 +127,7 @@ _Ex: !comprar 2_`
 // ============================
 async function comprar(sock, ctx) {
   const { jid, sender, msg, args } = ctx;
-  const itemId = parseInt(args[0]);
+  const itemId = args.length === 1 && /^\d+$/.test(args[0]) ? Number(args[0]) : NaN;
   const item = SHOP_ITEMS.find(i => i.id === itemId);
 
   if (!item) {
@@ -166,38 +136,9 @@ async function comprar(sock, ctx) {
     }, { quoted: msg });
   }
 
-  const user = db.getUser(sender);
-  if ((user?.gold || 0) < item.price) {
-    return sock.sendMessage(jid, {
-      text: `❌ Gold insuficiente!\n💰 Você tem: *${formatNumber(user?.gold || 0)} Gold*\n💸 Precisa: *${formatNumber(item.price)} Gold*`
-    }, { quoted: msg });
-  }
-
-  db.addGold(sender, -item.price);
-
-  // Aplicar efeito do item
-  let effectMsg = '';
-  if (itemId === 1) { // Premium 7 dias
-    db.db.prepare(`UPDATE users SET premium = 1 WHERE jid = ?`).run(sender);
-    effectMsg = '👑 Premium ativado por 7 dias!';
-  } else if (itemId === 2) { // Cure lobos
-    db.updateWolvesAlive(sender, 100);
-    effectMsg = '🐺 Todos os 100 lobos foram curados!';
-  } else if (itemId === 3) { // Estratégia aleatória
-    const atk = Math.floor(Math.random() * 60) + 20;
-    const def = Math.floor(Math.random() * (80 - atk));
-    const ctr = 100 - atk - def;
-    db.upsertStrategy(sender, atk, def, ctr);
-    effectMsg = `🎲 Estratégia sorteada: Ataque ${atk} / Defesa ${def} / Contra ${ctr}`;
-  } else if (itemId === 4) { // Boost XP
-    effectMsg = '⚡ Boost de XP ativado por 24h!';
-  } else if (itemId === 5) { // Escudo
-    const cache = require('../utils/cache');
-    await cache.set(`shield_${sender}`, true, 3 * 3600);
-    effectMsg = '🛡️ Escudo ativado por 3 horas!';
-  } else if (itemId === 6) { // Título
-    effectMsg = '🌕 Título "Alfa da Lua" concedido!';
-  }
+  let effectMsg;
+  try { effectMsg=require('../services/economy').economy().buy(sender,item,msg.key?.id).message; }
+  catch(error) { return sock.sendMessage(jid,{text:'❌ '+error.message},{quoted:msg}); }
 
   await sock.sendMessage(jid, {
     text: `✅ 🛒 *Compra realizada!*\n\n📦 ${item.name}\n💰 *-${formatNumber(item.price)} Gold*\n\n${effectMsg}\n\n_A matilha agradece! 🐺_`
@@ -211,4 +152,13 @@ async function premiumInfo(sock, ctx) {
   }, { quoted: msg });
 }
 
-module.exports = { verGold, enviarGold, rankGold, daily, loja, comprar, premiumInfo };
+async function titulos(sock,ctx) {
+  const items=require('../services/economy').economy().titles(ctx.sender);
+  return sock.sendMessage(ctx.jid,{text:require('../menus/render').frameMenu('🌕 TÍTULOS',items.length?items.map(item=>`${item.equipped?'✅':'🐾'} ${item.title_name} • ${item.title_id}`):['Você ainda não adquiriu títulos.'])},{quoted:ctx.msg});
+}
+async function titulo(sock,ctx) {
+  if(ctx.args.length!==2 || ctx.args[0]!=='usar') return sock.sendMessage(ctx.jid,{text:'Use '+require('../config').get('PREFIX')+'titulo usar ID'},{quoted:ctx.msg});
+  try { require('../services/economy').economy().equip(ctx.sender,ctx.args[1]);return sock.sendMessage(ctx.jid,{text:'🌕 Título equipado.'},{quoted:ctx.msg}); }
+  catch(error) { return sock.sendMessage(ctx.jid,{text:'❌ '+error.message},{quoted:ctx.msg}); }
+}
+module.exports = { verGold, enviarGold, rankGold, daily, loja, comprar, premiumInfo, titulos, titulo };

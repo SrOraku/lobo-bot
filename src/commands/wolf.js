@@ -163,9 +163,14 @@ async function atacar(sock, ctx) {
     }, { quoted: msg });
   }
 
+  if (require('../services/economy').economy().activeEffect(defender,'shield'))
+    return sock.sendMessage(jid,{text:'🛡️ Este participante está protegido por um escudo ativo.'},{quoted:msg});
+
   // Anti-cooldown de batalha (30s entre batalhas)
   const battleKey = `battle_${sender}`;
-  const lastBattle = await cache.get(battleKey);
+  const battleChat=require('../isolation/context').current() || jid;
+  const persisted=db.db.prepare('SELECT expires_at FROM persistent_cooldowns WHERE chat_jid=? AND user_jid=? AND action=?').get(battleChat,sender,'battle');
+  const lastBattle = persisted?.expires_at > Date.now() ? persisted.expires_at-BATTLE_TIMEOUT*1000 : null;
   if (lastBattle) {
     const remaining = Math.ceil((BATTLE_TIMEOUT - (Date.now() - lastBattle) / 1000));
     if (remaining > 0) {
@@ -176,7 +181,7 @@ async function atacar(sock, ctx) {
   }
 
   // Checar se já está em batalha
-  if (activeBattles.has(sender)) {
+  if (activeBattles.has(jid+':'+sender)) {
     return sock.sendMessage(jid, {
       text: `⚔️ Você já está em uma batalha!`
     }, { quoted: msg });
@@ -205,9 +210,9 @@ async function atacar(sock, ctx) {
   const defUser = db.getUser(defender);
   const defName = defUser?.name || getNumber(defender);
 
-  activeBattles.add(sender);
-  activeBattles.add(defender);
-  await cache.set(battleKey, Date.now(), BATTLE_TIMEOUT);
+  activeBattles.add(jid+':'+sender);
+  activeBattles.add(jid+':'+defender);
+  try {
 
   // Anunciar batalha
   await sock.sendMessage(jid, {
@@ -217,8 +222,13 @@ async function atacar(sock, ctx) {
 
   await sleep(2000);
 
-  // Calcular batalha
-  const result = calculateBattle(
+  // Read fresh strategies after the announcement; mutate all results atomically.
+  let result, goldPrize=0;
+  db.db.transaction(()=>{
+  db.db.prepare('INSERT INTO users(jid,name) VALUES (?,?) ON CONFLICT(jid) DO NOTHING').run(defender,defName);
+  atkStrat=db.getStrategy(sender);defStrat=db.getStrategy(defender);
+  if(require('../services/economy').economy().activeEffect(defender,'shield')) throw Error('O defensor está protegido por escudo.');
+  result = calculateBattle(
     { strategy: atkStrat, wolves: atkStrat.wolves_alive },
     { strategy: defStrat, wolves: defStrat.wolves_alive }
   );
@@ -228,15 +238,15 @@ async function atacar(sock, ctx) {
   db.updateWolvesAlive(defender, result.defWolvesAfter);
   db.incrementAttackStats(sender);
 
-  let goldPrize = 0;
-
   if (result.winner === 'attacker') {
     db.incrementVictoryStats(sender);
     db.updateBattleResult(sender, 1, 0);
     db.updateBattleResult(defender, 0, 1);
     goldPrize = Math.floor(50 + Math.random() * 50);
     db.addGold(sender, goldPrize);
-    db.addGold(defender, -Math.floor(goldPrize * 0.5));
+    const loss=Math.min(db.getUser(defender)?.gold || 0,Math.floor(goldPrize*0.5));
+    db.addGold(defender,-loss);
+    if(loss) db.logGoldTransaction(defender,'battle',loss,'Derrota em batalha');
   } else if (result.winner === 'defender') {
     db.incrementVictoryStats(defender);
     db.updateBattleResult(defender, 1, 0);
@@ -253,8 +263,9 @@ async function atacar(sock, ctx) {
     result: result.winner, groupId: jid
   });
 
-  activeBattles.delete(sender);
-  activeBattles.delete(defender);
+  db.db.prepare('INSERT INTO persistent_cooldowns VALUES (?,?,?,?) ON CONFLICT(chat_jid,user_jid,action) DO UPDATE SET expires_at=excluded.expires_at').run(battleChat,sender,'battle',Date.now()+BATTLE_TIMEOUT*1000);
+  if(goldPrize) db.logGoldTransaction('battle',result.winner==='attacker'?sender:defender,goldPrize,'Prêmio de batalha');
+  })();
 
   const winnerText = result.winner === 'attacker'
     ? `🏆 *VITÓRIA de @${getNumber(sender)}!*\n💰 Prêmio: *+${goldPrize} Gold*`
@@ -284,6 +295,10 @@ ${winnerText}
 _Uuuuuuwooooo! 🐺🌕_`,
     mentions: [sender, defender]
   });
+  } finally {
+    activeBattles.delete(jid+':'+sender);
+    activeBattles.delete(jid+':'+defender);
+  }
 }
 
 // ============================
@@ -373,8 +388,7 @@ async function curarLobos(sock, ctx) {
     }, { quoted: msg });
   }
 
-  db.addGold(sender, -CURE_COST);
-  db.updateWolvesAlive(sender, 100);
+  require('../services/economy').economy().buy(sender,{id:2,price:CURE_COST},msg.key?.id);
 
   await sock.sendMessage(jid, {
     text: `✅ 🐺 *Matilha Curada!*\n\nSeus 100 lobos foram ressuscitados!\n💰 Custo: *-${CURE_COST} Gold*\n\n_Uuuuuuwooooo! 🐺🌕_`

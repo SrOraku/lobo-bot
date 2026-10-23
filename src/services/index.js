@@ -19,17 +19,19 @@ const UserService = {
   },
 
   addGold(jid, amount, reason = '') {
-    const user = db.getUser(jid);
-    if (!user) return;
-    // Garantir não ficar negativo
-    const current = user.gold || 0;
-    const final = Math.max(0, current + amount);
-    const delta = final - current;
-    if (delta === 0 && amount < 0) return { success: false, reason: 'insufficient' };
-    db.addGold(jid, delta);
-    db.logGoldTransaction(amount < 0 ? jid : 'system', amount < 0 ? 'system' : jid, Math.abs(delta), reason);
-    bus.emit(EVENTS.GOLD_CHANGED, { jid, delta, reason });
-    return { success: true, delta, newBalance: final };
+    if(!Number.isSafeInteger(amount)) throw Error('Quantidade inválida.');
+    let outcome;
+    db.db.transaction(()=>{
+      const user=db.getUser(jid);
+      if(!user) throw Error('Usuário não encontrado.');
+      const final=(user.gold || 0)+amount;
+      if(!Number.isSafeInteger(final)||final<0) {outcome={success:false,reason:'insufficient'};return;}
+      db.addGold(jid,amount);
+      db.logGoldTransaction(amount<0?jid:'system',amount<0?'system':jid,Math.abs(amount),reason);
+      outcome={success:true,delta:amount,newBalance:final};
+    })();
+    if(outcome.success) bus.emit(EVENTS.GOLD_CHANGED,{jid,delta:amount,reason});
+    return outcome;
   },
 
   addXP(jid, amount) {
@@ -41,31 +43,11 @@ const UserService = {
   },
 
   transfer(fromJid, toJid, amount) {
-    const from = db.getUser(fromJid);
-    if (!from || (from.gold || 0) < amount) return { success: false, reason: 'insufficient' };
-    db.addGold(fromJid, -amount);
-    db.addGold(toJid,   +amount);
-    db.logGoldTransaction(fromJid, toJid, amount, 'Transferência');
-    bus.emit(EVENTS.GOLD_CHANGED, { jid: fromJid, delta: -amount, reason: 'transfer_out' });
-    bus.emit(EVENTS.GOLD_CHANGED, { jid: toJid,   delta: +amount, reason: 'transfer_in' });
-    return { success: true };
+    return require('./economy').economy().transfer(fromJid,toJid,amount);
   },
 
   async claimDaily(jid) {
-    const cacheKey = `daily_${jid}`;
-    const last = await cache.get(cacheKey);
-    if (last) {
-      const remaining = 86400 - Math.floor((Date.now() - last) / 1000);
-      return { success: false, remaining };
-    }
-    const user    = db.getUser(jid);
-    const premium = user?.premium;
-    const gold    = premium ? 500 : 200;
-    const xp      = premium ? 100 : 50;
-    UserService.addGold(jid, gold, 'Daily');
-    UserService.addXP(jid, xp);
-    await cache.set(cacheKey, Date.now(), 86400);
-    return { success: true, gold, xp, premium: !!premium };
+    return require('./economy').economy().daily(jid);
   },
 };
 
@@ -88,6 +70,7 @@ const WolfService = {
   },
 
   async battle(attackerJid, defenderJid, groupJid) {
+    if(require('./economy').economy().activeEffect(defenderJid,'shield')) return {success:false,reason:'shield'};
     const cooldownKey = `battle_${attackerJid}`;
     const timeout     = config.getNumber('BATTLE_TIMEOUT') || 60;
     const lastBattle  = await cache.get(cooldownKey);

@@ -1,20 +1,21 @@
 'use strict';
 const db = require('../utils/database');
-const { BOT_NAME, wolvesBar } = require('../utils/helpers');
 
-const XP_PER_MSG = parseInt(process.env.XP_PER_MESSAGE) || 5;
-const XP_PREMIUM = parseFloat(process.env.XP_PREMIUM_MULTIPLIER) || 2;
-const XP_COOLDOWN = new Map(); // anti spam xp
+const config = require('../config');
+
 
 async function handleXP(sock, msg, { jid, sender, body, user }) {
   try {
     const features=require('../activations/manager').manager;
     const xpEnabled=features.isEnabled(jid,'xp');
-    // Cooldown de 30s por mensagem para não ganhar XP spammando
-    const coolKey = `xp_${sender}_${jid}`;
-    const lastXP = XP_COOLDOWN.get(coolKey) || 0;
-    if (Date.now() - lastXP < 30000) return;
-    XP_COOLDOWN.set(coolKey, Date.now());
+    // Cooldown e recompensas compartilham a mesma transação.
+    const chat = require('../isolation/context').current() || jid;
+    const timestamp = Date.now();
+    const result = db.db.transaction(() => {
+      const last = db.db.prepare('SELECT expires_at FROM persistent_cooldowns WHERE chat_jid=? AND user_jid=? AND action=?').get(chat,sender,'xp');
+      if(last?.expires_at > timestamp) return false;
+      db.db.prepare('INSERT INTO persistent_cooldowns VALUES (?,?,?,?) ON CONFLICT(chat_jid,user_jid,action) DO UPDATE SET expires_at=excluded.expires_at').run(chat,sender,'xp',timestamp+(config.getNumber('XP_COOLDOWN_SEC') || 30)*1000);
+
 
     // Ganhou gold por mensagem (1 gold a cada 10 msgs)
     const actLog = db.db.prepare(`SELECT message_count FROM activity_log WHERE jid = ? AND group_id = ?`).get(sender, jid);
@@ -23,9 +24,17 @@ async function handleXP(sock, msg, { jid, sender, body, user }) {
     }
 
     if(!xpEnabled) return;
-    const xpGain = Math.floor(XP_PER_MSG * (user?.premium ? XP_PREMIUM : 1));
-    const result = db.addXP(sender, xpGain);
-    if (!result) return;
+    const {economy,isPremium}=require('../services/economy');
+    const boost=economy().activeEffect(sender,'xp');
+    const xpGain = Math.floor((config.getNumber('XP_PER_MESSAGE') || 5) * Math.max(isPremium(db.getUser(sender)) ? (config.getNumber('XP_PREMIUM_MULTIPLIER') || 2) : 1, boost?.multiplier || 1));
+    const gain = db.addXP(sender, xpGain);
+    if(gain?.newLevel>gain?.oldLevel && features.isEnabled(jid,'level') && features.isEnabled(jid,'economia')) {
+      db.addGold(sender,50);
+      db.logGoldTransaction('bot',sender,50,'Level up para '+gain.newLevel);
+    }
+    return gain;
+    })();
+    if(!result) return;
 
     // Verificar level up
     if (result.newLevel > result.oldLevel) {
@@ -48,14 +57,11 @@ ${features.isEnabled(jid,'economia') ? '💰 *+50 Gold* de presente pelo level u
 _Uuuuuuwooooo! 🐺_`,
           mentions: [sender]
         });
-        if(features.isEnabled(jid,'economia')) {
-          db.addGold(sender, 50);
-          db.logGoldTransaction('bot', sender, 50, `Level up para ${result.newLevel}`);
-        }
+
       }
     }
   } catch (err) {
-    // XP errors são silenciosos
+    require('../utils/helpers').logger.error({component:'xp',errorCode:err.code || 'XP_FAILED',error:err.message},'Falha ao processar XP.');
   }
 }
 

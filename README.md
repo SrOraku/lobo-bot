@@ -2,7 +2,9 @@
 
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
-## Edição atual — v1.3.0
+## Edição atual
+
+A versão oficial é definida em [package.json](package.json) e exibida dinamicamente por `!ping`. Consulte [a modernização e seus limites](MODERNIZACAO.md).
 
 Novos sistemas: `!donos`, capa de foto/GIF por `!fotomenu`, emissão autorizada de moedas por `!doarwok` e controle de informações de grupo por `!adm perm`. Consulte [comandos, limites e funcionamento](MENUS.md). O antirroubo depende de privilégios e eventos do WhatsApp; não garante impedir tomada de grupos.
 

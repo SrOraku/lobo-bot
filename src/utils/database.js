@@ -90,7 +90,10 @@ module.exports = {
   logBattle: d=>stmts.logBattle.run(d.attacker,d.defender,d.atkBefore,d.defBefore,d.atkAfter,d.defAfter,d.result,d.groupId),
   getGroup:    j=>stmts.getGroup.get(j),
   upsertGroup: (j,n)=>stmts.upsertGroup.run(j,n||''),
-  updateGroup: (j,f,v)=>db.prepare(`UPDATE groups SET ${f}=? WHERE jid=?`).run(v,j),
+  updateGroup: (j,f,v)=>{
+    if(!new Set(['name','antilink','antilink_mode','antifake','anticontact','antitag','antiinactivity','inactivity_days','open','welcome','goodbye','auto_reply','level_up_msg','nsfw']).has(f)) throw Error('Campo de grupo não permitido.');
+    return db.prepare(`UPDATE groups SET ${f}=? WHERE jid=?`).run(v,j);
+  },
   upsertActivity:   (j,g)=>stmts.upsertAct.run(j,g),
   getInactiveUsers: (g,d)=>stmts.getInactive.all(g,d),
   getAutoReplies:   g=>stmts.getAutoR.all(g),

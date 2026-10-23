@@ -25,9 +25,10 @@ async function verLevel(sock, ctx) {
 
 
 👤 *${user.name || getNumber(target)}*
-${user.premium ? '👑 *PREMIUM*' : ''}
+${require('../services/economy').isPremium(user) ? '👑 *PREMIUM*' : ''}
 
 🏆 *Rank:* ${user.rank}
+${require('../services/economy').economy().titles(target).filter(t=>t.equipped).map(t=>'🌕 *Título:* '+t.title_name).join('\n')}
 🆙 *Level:* *${user.level}*
 ⭐ *XP:* ${formatNumber(user.xp)} / ${formatNumber(Math.floor(nextLevelXP))}
 
@@ -63,9 +64,10 @@ async function perfil(sock, ctx) {
 
 👤 *Nome:* ${user.name || getNumber(target)}
 🏆 *Rank:* ${user.rank}
+${require('../services/economy').economy().titles(target).filter(t=>t.equipped).map(t=>'🌕 *Título:* '+t.title_name).join('\n')}
 🆙 *Level:* *${user.level}*
 ⭐ *XP Total:* ${formatNumber(user.xp)}
-${user.premium ? '👑 *Status: PREMIUM*\n' : ''}
+${require('../services/economy').isPremium(user) ? '👑 *Status: PREMIUM*\n' : ''}
 ━━━━━━━━━━━━━━━━━━━━
 💰 *Gold:* ${formatNumber(user.gold)}
 

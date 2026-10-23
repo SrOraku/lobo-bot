@@ -56,6 +56,6 @@ setInterval(() => {
   for (const [k, v] of cmdCooldown) if (now - v > 60000) cmdCooldown.delete(k);
   for (const [k, v] of floodTracker) if (now - v.windowStart > FLOOD_WINDOW_MS * 2) floodTracker.delete(k);
   for (const [k, v] of floodBanned) if (now > v) floodBanned.delete(k);
-}, 300000);
+}, 300000).unref();
 
 module.exports = { checkRateLimit };

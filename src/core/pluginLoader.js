@@ -25,7 +25,12 @@ const loadedPlugins = new Map();
 async function loadPlugin(pluginPath, sock) {
   try {
     const plugin = require(pluginPath);
-    if (!plugin.name) throw new Error('Plugin sem nome definido');
+    require('./plugin-contract').validatePlugin(plugin);
+    const previous=loadedPlugins.get(plugin.name);
+    if(previous) {
+      if(previous.onUnload) await previous.onUnload();
+      loadedPlugins.delete(plugin.name);
+    }
 
     // Verificar se está habilitado no banco
     const record = db.db.prepare(`SELECT enabled FROM plugins WHERE name = ?`).get(plugin.name);
@@ -42,6 +47,10 @@ async function loadPlugin(pluginPath, sock) {
 
     if (plugin.onLoad) await plugin.onLoad(sock);
 
+    try {
+      require('./plugin-contract').validatePlugin(plugin);
+      require('./plugin-contract').mergeCommands([...loadedPlugins.values(),plugin],new Set(require('./commandRegistry').registry.keys()));
+    } catch(error) { if(plugin.onUnload) await plugin.onUnload();throw error; }
     loadedPlugins.set(plugin.name, plugin);
     bus.emit(EVENTS.PLUGIN_LOADED, plugin.name);
     logger.info(`🌹 Plugin carregado: ${plugin.name} v${plugin.version || '?'}`);
@@ -69,11 +78,7 @@ async function loadAllPlugins(sock) {
 }
 
 function getPluginCommands() {
-  const commands = {};
-  for (const plugin of loadedPlugins.values()) {
-    if (plugin.commands) Object.assign(commands, plugin.commands);
-  }
-  return commands;
+  return require('./plugin-contract').mergeCommands(loadedPlugins.values());
 }
 
 function listPlugins() {
