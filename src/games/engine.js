@@ -4,6 +4,7 @@ const { WORDS, QUIZ, ROUTES, ENDINGS } = require('./content');
 const { QUESTIONS, CHARACTERS, nextQuestion } = require('./characters');
 const normalize = text => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 function start(game, pick = randomInt) {
+  if(require('./registry').has(game))return require('./registry').get(game).start(pick);
   if (game === 'akinator') return { candidates: CHARACTERS.map((_, i) => i), asked: [] };
   if (game === 'forca') return { word: pick(WORDS.length), letters: [], mistakes: 0 };
   if (game === 'adivinhar') return { secret: pick(100) + 1, attempts: 0, low: 1, high: 100 };
@@ -16,6 +17,7 @@ function start(game, pick = randomInt) {
   throw Error('Jogo não encontrado.');
 }
 function view(game, state, prefix) {
+  if(require('./registry').has(game))return require('./registry').get(game).view(state)+`\n_${prefix}${game} resposta_`;
   if (game === 'akinator') {
     if (state.candidates.length === 1 || nextQuestion(state) === -1)
       return `🔮 Minha hipótese: ${state.candidates.map(i => CHARACTERS[i][0]).join(', ')}. Acertei?\n_${prefix}akinator sim/não_`;
@@ -35,6 +37,7 @@ function view(game, state, prefix) {
 }
 function advance(game, original, input) {
   const state = structuredClone(original), value = normalize(input);
+  if(require('./registry').has(game))return require('./registry').get(game).advance(state,value);
   const done = (text, points, won) => ({ state, text, points, won, finished: true });
   if (game === 'akinator') {
     if (!['sim', 'nao', 'talvez'].includes(value)) throw Error('Responda sim, não ou talvez.');

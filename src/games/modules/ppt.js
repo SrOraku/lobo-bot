@@ -1,0 +1,2 @@
+'use strict';
+module.exports={id:'ppt',aliases:['jokenpo'],title:'✊ PEDRA, PAPEL E TESOURA',description:'Uma disputa recreativa sem apostas',start(pick){return {choice:pick(3)};},view:()=> 'Escolha pedra, papel ou tesoura.',advance(s,input){const choices=['pedra','papel','tesoura'],i=choices.indexOf(input);if(i<0)throw Error('Escolha pedra, papel ou tesoura.');const result=(i-s.choice+3)%3,won=result===1;return {state:s,text:`🐺 Bot: ${choices[s.choice]} • ${result===0?'Empate':won?'Você venceu!':'Bot venceu'}`,finished:true,won,points:won?15:result===0?5:0};}};

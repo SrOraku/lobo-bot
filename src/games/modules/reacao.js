@@ -1,0 +1,2 @@
+'use strict';
+module.exports={id:'reacao',title:'⚡ REAÇÃO',description:'Responda após o sinal de tempo',start(pick){return {ready:Date.now()+3000+pick(3000),attempted:false};},view:s=>`Envie JÁ quando chegar a ${new Date(s.ready).toISOString().slice(11,23)} UTC.\nHá uma janela de 3 segundos.`,advance(s,input){if(!['ja','já'].includes(input))throw Error('Responda JÁ.');const delay=Date.now()-s.ready,won=delay>=0&&delay<=3000;return {state:s,text:delay<0?'⏱️ Cedo demais!':won?'⚡ Boa reação!':'⌛ Fora da janela.',finished:true,won,points:won?30:0};}};

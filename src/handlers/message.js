@@ -35,6 +35,7 @@ async function processMessage(sock, msg) {
     body = body.trim();
     if (msg.key.fromMe && !body.startsWith(PREFIX) && !/^\d+$/.test(body)) return;
 
+    if(await require('../automation/anti-pv').createAntiPV(db).handle(sock,msg,{jid,sender,isGroup}))return;
     await require('../services/universal-currency').linkMessageWallet(db,sock,msg,{jid,sender,isGroup});
     db.upsertUser(sender, pushName);
     const user = db.getUser(sender);
@@ -60,6 +61,10 @@ async function processMessage(sock, msg) {
     if (isGroup && body) await handleXP(sock, msg, { jid, sender, body, user });
     if (isGroup && body && !body.startsWith(PREFIX) && await require('./autoDownload').handleAutoDownload(sock,msg,{jid,sender,body,isGroup,user,pushName,senderNumber})) return;
     if (isGroup && body && !body.startsWith(PREFIX)) await handleAutoReply(sock, msg, { jid, sender, body });
+    if(isGroup&&body&&!body.startsWith(PREFIX)){
+      const result=await require('../games/gartic').gartic().guess(sock,{jid,sender,pushName,msg},body);
+      if(result){await sock.sendMessage(jid,{text:result},{quoted:msg});return;}
+    }
     if (!body.startsWith(PREFIX)) return;
 
     const parts   = body.slice(PREFIX.length).trim().split(/\s+/);
@@ -67,6 +72,12 @@ async function processMessage(sock, msg) {
 
     const ctx = { jid, sender, senderNumber, pushName, isGroup, args: parts, body, command, msg, msgType, user, BOT_NAME, PREFIX };
     await execute(command, sock, ctx);
+    try {
+      const progress=require('../progression/service').progression();
+      progress.touch(jid,sender);
+      const unlocked=progress.refresh(jid,sender);
+      if(unlocked.length)await sock.sendMessage(jid,{text:require('../menus/render').frameNotice('🏆 CONQUISTA DESBLOQUEADA',unlocked.map(a=>`${a.emoji} ${a.name} • +${a.reward} WoK coin`))},{quoted:msg});
+    } catch(error){logger.error({component:'progression',code:error.code||'PROGRESSION_FAILED'},'Falha na progressão.');}
 
   } catch (err) {
     logger.error({ err }, 'Erro em handleMessage');

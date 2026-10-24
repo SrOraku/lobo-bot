@@ -63,18 +63,19 @@ export function addWolves(player, amount, rng = Math.random, now = Date.now()) {
   return { added, allocation, wolves: player.wolves };
 }
 
-export function trainPlayer(player, { now = Date.now(), rng = Math.random } = {}) {
+export function trainPlayer(player, { now = Date.now(), rng = Math.random, bonuses = {} } = {}) {
   assertPlayable(player);
   integer(now, { min: 0, label: 'Data' });
   if (player.wolves >= LIMITS.wolves) throw new GameError('Você já possui 100/100 lobisomens.', 'WOLVES_LIMIT');
   const normalAt = player.normalTrainingAt ?? player.lastTraining;
-  const remaining = normalAt === null || normalAt === undefined ? 0 : Math.max(0, COOLDOWNS.training - (now - normalAt));
+  const remaining = normalAt === null || normalAt === undefined ? 0 : Math.max(0, Math.floor(COOLDOWNS.training*(bonuses.trainingCooldown||1)) - (now - normalAt));
   const credits = integer(player.extraTraining ?? 0, { min: 0, label: 'Treinos extras' });
   const usedExtra = remaining > 0;
   if (usedExtra && credits < 1) throw new GameError(`Aguarde ${formatRemaining(remaining)} para treinar novamente.`, 'COOLDOWN');
-  const result = addWolves(player, 5, rng, now);
+  const result = addWolves(player, Math.floor(5*(bonuses.training||1)), rng, now);
   player.extraTraining = credits - (usedExtra ? 1 : 0);
   if (!usedExtra) player.normalTrainingAt = now;
+  markActivityDay(player,'training',bonuses.day||new Date(now).toISOString().slice(0,10));
   player.lastTraining = now;
   player.updatedAt = now;
   return { ...result, usedExtra, lastTraining: now };
@@ -96,4 +97,11 @@ export function setFormation(player, position, amount, now = Date.now()) {
 export function rankPlayers(game) {
   return Object.values(game.players).filter(player => !player.banned).sort((a, b) =>
     b.wins - a.wins || b.coins - a.coins || b.wolves - a.wolves || a.losses - b.losses || a.jid.localeCompare(b.jid));
+}
+
+export function markActivityDay(player,type,day){
+  player.activityStreaks ||= {};
+  const prior=player.activityStreaks[type]||{current:0,best:0,lastDay:null,days:0};
+  if(prior.lastDay!==day){prior.current=prior.lastDay&&Date.parse(day)-Date.parse(prior.lastDay)===86400000?prior.current+1:1;prior.best=Math.max(prior.best,prior.current);prior.lastDay=day;prior.days++;}
+  player.activityStreaks[type]=prior;return prior;
 }

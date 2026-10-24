@@ -244,7 +244,8 @@ async function atacar(sock, ctx) {
     db.updateBattleResult(defender, 0, 1);
     goldPrize = Math.floor(50 + Math.random() * 50);
     db.addGold(sender, goldPrize);
-    const loss=Math.min(db.getUser(defender)?.gold || 0,Math.floor(goldPrize*0.5));
+    const protectedWallet=require('../progression/service').progression().effects(jid,defender).some(effect=>effect.type==='economicShield');
+    const loss=protectedWallet?0:Math.min(db.getUser(defender)?.gold || 0,Math.floor(goldPrize*0.5));
     db.addGold(defender,-loss);
     if(loss) db.logGoldTransaction(defender,'battle',loss,'Derrota em batalha');
   } else if (result.winner === 'defender') {

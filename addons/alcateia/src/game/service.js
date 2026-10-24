@@ -41,6 +41,8 @@ function completeBattle(game, attacker, defender, request, now) {
     player.coins = side.coinsAfter;
     const counter = { win: 'wins', loss: 'losses', draw: 'draws' }[side.outcome];
     player[counter] = safeAdd(player[counter], 1, counter);
+    player.winStreak=side.outcome==='win'?(player.winStreak||0)+1:0;
+    player.bestWinStreak=Math.max(player.bestWinStreak||0,player.winStreak);
     player.lastBattle = now;
     player.updatedAt = now;
     if (player.clan) {
@@ -112,7 +114,7 @@ export class GameService {
       }
       case 'treino':
         exactArgs(args, 0, '!treino');
-        return { type: 'training', player, ...trainPlayer(player, { now, rng: this.rng }) };
+        return { type: 'training', player, ...trainPlayer(player, { now, rng: this.rng, bonuses:game.universalModifiers?.[actor.jid] }) };
       case 'formacao':
         exactArgs(args, 2, '!formacao A/D/C quantidade');
         setFormation(player, args[0], args[1], now);
@@ -142,7 +144,7 @@ export class GameService {
       }
       case 'evento':
         exactArgs(args, 0, '!evento');
-        return { type: 'event', player, reward: runEvent(player, { now, rng: this.rng }) };
+        return { type: 'event', player, reward: runEvent(player, { now, rng: this.rng, day:game.universalModifiers?.[actor.jid]?.day }) };
       default:
         throw new GameError('Comando do jogo desconhecido.');
     }

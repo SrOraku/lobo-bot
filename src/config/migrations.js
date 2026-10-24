@@ -191,6 +191,20 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
     CREATE TABLE universal_currency_seed(id INTEGER PRIMARY KEY CHECK(id=1),state TEXT NOT NULL);
     CREATE TABLE universal_currency_audit(id INTEGER PRIMARY KEY,chat_jid TEXT NOT NULL,action TEXT NOT NULL,user_jid TEXT,amount INTEGER NOT NULL,created_at TEXT DEFAULT(datetime('now')));
   `},
+  {version:13,name:'progression_and_virtual_finance',up:`
+    CREATE TABLE progression_users(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,state TEXT NOT NULL,PRIMARY KEY(chat_jid,user_jid));
+    CREATE TABLE user_achievements(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,achievement_id TEXT NOT NULL,reward INTEGER NOT NULL,unlocked_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,user_jid,achievement_id));
+    CREATE TABLE group_daily_activity(chat_jid TEXT NOT NULL,day TEXT NOT NULL,user_jid TEXT NOT NULL,PRIMARY KEY(chat_jid,day,user_jid));
+    CREATE TABLE virtual_investments(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,principal INTEGER NOT NULL,started_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,user_jid));
+    CREATE TABLE virtual_loans(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,principal INTEGER NOT NULL,remaining INTEGER NOT NULL,due_at INTEGER NOT NULL,paid INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(chat_jid,user_jid));
+    CREATE TABLE finance_history(id INTEGER PRIMARY KEY,chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,kind TEXT NOT NULL,amount INTEGER NOT NULL,at INTEGER NOT NULL);
+    CREATE TABLE expansion_events(chat_jid TEXT NOT NULL,event_id TEXT NOT NULL,at INTEGER NOT NULL,PRIMARY KEY(chat_jid,event_id));
+    CREATE TABLE expansion_rounds(chat_jid TEXT NOT NULL,kind TEXT NOT NULL,state TEXT NOT NULL,PRIMARY KEY(chat_jid,kind));
+    CREATE TABLE expansion_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
+    CREATE TABLE daily_challenge_history(chat_jid TEXT NOT NULL,day TEXT NOT NULL,challenge INTEGER NOT NULL,winner TEXT,reward INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(chat_jid,day));
+    CREATE TABLE smart_responses(id INTEGER PRIMARY KEY,chat_jid TEXT NOT NULL,trigger TEXT NOT NULL,mode TEXT NOT NULL,response_type TEXT NOT NULL,content TEXT NOT NULL,cooldown INTEGER NOT NULL,chance REAL NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,last_at INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE response_cooldowns(chat_jid TEXT NOT NULL,rule_id INTEGER NOT NULL,last_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,rule_id));
+  `},
 ];
 
 function runMigrations(db) {

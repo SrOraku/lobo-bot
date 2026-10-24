@@ -70,11 +70,11 @@ function coinsOf(player) {
   return player.coins;
 }
 
-function resultSide(player, damage, incomingDamage, outcome) {
+function resultSide(player, damage, incomingDamage, outcome, now) {
   const hpBefore = clampHp(player.hp);
   const hpAfter = clampHp(hpBefore - incomingDamage);
   const coins = coinsOf(player);
-  const coinChange = outcome === 'win' ? 50 : outcome === 'draw' ? 10 : -Math.min(25, coins);
+  const coinChange = outcome==='loss'&&player.economicShieldUntil>now ? 0 : outcome === 'win' ? 50 : outcome === 'draw' ? 10 : -Math.min(25, coins);
   const coinsAfter = coins + coinChange;
   if (!Number.isSafeInteger(coinsAfter)) throw new RangeError('O saldo excederia o limite seguro.');
   return {
@@ -94,8 +94,8 @@ export function resolveBattle(attacker, defender, { now = Date.now() } = {}) {
   const outcome = difference > 0 ? 'attacker' : difference < 0 ? 'defender' : 'draw';
   return {
     at: now,
-    attacker: resultSide(attacker, attackerDamage, defenderDamage, outcome === 'draw' ? 'draw' : outcome === 'attacker' ? 'win' : 'loss'),
-    defender: resultSide(defender, defenderDamage, attackerDamage, outcome === 'draw' ? 'draw' : outcome === 'defender' ? 'win' : 'loss'),
+    attacker: resultSide(attacker, attackerDamage, defenderDamage, outcome === 'draw' ? 'draw' : outcome === 'attacker' ? 'win' : 'loss', now),
+    defender: resultSide(defender, defenderDamage, attackerDamage, outcome === 'draw' ? 'draw' : outcome === 'defender' ? 'win' : 'loss', now),
     outcome,
   };
 }

@@ -17,6 +17,7 @@ const logger = pino(
   { level: 'warn', redact: ['creds','auth','session','key','*.privKey','*.rootKey','*.chainKey','*.privateKey'] },
   pino.multistream([
     { level: 'error', stream: process.stderr },
+    { level: 'error', stream: fs.createWriteStream(path.join(LOG_DIR,'error.log'),{flags:'a',mode:0o600}) },
     { level: 'warn', stream: fs.createWriteStream(LOG_FILE, { flags: 'a', mode: 0o600 }) },
   ])
 );

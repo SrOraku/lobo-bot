@@ -57,6 +57,7 @@ test('activation number uses shared manager, confirms 1, cancels 2 and persists 
 test('message pipeline applies protection before automatic downloads and keeps prefixed commands separate',async()=>{
  const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path'),module={exports:{}},calls=[];let blocked=true;
  const replacements={
+  '../automation/anti-pv':{createAntiPV:()=>({handle:async()=>false})},'../games/gartic':{gartic:()=>({guess:async()=>null})},'../progression/service':{progression:()=>({touch(){},refresh:()=>[]})},
   '../services/universal-currency':{linkMessageWallet:async()=>{}},
   dotenv:{config(){}},'../utils/helpers':{cleanJid:j=>j,getNumber:j=>j.split('@')[0],PREFIX:'!',logger:{error(){}},BOT_NAME:'Lobo'},
   '../utils/database':{upsertUser(){},getUser:()=>({}),upsertActivity(){},upsertGroup(){}},

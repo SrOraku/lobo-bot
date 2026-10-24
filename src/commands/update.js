@@ -50,6 +50,8 @@ function createUpdateHandler({ service = new UpdateService(), config = require('
           `⚙️ Atualizando: ${state.active ? 'sim' : 'não'}`,
           `⏳ Reinício pendente: ${state.needsRestart ? 'sim' : 'não'}`,
           `⭐ Última atualização: ${state.last?.at || 'nenhuma por comando'}`,
+          `❤️ Saúde: ${state.health?'versão em teste • '+state.health.crashCount+' falhas':'sem versão em teste'}`,
+          `🔐 Integridade: ${state.last?.integrity||'commit fixado'}`,
         ]);
       }
       await reply('ATUALIZAÇÃO INICIADA', ['⚙️ Aguarde a verificação e instalação.', '🛡️ Sessão, configurações e dados dos jogos serão preservados.']);

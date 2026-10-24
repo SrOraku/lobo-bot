@@ -89,7 +89,7 @@ class UpdateService {
     const last = await readJSON(path.join(this.directory, 'state.json'));
     return { version: pkg.version, node: this.nodeVersion,
       baileys: installed?.version || pkg.dependencies?.['@whiskeysockets/baileys'] || 'não identificado',
-      active: this.running, needsRestart: this.needsRestart, last };
+      active: this.running, needsRestart: this.needsRestart, last, health:await readJSON(path.join(this.directory,'pending-release.json')) };
   }
   async update(action) {
     if (!['bot', 'baileys'].includes(action)) throw new UpdateError('Use atualizar bot ou atualizar baileys.');
@@ -113,11 +113,14 @@ class UpdateService {
         throw new UpdateError('Uma atualização anterior foi interrompida. Confira o backup e remova updates/update.lock pelo painel antes de tentar novamente.', 'STALE_LOCK');
       }
       await lock.writeFile(JSON.stringify({ pid: process.pid, at: Date.now() }));
+      if(await readJSON(path.join(this.directory,'pending-release.json')))throw new UpdateError('A versão está em teste. Aguarde três minutos de runtime saudável; se o supervisor ainda é antigo, reinicie uma vez pelo painel.','RELEASE_IN_TRIAL');
       stage = await fs.mkdtemp(path.join(this.directory, 'stage-'));
       let files, sha = null, targetVersion;
       if (action === 'bot') {
         phase = 'consulta ao GitHub';
         const source = await this.snapshot(); sha = source.sha;
+        const bad=await readJSON(path.join(this.directory,'bad-releases.json'),[]);
+        if(bad.some(item=>item.sha===sha))throw new UpdateError('Esta versão falhou no boot e está bloqueada. Aguarde uma versão corrigida.','BAD_RELEASE');
         const previous = await readJSON(path.join(this.directory, 'state.json'));
         // Reaplicar o snapshot também repara arquivos locais alterados no mesmo commit.
         files = source.files;
@@ -149,6 +152,7 @@ class UpdateService {
         targetVersion = latest.version;
         files = [{ path: 'package.json' }, { path: 'package-lock.json' }];
       }
+      const integrity=action==='bot'?(await require('./integrity').verifyStage(stage,files)).mode:'NPM_LOCKFILE';
       const pkg = await readJSON(path.join(stage, 'package.json'));
       if (pkg?.name !== 'lobo-bot' || !semver.valid(pkg.version) || !semver.satisfies(this.nodeVersion, pkg.engines?.node || '>=22.12.0')) {
         throw new UpdateError('Esta atualização do bot não é compatível com o Node do servidor.');
@@ -185,7 +189,7 @@ class UpdateService {
       phase = 'testes críticos';
       await this._run('npm', ['test'], stage);
       phase = 'backup e aplicação';
-      const result = await this._apply(stage, files, { action, sha, version: targetVersion || pkg.version, reuseDependencies });
+      const result = await this._apply(stage, files, { action, sha, version: targetVersion || pkg.version, reuseDependencies, integrity });
       this.needsRestart = true;
       return result;
     } catch (error) {
@@ -255,6 +259,9 @@ class UpdateService {
       }
       for (const name of removed) await fs.rm(await safeTarget(this.root, name), { force: true });
       applyStep = 'registro da atualização';
+      const backupRecord={backup:path.basename(backup),saved,previous,hadModules:oldModules||result.reuseDependencies,reuseDependencies:result.reuseDependencies};
+      await atomicWrite(path.join(backup,'release.json'),JSON.stringify(backupRecord),0o600);
+      await atomicWrite(path.join(this.directory,'pending-release.json'),JSON.stringify({fromVersion:previous?.version||'anterior',toVersion:result.version,sha:result.sha,backup:path.basename(backup),startedAt:Date.now(),crashCount:0}),0o600);
       const state = { ...result, at: new Date().toISOString(), backup: path.basename(backup),
         sha: result.sha || previous?.sha || null,
         files: result.action === 'bot' ? [...incoming] : previous?.files || [] };
@@ -262,6 +269,7 @@ class UpdateService {
       await fs.rm(path.join(this.directory, 'apply-journal.json'), { force: true });
     } catch (error) {
       error.updateStage = applyStep;
+      await fs.rm(path.join(this.directory,'pending-release.json'),{force:true});
       try {
         for (const { name, present, mode } of saved) {
           const target = await safeTarget(this.root, name);
@@ -278,7 +286,8 @@ class UpdateService {
       throw error;
     }
     // Code + lock remain backed up; old dependencies can be recreated with npm ci.
-    await fs.rm(path.join(backup, 'node_modules'), { recursive: true, force: true }).catch(() => {});
+    // Retain the previous dependency tree until the new runtime passes its trial.
+    try{require('../utils/file-log').record('update',{toVersion:result.version,result:'applied'});}catch(error){this.logger.warn?.({code:error.code||'UPDATE_LOG_FAILED'},'Código aplicado, mas o log adicional não pôde ser salvo.');}
     return { ...result, backup: path.basename(backup), needsRestart: true };
   }
 }

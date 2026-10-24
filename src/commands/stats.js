@@ -70,6 +70,7 @@ ${require('../services/economy').economy().titles(target).filter(t=>t.equipped).
 ${require('../services/economy').isPremium(user) ? '👑 *Status: PREMIUM*\n' : ''}
 ━━━━━━━━━━━━━━━━━━━━
 💰 *WoK coin:* ${formatNumber(user.gold)}
+🚀 *Boosts:* ${require('../progression/service').progression().effects(jid,target).map(e=>e.type+' '+e.multiplier+'×').join(', ')||'nenhum'}
 
 🐺 *BATALHAS:*
 ⚔️ Total: ${user.battles}

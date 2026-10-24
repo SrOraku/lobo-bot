@@ -1,3 +1,4 @@
+import careerPolicy from '../../../../src/progression/career.js';
 import { GameError, integer, formatRemaining } from '../game/validation.js';
 import { assertPlayable } from '../game/players.js';
 import { credit, debit } from '../game/wallet.js';
@@ -127,7 +128,7 @@ export function chooseJob(player, id, now = Date.now()) {
   return { job, rp };
 }
 
-export function work(player, { now = Date.now(), rng = Math.random } = {}) {
+export function work(player, { now = Date.now(), rng = Math.random, modifiers } = {}) {
   const rp = ready(player, now);
   if (!rp.jobId) throw new GameError('Escolha uma profissão antes de trabalhar.', 'RP_JOB');
   const job = getJob(rp.jobId);
@@ -138,7 +139,9 @@ export function work(player, { now = Date.now(), rng = Math.random } = {}) {
   if (rp.energy < 15 || rp.hunger < 10) throw new GameError('Para trabalhar, tenha ao menos 15 de energia e 10 de saciedade RP.', 'RP_NEEDS');
   const experience = advance(rp.experience, 10, 'Experiência');
   const caught = job.illegal && random(rng) < 0.25;
-  const coinChange = caught ? -Math.min(20, player.coins) : job.salary;
+  let salary=job.salary;
+  if(!caught&&modifiers)salary=careerPolicy.record(rp,now,modifiers.day,Math.floor(job.salary*(modifiers.salary||1))).paid;
+  const coinChange = caught ? -Math.min(20, player.coins) : salary;
   if (coinChange < 0) debit(player, -coinChange);
   else credit(player, coinChange);
   rp.experience = experience;
@@ -148,7 +151,7 @@ export function work(player, { now = Date.now(), rng = Math.random } = {}) {
   if (job.illegal) rp.wanted = Math.min(100, (rp.wanted ?? 0) + 1);
   rp.jailedUntil = caught ? now + JAIL_TIME : rp.jailedUntil ?? null;
   touch(player, now);
-  return { job, salary: caught ? 0 : job.salary, coinChange, experienceGain: 10,
+  return { job, salary: caught ? 0 : salary, coinChange, experienceGain: 10,
     energy: rp.energy, hunger: rp.hunger, event: caught ? 'fine' : job.illegal ? 'fictional-success' : 'salary',
     wanted: rp.wanted ?? 0, jailedUntil: rp.jailedUntil };
 }

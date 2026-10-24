@@ -25,7 +25,7 @@ function loadAllCommands() {
   r({name:'menu',    aliases:['ajuda','help'], description:'Menu principal',     category:'geral',  usage:'!menu [categoria]', example:'!menu gold', handler:menu.menu});
 
   for (const category of Object.keys(require('../menus/catalog').CATEGORIES)) {
-    if (['rp','alcateia'].includes(category)) continue; // rotas existentes do plugin
+    if (['rp','alcateia','gartic','conquistas'].includes(category)) continue; // rotas existentes do plugin
     if (require('../core/commandRegistry').registry.has(category)) continue;
     r({name:category, menuShortcut:true, category:'geral', description:'Abrir menu '+category, handler:(sock,ctx)=>menu.menu(sock,{...ctx,args:[category]})});
   }
@@ -34,7 +34,7 @@ function loadAllCommands() {
   r({name:'estrategia',aliases:['strategy'],  description:'Ver estratégia',      category:'lobo',   usage:'!estrategia',                            example:'!estrategia',                 handler:wolf.verEstrategia});
   r({name:'mudar',                             description:'Mudar estratégia',   category:'lobo',   usage:'!mudar estrategia ataque:X defesa:Y contra:Z', example:'!mudar estrategia ataque:40 defesa:35 contra:25', handler:wolf.mudarEstrategia});
   r({name:'atacar',                            description:'Atacar guerreiro',   category:'lobo',   usage:'!atacar @usuário',                       example:'!atacar @membro',             handler:wolf.atacar,    groupOnly:true});
-  r({name:'lobos',   aliases:['matilha'],      description:'Ver sua matilha',    category:'lobo',   usage:'!lobos',                                 example:'!lobos',                      handler:wolf.meusLobos});
+  r({name:'lobos',   aliases:['matilha'],      description:'Ver sua matilha',    category:'lobo',   usage:'!lobos',                                 example:'!lobos',                      handler:async(sock,ctx)=>{await wolf.meusLobos(sock,ctx);if(ctx.command==='matilha')return require('../commands/expansion').handler('atividadegrupo')(sock,ctx);}});
   r({name:'ranklobos',                         description:'Ranking batalhas',   category:'lobo',   usage:'!ranklobos',                             example:'!ranklobos',                  handler:wolf.rankLobos});
   r({name:'curarlobos',aliases:['curar'],      description:'Curar lobos (200💰)',category:'lobo',   usage:'!curarlobos',                            example:'!curarlobos',                 handler:wolf.curarLobos});
   r({name:'resetarlobos',                      description:'Resetar lobos',      category:'lobo',   usage:'!resetarlobos [@usuário]',               example:'!resetarlobos',               handler:wolf.resetarLobos, minLevel:LEVELS.BOT_ADMIN});
@@ -145,7 +145,10 @@ function loadAllCommands() {
     r({...existing,replace:true,name:feature.id,activationControl:true,aliases:[...new Set([...(existing?.aliases||[]),...feature.aliases.filter(alias=>!commands.has(alias))])],description:feature.description,category:'adm',groupOnly:true,minLevel:LEVELS.USER,usage:'!'+feature.id+(['antilink','antilinkgrupo','antilinkexterno'].includes(feature.id)?' on/off/delete/warn/kick':' on/off'),handler:activation.createActivationHandler({featureId:feature.id})});
   }
   require('../integrations/bronxys/register').registerBronxys(r,commands);
+  require('../commands/expansion').register(r);
+  require('../commands/automation').register(r,commands);
   commandsLoaded=true;
+
 }
 
 module.exports = { loadAllCommands };

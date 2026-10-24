@@ -17,8 +17,9 @@ function createArcadeCommand(game, { repository } = {}) {
           `📖 _${prefix}menu jogos_`,
         ]));
       }
+      if(game==='akinator'){const text=require('../services/akinator').createAkinator({arcade}).play(ctx,prefix);if(text)return reply(frameMenu(TITLES[game],[text]));return;}
       const text = arcade.play(ctx.jid, ctx.sender, clean(ctx.pushName || 'Lobo'), game, ctx.args.join(' '), ctx.msg.key.id, prefix);
-      if (text) return reply(frameMenu(TITLES[game], [text]));
+      if (text) return reply(frameMenu(TITLES[game]||require('../games/registry').get(game)?.title||game, [text]));
     } catch (error) {
       if (error.code || error instanceof SyntaxError) throw error;
       return reply(frameNotice('⚠️ JOGADA INVÁLIDA', [error.message]));

@@ -1,6 +1,6 @@
 import { LIMITS, COOLDOWNS } from './constants.js';
 import { GameError, integer, formatRemaining } from './validation.js';
-import { addWolves, assertPlayable } from './players.js';
+import { addWolves, assertPlayable, markActivityDay } from './players.js';
 import { grantBoost } from './shop.js';
 import { credit } from './wallet.js';
 
@@ -10,7 +10,7 @@ function pick(rng, count) {
   return Math.floor(value * count);
 }
 
-export function runEvent(player, { now = Date.now(), rng = Math.random } = {}) {
+export function runEvent(player, { now = Date.now(), rng = Math.random, day } = {}) {
   assertPlayable(player);
   integer(now, { min: 0, label: 'Data' });
   const remaining = player.lastEvent === null || player.lastEvent === undefined ? 0 :
@@ -43,6 +43,7 @@ export function runEvent(player, { now = Date.now(), rng = Math.random } = {}) {
     default:
       reward = { type: 'none', amount: 0 };
   }
+  markActivityDay(player,'events',day||new Date(now).toISOString().slice(0,10));
   player.lastEvent = now;
   player.updatedAt = now;
   return reward;

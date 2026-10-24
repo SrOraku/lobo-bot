@@ -11,7 +11,7 @@ async function checkRelease() {
 }
 async function boot({
   recover=()=>require('../src/updater/recovery').recover(root),
-  prepare=()=>require('../src/bootstrap').ensureDependencies(),
+  prepare=()=>{if(!require('../src/bootstrap').ensureDependencies())return false;require('dotenv').config({path:path.join(root,'.env')});return true;},
   check=checkRelease,
   update=snapshot=>new (require('../src/updater/service').UpdateService)({root,snapshot:async()=>snapshot}).update('bot'),
   start=()=>require('../src/updater/supervisor').start(),

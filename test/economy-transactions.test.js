@@ -61,6 +61,7 @@ function xpHandler(f) {
   if(name==='../config')return {getNumber:key=>({XP_PER_MESSAGE:5,XP_PREMIUM_MULTIPLIER:2,XP_COOLDOWN_SEC:30})[key]};
   if(name==='../activations/manager')return {manager:{isEnabled:()=>true}};
   if(name==='../isolation/context')return {current:()=> '123@g.us'};
+  if(name==='../progression/service')return {progression:()=>({multipliers:()=>({xp:1})})};
   if(name==='../services/economy')return {economy:()=>f.service,isPremium};
   if(name==='../utils/helpers')return {logger:{error(){}}};
   throw Error('Unexpected dependency: '+name);

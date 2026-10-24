@@ -21,5 +21,6 @@ jobs:
       - run: npm run check:syntax
       - run: npm test
       - run: npm run check:startup
+      - run: npm run release:verify
       - run: npm run security
         continue-on-error: true

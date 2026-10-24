@@ -84,7 +84,7 @@ export function dispatchRP(game, request, { now, rng }) {
     }
     case 'trabalhar': {
       usage(args, 0, '!trabalhar');
-      const result = work(player, { now, rng });
+      const result = work(player, { now, rng, modifiers:game.universalModifiers?.[actor.jid] });
       const description = { salary: 'Expediente concluído. Seu salário entrou na carteira compartilhada.',
         fine: 'A cena fictícia terminou em multa e prisão RP temporária.',
         'fictional-success': 'Cena RP concluída. A recompensa entrou na carteira compartilhada.' }[result.event];

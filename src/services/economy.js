@@ -34,7 +34,8 @@ function createEconomy(api, { now = Date.now, scope = () => require('../isolatio
     return end;
   }
   function activeEffect(jid,type) {
-    return db.prepare('SELECT * FROM user_effects WHERE chat_jid=? AND user_jid=? AND type=? AND expires_at>?').get(scope(),jid,type,now());
+    const canonical=db.prepare('SELECT wallet_jid FROM universal_wallet_aliases WHERE chat_jid=? AND user_jid=?').get(scope(),jid)?.wallet_jid||jid;
+    return db.prepare('SELECT * FROM user_effects WHERE chat_jid=? AND (user_jid=? OR user_jid IN (SELECT user_jid FROM universal_wallet_aliases WHERE chat_jid=? AND wallet_jid=?)) AND type=? AND expires_at>? ORDER BY multiplier DESC,expires_at DESC LIMIT 1').get(scope(),canonical,scope(),canonical,type,now());
   }
   return {
     activeEffect,

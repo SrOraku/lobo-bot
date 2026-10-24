@@ -106,4 +106,4 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
  };
 }
 function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,async()=>{if(options?.shouldRun&&!await options.shouldRun(ctx))return;return handler(sock,ctx);}).catch(()=>sock.sendMessage(ctx.jid,{text:'🌹 Aguarde os downloads pendentes deste chat. 🐺'},{quoted:ctx.msg}));}
-module.exports={createHandler,queuedHandler,definitions,formatJSON,safeText};
+module.exports={incoming,createHandler,queuedHandler,definitions,formatJSON,safeText};

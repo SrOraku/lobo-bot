@@ -83,9 +83,16 @@ function attachUniversalStore(store,api) {
         const game=JSON.parse(db.prepare('SELECT state FROM universal_game_states WHERE chat_jid=?').get(chat).state);
         for(const player of Object.values(game.players))player.coins=valid(balance(db,chat,player.jid));
         game.universalBalances=Object.fromEntries(db.prepare('SELECT a.user_jid,w.balance FROM universal_wallet_aliases a JOIN universal_wallets w ON w.chat_jid=a.chat_jid AND w.wallet_jid=a.wallet_jid WHERE a.chat_jid=?').all(chat).map(row=>[row.user_jid,row.balance]));
+        game.universalModifiers={};
+        for(const player of Object.values(game.players)) {
+          const effects=db.prepare('SELECT type,multiplier,expires_at FROM user_effects WHERE chat_jid=? AND user_jid=? AND expires_at>?').all(chat,account(db,chat,player.jid),Date.now());
+          game.universalModifiers[player.jid]={day:require('../config/expansion').dateParts(Date.now()).day,...Object.fromEntries(effects.map(e=>[e.type,e.multiplier]))};
+          player.economicShieldUntil=effects.find(e=>e.type==='economicShield')?.expires_at || 0;
+        }
         const result=callback(game);
         if(result&&typeof result.then==='function')throw Error('Transação do jogo deve ser síncrona.');
         delete game.universalBalances;
+        delete game.universalModifiers;
         const table=prefixFor(chat)+'users';
         for(const player of Object.values(game.players)) {
           valid(player.coins);

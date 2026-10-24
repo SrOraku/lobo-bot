@@ -33,6 +33,7 @@ async function verGold(sock, ctx) {
 // ENVIAR GOLD
 // ============================
 async function enviarGold(sock, ctx) {
+  if(ctx.args?.[0]?.toLowerCase()==='divida')return require('./expansion').handler('pagardivida')(sock,{...ctx,args:ctx.args.slice(1)});
   const { jid, sender, msg, args } = ctx;
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
   const token = args.find(a => /^\d+$/.test(a));
@@ -114,7 +115,7 @@ async function loja(sock, ctx) {
 
 
 
-${items}
+${items}\n\n🛡️ Escudo econômico: !comprarescudo\n🚀 Boosts: !boosts
 
 ━━━━━━━━━━━━━━━━━━━━
 _Use *!comprar [ID]* para comprar!_

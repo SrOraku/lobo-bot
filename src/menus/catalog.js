@@ -15,6 +15,9 @@ const CATEGORIES = Object.freeze({
   ferramentas: '⚙️ FERRAMENTAS',
   rp: '🏙️ ROLEPLAY',
   economia: '💰 ECONOMIA',
+  trabalho: '💼 TRABALHO',
+  conquistas: '🏆 CONQUISTAS',
+  gartic: '🎨 GARTIC',
 });
 const CATEGORY_ALIASES = {
   gold: 'economia',

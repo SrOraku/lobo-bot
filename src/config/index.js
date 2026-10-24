@@ -28,6 +28,8 @@ const DEFAULTS = {
 };
 
 const SCHEMA = {
+  LASTFM_API_KEY:{required:false,type:'string',desc:'Chave opcional Last.fm'},
+  ASSEMBLYAI_API_KEY:{required:false,type:'string',desc:'Chave opcional AssemblyAI'},
   BRONXYS_API_KEY:{required:false,type:'string',desc:'Chave privada da API Bronxys'},
   MAX_RECONNECT:{required:false,type:'number',min:0,max:100,desc:'Tentativas de reconexão'},
   XP_COOLDOWN_SEC:{required:false,type:'number',min:1,max:86400,desc:'Cooldown de XP'},

@@ -6,7 +6,7 @@ function createArcade(db, { now = Date.now, pick } = {}) {
     if (db.prepare('SELECT 1 FROM arcade_events WHERE chat_jid=? AND event_id=?').get(chat, event)) return null;
     const row = db.prepare('SELECT * FROM arcade_sessions WHERE chat_jid=? AND user_jid=? AND game=?').get(chat, user, game);
     let state = row?.state ? JSON.parse(row.state) : null;
-    if (state && now() - row.updated_at > 86400000) state = null;
+    if (state && now() - row.updated_at > (game==='akinator'?600000:86400000)) state = null;
     const action = engine.normalize(input);
     let result;
     if (['parar', 'sair', 'cancelar', 'stop'].includes(action)) {

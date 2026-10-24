@@ -1,3 +1,5 @@
+> **Expansão v1.7.0:** [auditoria, comandos, migrations, compatibilidade e limites](EXPANSAO.md). WoK coin permanece a moeda única por chat.
+
 > **Atualização v1.6.0:** no Lobo Bot integrado, Gold e WOK Coin foram unificados como **WoK coin**. Os saldos antigos são somados uma única vez, na proporção 1:1, por jogador e chat. Economia, RP e Alcateia usam a mesma carteira SQLite. Os comandos antigos continuam válidos; `!carteira`, `!saldo` e `!wok` consultam o saldo universal. Referências históricas abaixo à separação das moedas descrevem versões anteriores. O addon executado isoladamente continua usando seu armazenamento JSON.
 
 # 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑

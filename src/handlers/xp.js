@@ -26,7 +26,8 @@ async function handleXP(sock, msg, { jid, sender, body, user }) {
     if(!xpEnabled) return;
     const {economy,isPremium}=require('../services/economy');
     const boost=economy().activeEffect(sender,'xp');
-    const xpGain = Math.floor((config.getNumber('XP_PER_MESSAGE') || 5) * Math.max(isPremium(db.getUser(sender)) ? (config.getNumber('XP_PREMIUM_MULTIPLIER') || 2) : 1, boost?.multiplier || 1));
+    const progressionMultiplier=require('../progression/service').progression().multipliers(jid,sender).xp;
+    const xpGain = Math.floor(progressionMultiplier * (config.getNumber('XP_PER_MESSAGE') || 5) * Math.max(isPremium(db.getUser(sender)) ? (config.getNumber('XP_PREMIUM_MULTIPLIER') || 2) : 1, boost?.multiplier || 1));
     const gain = db.addXP(sender, xpGain);
     if(gain?.newLevel>gain?.oldLevel && features.isEnabled(jid,'level') && features.isEnabled(jid,'economia')) {
       db.addGold(sender,50);

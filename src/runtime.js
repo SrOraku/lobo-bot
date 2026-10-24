@@ -29,6 +29,8 @@ function loadBaileys() {
 // ── Utils & Config ──────────────────────────────────────────
 const { printBanner, logger, BOT_NAME, OWNER, sleep } = require('./utils/helpers');
 const config    = require('./config');
+require('./config/expansion').load();
+require('./utils/temp-files').start();
 const db        = require('./utils/database');
 const cache     = require('./utils/cache');
 
@@ -211,6 +213,7 @@ async function startBot() {
       process.exit(1);
 
     } else if (connection === 'open') {
+      require('./games/gartic').gartic().resume(sock);
       reconnectAttempts = 0;
       const user = sock.user;
       logger.info(`✅ Conectado como: ${user?.name || user?.id}`);
@@ -273,8 +276,8 @@ async function startBot() {
 // ============================================================
 // TRATAMENTO DE ERROS GLOBAIS
 // ============================================================
-process.on('uncaughtException',  (err) => logger.error({ err }, '❌ uncaughtException'));
-process.on('unhandledRejection', (err) => logger.error({ err }, '❌ unhandledRejection'));
+process.on('uncaughtException',err=>{require('./utils/file-log').record('error',{code:err.code||'UNCAUGHT',message:err.message,stack:err.stack});logger.error({code:err.code||'UNCAUGHT'},'Erro fatal; o supervisor reiniciará o runtime.');process.exit(1);});
+process.on('unhandledRejection',err=>{require('./utils/file-log').record('error',{code:'UNHANDLED_REJECTION',message:err?.message,stack:err?.stack});process.exit(1);});
 
 process.on('SIGINT', async () => {
   logger.info('🛑 Encerrando bot (SIGINT)...');
@@ -299,7 +302,7 @@ process.on('SIGTERM', async () => {
 // ============================================================
 // INICIAR
 // ============================================================
-startBot().catch((err) => {
+startBot().then(()=>{if(process.connected)process.send({type:'lobo:ready'});require('./utils/file-log').record('bot',{result:'runtime_ready'});}).catch((err) => {
   logger.error({ err }, '❌ Falha crítica ao iniciar o bot');
   process.exit(1);
 });
