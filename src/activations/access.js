@@ -23,15 +23,20 @@ async function resolveActor(sock, ctx) {
   const bot = await new IdentityResolver(sock, owner + '@s.whatsapp.net', metadata).member(
     sock.user?.id,
   );
-  return {
+  let securityLevel=0,securityMember=null;
+  if(group)try{securityMember=(await require('../security/groups/service').security().permissions.context(sock,key.remoteJid,sender,alt,{meta:metadata||undefined})).actor;securityLevel=securityMember.level;}catch{securityLevel=0;}
+  const result={
+    securityLevel,
     jid: sender,
     groupName: metadata?.subject || key.remoteJid,
     botAdmin: bot?.isAdmin === true,
-    owner: require('../utils/owners')
+    owner: group?securityMember?.globalOwner===true:require('../utils/owners')
       .ownerNumbers(config)
       .includes(actor?.phoneNumber?.split('@')[0]),
-    admin: actor?.isAdmin === true,
-    phone: actor?.phoneNumber || null,
+    admin: group?securityMember?.isAdmin===true:actor?.isAdmin===true,
+    phone: group?(securityMember?.known?securityMember.canonical:null):actor?.phoneNumber||null,
   };
+  Object.defineProperty(result,'securityContext',{value:{sock,metadata}});
+  return result;
 }
 module.exports = { resolveActor };

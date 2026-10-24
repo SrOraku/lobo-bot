@@ -126,7 +126,7 @@ test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async ()
   const ctx = (sender, isGroup) => ({
     sender,
     senderNumber: sender.split('@')[0],
-    jid: isGroup ? 'fixture-perm@g.us' : sender,
+    jid: isGroup ? '120999999@g.us' : sender,
     isGroup,
     msg: {},
     args: [],

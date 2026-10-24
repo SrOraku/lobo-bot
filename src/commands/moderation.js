@@ -20,20 +20,11 @@ async function isBotAdmin(sock, jid) {
   } catch { return false; }
 }
 
-function requireGroupAdmin(fn) {
-  return async (sock, ctx) => {
-    if (!ctx.isGroup) return sock.sendMessage(ctx.jid, { text: `❌ Apenas em grupos!` }, { quoted: ctx.msg });
-    const isAdm = await isGroupAdmin(sock, ctx.jid, ctx.sender);
-    const isBotAdm = db.isBotAdmin(ctx.sender);
-    const isOwner = ctx.senderLevel === 3 || require('../utils/owners').ownerNumbers().includes(ctx.senderNumber);
-    if (!isAdm && !isBotAdm && !isOwner) {
-      return sock.sendMessage(ctx.jid, {
-        text: `🚫 _Apenas administradores podem usar este comando!_ 🐺`
-      }, { quoted: ctx.msg });
-    }
-    if (!await require('../security/group-guard').canManage(sock,ctx))
-      return sock.sendMessage(ctx.jid,{text:'🛡️ O dono não autorizou você a administrar este grupo pelo bot.'},{quoted:ctx.msg});
-    return fn(sock, ctx);
+function requireGroupAdmin(fn,action='settings') {
+  return async(sock,ctx)=>{
+    try{await require('../security/groups/service').security().permissions.guardCommand(sock,ctx,action);}
+    catch(error){return sock.sendMessage(ctx.jid,{text:require('../menus/render').frameNotice('🛡️ LOBO SECURITY',[error.code?'Não foi possível validar as permissões atuais.':error.message])},{quoted:ctx.msg});}
+    return fn(sock,ctx);
   };
 }
 
@@ -49,12 +40,13 @@ const ban = requireGroupAdmin(async (sock, ctx) => {
   if (await require('../utils/owners').protectedOwner(sock, target, jid))
     return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser alvo de punições.') }, { quoted: msg });
   db.setBanned(target, 1);
+  require('../security/groups/service').security().store.audit(jid,{actor:ctx.sender,target,action:'BOT_BAN',authorized:true,result:'APPLIED'});
 
   await sock.sendMessage(jid, {
     text: `🔨 🚫 *@${getNumber(target)}* foi *BANIDO* do bot!\n\n_Nenhum comando será respondido para esse usuário._`,
     mentions: [target]
   }, { quoted: msg });
-});
+},'ban');
 
 // ============================
 // UNBAN
@@ -66,6 +58,7 @@ const unban = requireGroupAdmin(async (sock, ctx) => {
 
   const target = cleanJid(mentioned);
   db.setBanned(target, 0);
+  require('../security/groups/service').security().store.audit(jid,{actor:ctx.sender,target,action:'BOT_UNBAN',authorized:true,result:'APPLIED'});
 
   await sock.sendMessage(jid, {
     text: `✅ 🔓 *@${getNumber(target)}* foi *DESBANIDO*!`,
@@ -85,12 +78,13 @@ const mute = requireGroupAdmin(async (sock, ctx) => {
   if (await require('../utils/owners').protectedOwner(sock, target, jid))
     return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser alvo de punições.') }, { quoted: msg });
   db.setMuted(target, 1);
+  require('../security/groups/service').security().store.audit(jid,{actor:ctx.sender,target,action:'BOT_MUTE',authorized:true,result:'APPLIED'});
 
   await sock.sendMessage(jid, {
     text: `🔇 🤫 *@${getNumber(target)}* foi *SILENCIADO*!\n_Comandos do bot ignorados._`,
     mentions: [target]
   }, { quoted: msg });
-});
+},'mute');
 
 // ============================
 // UNMUTE
@@ -102,6 +96,7 @@ const unmute = requireGroupAdmin(async (sock, ctx) => {
 
   const target = cleanJid(mentioned);
   db.setMuted(target, 0);
+  require('../security/groups/service').security().store.audit(jid,{actor:ctx.sender,target,action:'BOT_UNMUTE',authorized:true,result:'APPLIED'});
 
   await sock.sendMessage(jid, {
     text: `🔊 ✅ *@${getNumber(target)}* foi *DESMUTADO*!`,
@@ -123,14 +118,15 @@ const kick = requireGroupAdmin(async (sock, ctx) => {
   const botAdm = await isBotAdmin(sock, jid);
   if (!botAdm) return sock.sendMessage(jid, { text: `❌ O bot precisa ser admin do grupo para remover membros!` }, { quoted: msg });
 
+  await sleep(500);
+  await require('../security/groups/service').security().performParticipants(sock,ctx,[target],'remove');
+
   await sock.sendMessage(jid, {
     text: `👢 🚪 *@${getNumber(target)}* foi *REMOVIDO* do grupo!\n\n_A matilha não tolera fraqueza!_ 🐺`,
     mentions: [target]
   }, { quoted: msg });
 
-  await sleep(500);
-  await sock.groupParticipantsUpdate(jid, [target], 'remove');
-});
+},'remove');
 
 // ============================
 // ADD
@@ -140,16 +136,17 @@ const add = requireGroupAdmin(async (sock, ctx) => {
   if (!args[0]) return sock.sendMessage(jid, { text: `❌ Informe o número: !add 5511999999999` }, { quoted: msg });
 
   const number = args[0].replace(/\D/g, '');
+  if(!/^\d{10,15}$/.test(number))return sock.sendMessage(jid,{text:'❌ Informe DDI + DDD + número válido, de 10 a 15 dígitos.'},{quoted:msg});
   const targetJid = `${number}@s.whatsapp.net`;
 
   const botAdm = await isBotAdmin(sock, jid);
   if (!botAdm) return sock.sendMessage(jid, { text: `❌ O bot precisa ser admin para adicionar membros!` }, { quoted: msg });
 
-  await sock.groupParticipantsUpdate(jid, [targetJid], 'add');
+  await require('../security/groups/service').security().performParticipants(sock,ctx,[targetJid],'add');
   await sock.sendMessage(jid, {
     text: `✅ 🐾 *+55${number}* foi adicionado à matilha!`,
   }, { quoted: msg });
-});
+},'add');
 
 // ============================
 // PROMOVER
@@ -160,12 +157,12 @@ const promover = requireGroupAdmin(async (sock, ctx) => {
   if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem promover!` }, { quoted: msg });
 
   const target = cleanJid(mentioned);
-  await sock.groupParticipantsUpdate(jid, [target], 'promote');
+  await require('../security/groups/service').security().performParticipants(sock,ctx,[target],'promote');
   await sock.sendMessage(jid, {
     text: `⬆️ 👑 *@${getNumber(target)}* agora é *ADMIN* da matilha!`,
     mentions: [target]
   }, { quoted: msg });
-});
+},'promote');
 
 // ============================
 // REBAIXAR
@@ -178,12 +175,12 @@ const rebaixar = requireGroupAdmin(async (sock, ctx) => {
   const target = cleanJid(mentioned);
   if (await require('../utils/owners').protectedOwner(sock, target, jid))
     return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser rebaixado.') }, { quoted: msg });
-  await sock.groupParticipantsUpdate(jid, [target], 'demote');
+  await require('../security/groups/service').security().performParticipants(sock,ctx,[target],'demote');
   await sock.sendMessage(jid, {
     text: `⬇️ 👤 *@${getNumber(target)}* foi *rebaixado* para membro.`,
     mentions: [target]
   }, { quoted: msg });
-});
+},'demote');
 
 // ============================
 // ABRIR / FECHAR GRUPO
@@ -193,7 +190,7 @@ const abrirGrupo = requireGroupAdmin(async (sock, ctx) => {
   const botAdm = await isBotAdmin(sock, jid);
   if (!botAdm) return sock.sendMessage(jid, { text: `❌ Bot precisa ser admin!` }, { quoted: msg });
 
-  await sock.groupSettingUpdate(jid, 'not_announcement');
+  await require('../security/groups/service').security().engine.operation(sock,jid,{action:'SETTINGS_CHANGE',target:'announce',value:false},()=>sock.groupSettingUpdate(jid,'not_announcement'));
   db.updateGroup(jid, 'open', 1);
   await sock.sendMessage(jid, {
     text: `🔓 ✅ O grupo foi *ABERTO*!\n_Todos podem enviar mensagens._`
@@ -205,7 +202,7 @@ const fecharGrupo = requireGroupAdmin(async (sock, ctx) => {
   const botAdm = await isBotAdmin(sock, jid);
   if (!botAdm) return sock.sendMessage(jid, { text: `❌ Bot precisa ser admin!` }, { quoted: msg });
 
-  await sock.groupSettingUpdate(jid, 'announcement');
+  await require('../security/groups/service').security().engine.operation(sock,jid,{action:'SETTINGS_CHANGE',target:'announce',value:true},()=>sock.groupSettingUpdate(jid,'announcement'));
   db.updateGroup(jid, 'open', 0);
   await sock.sendMessage(jid, {
     text: `🔒 🚫 O grupo foi *FECHADO*!\n_Apenas admins podem enviar mensagens._`
@@ -244,8 +241,12 @@ const limparInatividade = requireGroupAdmin(async (sock, ctx) => {
   let removed = 0;
   for (const u of inactive) {
     try {
-      if (await require('../utils/owners').protectedOwner(sock, u.jid, jid)) continue;
-      await sock.groupParticipantsUpdate(jid, [u.jid], 'remove');
+      const security=require('../security/groups/service').security();
+      if(security.store.get(jid).pausedUntil>security.store.now())break;
+      const check=await security.permissions.context(sock,jid,ctx.sender,ctx.msg.key.participantAlt,{force:true});
+      if(!security.permissions.canAct(check,'remove',await check.identify(u.jid)).allowed)continue;
+      if(security.manager.isEnabled(jid,'antimasskick')&&removed>=security.store.get(jid).masskick.max)break;
+      await security.performParticipants(sock,ctx,[u.jid],'remove');
       removed++;
       await sleep(500);
     } catch {}
@@ -254,7 +255,7 @@ const limparInatividade = requireGroupAdmin(async (sock, ctx) => {
   await sock.sendMessage(jid, {
     text: `✅ 🧹 *${removed}* membros inativos foram removidos!\n\n_A matilha permanece forte! 🐺_`
   }, { quoted: msg });
-});
+},'remove');
 
 // ============================
 // MARCAR TODOS

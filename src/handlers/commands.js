@@ -147,6 +147,7 @@ function loadAllCommands() {
   require('../integrations/bronxys/register').registerBronxys(r,commands);
   require('../commands/expansion').register(r);
   require('../commands/automation').register(r,commands);
+  require('../commands/security').register(r,commands);
   commandsLoaded=true;
 
 }

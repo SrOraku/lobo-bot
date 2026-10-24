@@ -205,6 +205,25 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
     CREATE TABLE smart_responses(id INTEGER PRIMARY KEY,chat_jid TEXT NOT NULL,trigger TEXT NOT NULL,mode TEXT NOT NULL,response_type TEXT NOT NULL,content TEXT NOT NULL,cooldown INTEGER NOT NULL,chance REAL NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,last_at INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE response_cooldowns(chat_jid TEXT NOT NULL,rule_id INTEGER NOT NULL,last_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,rule_id));
   `},
+  {version:14,name:'lobo_group_security',up:`
+    CREATE TABLE group_security(group_id TEXT PRIMARY KEY,policy TEXT NOT NULL,paused_until INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL);
+    CREATE TABLE trusted_admins(group_id TEXT NOT NULL,user_jid TEXT NOT NULL,configured_by TEXT NOT NULL,configured_at INTEGER NOT NULL,PRIMARY KEY(group_id,user_jid));
+    CREATE TABLE group_audit_log(id INTEGER PRIMARY KEY,group_id TEXT NOT NULL,actor_jid TEXT,target_jid TEXT,action TEXT NOT NULL,old_value TEXT,new_value TEXT,authorized INTEGER NOT NULL,result TEXT NOT NULL,created_at INTEGER NOT NULL);
+    CREATE INDEX group_audit_recent ON group_audit_log(group_id,created_at DESC,id DESC);
+    CREATE INDEX group_audit_actor ON group_audit_log(group_id,actor_jid,created_at DESC);
+    CREATE TABLE security_incidents(id INTEGER PRIMARY KEY,group_id TEXT NOT NULL,actor_jid TEXT,action TEXT NOT NULL,reason TEXT NOT NULL,result TEXT NOT NULL,created_at INTEGER NOT NULL);
+    CREATE INDEX security_incidents_recent ON security_incidents(group_id,created_at DESC);
+    CREATE TABLE group_snapshots(id INTEGER PRIMARY KEY,group_id TEXT NOT NULL,actor_jid TEXT NOT NULL,state TEXT NOT NULL,created_at INTEGER NOT NULL);
+    CREATE TABLE security_event_keys(group_id TEXT NOT NULL,event_key TEXT NOT NULL,seen_at INTEGER NOT NULL,PRIMARY KEY(group_id,event_key));
+    CREATE TABLE security_internal(group_id TEXT NOT NULL,fingerprint TEXT NOT NULL,expires_at INTEGER NOT NULL,PRIMARY KEY(group_id,fingerprint));
+    CREATE TABLE security_action_windows(id INTEGER PRIMARY KEY,group_id TEXT NOT NULL,actor_jid TEXT NOT NULL,action TEXT NOT NULL,created_at INTEGER NOT NULL);
+    CREATE INDEX security_windows_lookup ON security_action_windows(group_id,actor_jid,action,created_at);
+    CREATE TABLE group_picture_guard(group_id TEXT PRIMARY KEY,image BLOB NOT NULL,sha256 TEXT NOT NULL,updated_at INTEGER NOT NULL);
+    INSERT INTO group_security(group_id,policy,updated_at) SELECT group_jid,json_object('mode','alta','baseline',json_object('subject',json_extract(policy,'$.subject'),'desc',COALESCE(json_extract(policy,'$.desc'),''),'restrict',json_extract(policy,'$.restrict'),'announce',json_extract(policy,'$.announce'))),unixepoch()*1000 FROM group_guard WHERE enabled=1 AND json_valid(policy);
+    INSERT OR IGNORE INTO trusted_admins SELECT g.group_jid,j.value,'legacy-guard',unixepoch()*1000 FROM group_guard g,json_each(g.policy,'$.allowed') j WHERE g.enabled=1 AND json_valid(g.policy) AND j.type='text';
+    INSERT INTO group_activations(group_jid,policy,updated_by) SELECT group_jid,'{"features":{"antiroubo":true,"lockname":true,"lockdesc":true}}','security-migration' FROM group_guard WHERE enabled=1
+      ON CONFLICT(group_jid) DO UPDATE SET policy=json_set(group_activations.policy,'$.features.antiroubo',json('true'),'$.features.lockname',json('true'),'$.features.lockdesc',json('true'));
+  `},
 ];
 
 function runMigrations(db) {

@@ -1,0 +1,28 @@
+'use strict';
+const crypto=require('node:crypto');
+const {validate}=require('./config');
+function groupId(value){if(typeof value!=='string'||!/^\d+(?:-\d+)?@g\.us$/.test(value))throw Error('Grupo inválido.');return value;}
+function createSecurityStore(db,{now=Date.now}={}){
+ function get(group){groupId(group);const row=db.prepare('SELECT policy,paused_until FROM group_security WHERE group_id=?').get(group);return {...validate(row?JSON.parse(row.policy):{}),pausedUntil:row?.paused_until||0};}
+ function put(group,policy){groupId(group);const next=validate(policy);delete next.pausedUntil;db.prepare('INSERT INTO group_security(group_id,policy,updated_at) VALUES(?,?,?) ON CONFLICT(group_id) DO UPDATE SET policy=excluded.policy,updated_at=excluded.updated_at').run(group,JSON.stringify(next),now());return next;}
+ function trusted(group){return db.prepare('SELECT user_jid,configured_by,configured_at FROM trusted_admins WHERE group_id=? ORDER BY user_jid').all(group);}
+ function audit(group,{actor=null,target=null,action,oldValue=null,newValue=null,authorized=false,result}){const safe=value=>value===null?null:JSON.stringify(value).slice(0,3000);return db.prepare('INSERT INTO group_audit_log(group_id,actor_jid,target_jid,action,old_value,new_value,authorized,result,created_at) VALUES(?,?,?,?,?,?,?,?,?)').run(group,actor,target,action,safe(oldValue),safe(newValue),Number(authorized),result,now()).lastInsertRowid;}
+ function incident(group,actor,action,reason,result){return db.prepare('INSERT INTO security_incidents(group_id,actor_jid,action,reason,result,created_at) VALUES(?,?,?,?,?,?)').run(group,actor,action,reason,result,now()).lastInsertRowid;}
+ const fingerprint=event=>crypto.createHash('sha256').update(JSON.stringify([event.action,event.target||null,event.value??null])).digest('hex');
+ const dedup=db.transaction((group,key,ttl)=>{const row=db.prepare('SELECT seen_at FROM security_event_keys WHERE group_id=? AND event_key=?').get(group,key);if(row&&now()-row.seen_at<ttl)return false;db.prepare('INSERT INTO security_event_keys VALUES(?,?,?) ON CONFLICT(group_id,event_key) DO UPDATE SET seen_at=excluded.seen_at').run(group,key,now());db.prepare("DELETE FROM security_event_keys WHERE seen_at<? AND event_key NOT LIKE 'id:%'").run(now()-86400000);return true;});
+ function internal(group,event,ttl=30000){db.prepare('INSERT INTO security_internal VALUES(?,?,?) ON CONFLICT(group_id,fingerprint) DO UPDATE SET expires_at=excluded.expires_at').run(group,fingerprint(event),now()+ttl);}
+ const consumeInternal=db.transaction((group,event)=>{const key=fingerprint(event),row=db.prepare('SELECT expires_at FROM security_internal WHERE group_id=? AND fingerprint=?').get(group,key);db.prepare('DELETE FROM security_internal WHERE (group_id=? AND fingerprint=?) OR expires_at<?').run(group,key,now());return !!row&&row.expires_at>=now();});
+ function count(group,actor,action,windowMs,n=1){db.prepare('DELETE FROM security_action_windows WHERE created_at<?').run(now()-3600000);for(let i=0;i<n;i++)db.prepare('INSERT INTO security_action_windows(group_id,actor_jid,action,created_at) VALUES(?,?,?,?)').run(group,actor,action,now());return db.prepare('SELECT count(*) AS n FROM security_action_windows WHERE group_id=? AND actor_jid=? AND action=? AND created_at>?').get(group,actor,action,now()-windowMs).n;}
+ return {db,now,get,put,trusted,audit,incident,dedup,internal,consumeInternal,fingerprint,count,
+  trust(group,user,actor,on){if(!/^\d+@(s\.whatsapp\.net|lid)$/.test(user))throw Error('JID inválido.');if(on)db.prepare('INSERT OR IGNORE INTO trusted_admins VALUES(?,?,?,?)').run(group,user,actor,now());else db.prepare('DELETE FROM trusted_admins WHERE group_id=? AND user_jid=?').run(group,user);},
+  pause(group,until){put(group,get(group));db.prepare('UPDATE group_security SET paused_until=? WHERE group_id=?').run(until,group);},
+  audits(group,{user,limit=10}={}){return db.prepare('SELECT * FROM group_audit_log WHERE group_id=? AND (? IS NULL OR actor_jid=? OR target_jid=?) ORDER BY id DESC LIMIT ?').all(group,user||null,user||null,user||null,Math.max(1,Math.min(50,Number(limit)||10)));},
+  latest(group){return db.prepare('SELECT action,reason,result,created_at FROM security_incidents WHERE group_id=? ORDER BY id DESC LIMIT 1').get(group);},
+  snapshot(group,actor,state){const id=db.prepare('INSERT INTO group_snapshots(group_id,actor_jid,state,created_at) VALUES(?,?,?,?)').run(group,actor,JSON.stringify(state),now()).lastInsertRowid;db.prepare('DELETE FROM group_snapshots WHERE group_id=? AND id NOT IN (SELECT id FROM group_snapshots WHERE group_id=? ORDER BY id DESC LIMIT 10)').run(group,group);return id;},
+  snapshots(group){return db.prepare('SELECT id,actor_jid,created_at FROM group_snapshots WHERE group_id=? ORDER BY id DESC LIMIT 10').all(group);},
+  readSnapshot(group,id){const row=id?db.prepare('SELECT state FROM group_snapshots WHERE group_id=? AND id=?').get(group,id):db.prepare('SELECT state FROM group_snapshots WHERE group_id=? ORDER BY id DESC LIMIT 1').get(group);if(!row)throw Error('Snapshot não encontrado neste grupo.');return JSON.parse(row.state);},
+  picture(group){return db.prepare('SELECT image,sha256 FROM group_picture_guard WHERE group_id=?').get(group);},
+  savePicture(group,buffer){if(!Buffer.isBuffer(buffer)||buffer.length>1024*1024)throw Error('Foto protegida excede 1 MB.');db.prepare('INSERT INTO group_picture_guard VALUES(?,?,?,?) ON CONFLICT(group_id) DO UPDATE SET image=excluded.image,sha256=excluded.sha256,updated_at=excluded.updated_at').run(group,buffer,crypto.createHash('sha256').update(buffer).digest('hex'),now());},
+ };
+}
+module.exports={groupId,createSecurityStore};

@@ -25,9 +25,10 @@ const LEVEL_NAMES = {
 const groupMetaCache = new Map();
 async function getGroupMeta(sock, jid) {
   const cached = groupMetaCache.get(jid);
-  if (cached && Date.now() - cached.ts < 60000) return cached.data;
+  if (cached && Date.now() - cached.ts < 3000) return cached.data;
   try {
     const data = await sock.groupMetadata(jid);
+    if(groupMetaCache.size>=1000)groupMetaCache.delete(groupMetaCache.keys().next().value);
     groupMetaCache.set(jid, { data, ts: Date.now() });
     return data;
   } catch { return null; }
@@ -40,17 +41,14 @@ async function resolveLevel(sock, senderJid, groupJid) {
   const actor=await new IdentityResolver(sock,config.get('BOT_OWNER')+'@s.whatsapp.net',meta).member(senderJid);
   if(require('../utils/owners').ownerNumbers(config).includes(actor?.phoneNumber?.split('@')[0]))return LEVELS.OWNER;
   if(db.isBotAdmin(senderJid)||actor?.phoneNumber&&db.isBotAdmin(actor.phoneNumber))return LEVELS.BOT_ADMIN;
+  if(groupJid){const c=await require('../security/groups/service').security().permissions.context(sock,groupJid,senderJid,null,{force:false,meta:meta||undefined});if(c.actor.level>=2)return LEVELS.BOT_ADMIN;}
   if(actor?.isAdmin)return LEVELS.GROUP_ADMIN;
   return LEVELS.USER;
 }
 
 // Verificar se bot é admin no grupo
 async function botIsAdmin(sock, groupJid) {
-  const meta = await getGroupMeta(sock, groupJid);
-  if (!meta) return false;
-  const botNum = sock.user?.id?.split(':')[0]?.split('@')[0];
-  const p = meta.participants.find(x => x.id.split('@')[0] === botNum);
-  return p?.admin === 'admin' || p?.admin === 'superadmin';
+  try{return (await require('../security/groups/service').security().permissions.context(sock,groupJid,sock.user?.id,sock.user?.lid,{force:true})).bot.isAdmin===true;}catch{return false;}
 }
 
 // Middleware de permissão

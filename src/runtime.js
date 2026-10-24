@@ -245,8 +245,10 @@ async function startBot() {
   sock.ev.on('creds.update', saveCreds);
 
   // ── Mensagens ────────────────────────────────────────────────
+  sock.ev.on('messages.update',updates=>{require('./security/groups/service').security().engine.edits(sock,updates,(jid,id)=>store.loadMessage(jid,id)).catch(error=>logger.error({component:'security',code:error.code||'EDIT_EVENT_FAILED'},'Falha no evento de edição.'));});
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     for (const msg of messages) {
+      if(type==='notify'&&msg.messageStubType===(await loadBaileys()).WAMessageStubType.GROUP_CHANGE_ICON)require('./security/groups/service').security().engine.picture(sock,msg).catch(error=>logger.error({component:'security',code:error.code||'PICTURE_EVENT_FAILED'},'Falha no evento de foto.'));
       if (!msg.message) continue;
 
       if (type !== 'notify') continue;

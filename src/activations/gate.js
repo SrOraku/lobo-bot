@@ -6,9 +6,10 @@ function createGate({ store, resolveActor } = {}) {
     const key = commandSector(name, ctx.args, definition);
     if (!key) return true; // Navegação e recuperação continuam disponíveis.
     const policy = (store || require('./store').getStore()).get(ctx.jid);
-    if (policy.bot) return true;
+    if (policy.bot&&!policy.features?.somenteadmins) return true;
     const actor = await (resolveActor || require('../activations/access').resolveActor)(sock, ctx);
     if (actor.owner) return true;
+    if(policy.bot&&policy.features?.somenteadmins){if(actor.admin||(actor.securityLevel||0)>=2)return true;await sock.sendMessage(ctx.jid,{text:'🛡️ Este grupo está no modo de comandos somente para administradores.'},{quoted:ctx.msg});return false;}
     await sock.sendMessage(
       ctx.jid,
       {

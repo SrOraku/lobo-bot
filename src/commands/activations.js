@@ -17,10 +17,10 @@ function createActivationHandler({
     if (!ctx.jid?.endsWith('@g.us'))
       return reply('🌹 Use este painel dentro do grupo que deseja configurar. 🐺');
     const actor = await (resolveActor || require('../activations/access').resolveActor)(sock, ctx);
-    if (!actor.owner && !actor.admin)
+    if (!actor.owner && !actor.admin && (actor.securityLevel||0)<2)
       return reply('🌹 Somente o dono e os administradores do grupo podem abrir este painel. 🐺');
     const repository = store || require('../activations/store').getStore(),
-      manager = createManager(repository);
+      manager = createManager(repository,store?{}:{security:()=>require('../security/groups/service').security().engine});
     const args = (ctx.args || []).map(String),
       group = clean(actor.groupName || ctx.jid);
     try {
@@ -45,6 +45,7 @@ function createActivationHandler({
         return reply(frameMenu('🐺 ESTADO DA FUNÇÃO', [`${item.enabled ? '✅ ATIVO' : '❌ DESATIVADO'} • ${item.name}`, ...item.issues.map(issue => '⚠️ ' + issue)]));
       }
       let result;
+      if(forcedAction&&args[0]?.toLowerCase()==='antipv')return reply('🛡️ Anti-PV é uma configuração global exclusiva do dono. Use '+p+'antipv status no privado; o WhatsApp não informa conversas privadas entre membros de um grupo.');
       if (forcedAction || featureId) {
         let name = featureId || args.shift(),
           value;

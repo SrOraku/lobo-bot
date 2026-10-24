@@ -4,6 +4,7 @@ const CATEGORIES = Object.freeze({
   alcateia: '🐺 100 LOBISOMENS',
   midia: '🎬 MÍDIA & DOWNLOADS',
   adm: '🛡️ ADMINISTRAÇÃO',
+  seguranca: '🛡️ LOBO SECURITY',
   dono: '👑 DONO',
   util: '🧰 UTILIDADES',
   figurinhas: '✨ FIGURINHAS MÍSTICAS',

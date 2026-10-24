@@ -6,9 +6,10 @@ function createWarningCommand(action, { store, resolveActor } = {}) {
     const reply = text => sock.sendMessage(ctx.jid, { text }, { quoted: ctx.msg });
     if (!ctx.jid?.endsWith('@g.us')) return reply(frameNotice('⚠️ APENAS EM GRUPOS', ['Use este comando no grupo.']));
     const actor = await (resolveActor || require('../activations/access').resolveActor)(sock, ctx);
-    if (!actor.owner && !actor.admin) return reply(frameNotice('🔒 SEM PERMISSÃO', ['Somente administradores do grupo e donos.']));
+    if (!actor.owner && !actor.admin && (actor.securityLevel||0)<2) return reply(frameNotice('🔒 SEM PERMISSÃO', ['Somente administradores do grupo e donos.']));
     const target = inspect(ctx.msg.message).mentions[0];
     if (!target) return reply(frameNotice('⚠️ USO CORRETO', [`Mencione um participante: ${require('../config').get('PREFIX')}${ctx.command} @usuário`]));
+    if(!resolveActor&&action!=='status'&&action!=='reset')await require('../security/groups/service').security().permissions.guardCommand(sock,ctx,'warn');
     const metadata = await sock.groupMetadata(ctx.jid);
     const { IdentityResolver } = await import('../../addons/alcateia/src/identity.js');
     const resolver = new IdentityResolver(sock, '5543920030769@s.whatsapp.net', metadata);
@@ -31,7 +32,7 @@ function createWarningCommand(action, { store, resolveActor } = {}) {
     if (result.duplicate) return;
     let removed = false;
     if (result.count >= 5) {
-      const response = await sock.groupParticipantsUpdate(ctx.jid, [member.jid], 'remove');
+      const response = resolveActor?await sock.groupParticipantsUpdate(ctx.jid,[member.jid],'remove'):await require('../security/groups/service').security().performParticipants(sock,ctx,[member.jid],'remove');
       if (Array.isArray(response) && response.some(item => item.status && !['200', '201'].includes(String(item.status))))
         throw Error('WhatsApp recusou a remoção; as advertências foram preservadas.');
       removed = true;

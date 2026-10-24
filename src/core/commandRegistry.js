@@ -120,6 +120,11 @@ async function executeCommand(commandName, sock, ctx) {
   // Executar
   try {
     logCommand(ctx.sender, commandName, ctx.isGroup ? ctx.jid : null);
+    const administrative={ban:'ban',mute:'mute',kick:'remove',promover:'promote',rebaixar:'demote',advertir:'warn',abrirgrupo:'settings',fechargrupo:'settings',limparinatividade:'remove',add:'add'};
+    if(ctx.isGroup&&administrative[cmd.name]){
+      try{await require('../security/groups/service').security().permissions.guardCommand(sock,ctx,administrative[cmd.name]);}
+      catch(error){return sock.sendMessage(ctx.jid,{text:require('../menus/render').frameNotice('🛡️ LOBO SECURITY',[error.code?'Ação administrativa bloqueada; confira as permissões atuais.':error.message])},{quoted:ctx.msg});}
+    }
     await cmd.handler(sock, ctx);
     bus.emit(EVENTS.COMMAND_EXECUTED, { command: commandName, sender: ctx.sender });
   } catch (err) {

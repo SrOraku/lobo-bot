@@ -10,6 +10,7 @@ const { cleanJid, getNumber, logger } = require('../utils/helpers');
 async function processGroupParticipantsUpdate(sock, update) {
   try {
     const { id, participants, action } = update;
+    await require('../security/groups/service').security().engine.participants(sock,update);
 
     for (const participant of participants) {
       const jid = cleanJid(typeof participant === 'string' ? participant : participant?.id || participant?.phoneNumber || '');
@@ -67,13 +68,14 @@ async function handleGroupsUpdate(sock, updates) {
   try {
     for (const update of updates) {
       if (!update.id) continue;
-      await require('../security/group-guard').enforce(sock,update);
+      await require('../security/groups/service').security().engine.groups(sock,update);
       const group = db.getGroup(update.id);
       if (!group) continue;
 
       if (update.subject) {
-        const guard = require('../security/group-guard').get(update.id);
-        db.updateGroup(update.id, 'name', guard.enabled ? guard.subject : update.subject);
+        const guard = require('../security/groups/service').security();
+        const baseline=guard.store.get(update.id).baseline;
+        db.updateGroup(update.id,'name',guard.manager.isEnabled(update.id,'lockname')||guard.manager.isEnabled(update.id,'antiroubo')?baseline.subject||update.subject:update.subject);
       }
     }
   } catch (err) {

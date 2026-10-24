@@ -17,7 +17,7 @@ vm.runInNewContext(
   {
     module: exported,
     require(id) {
-      if (['../commands/expansion','../commands/automation'].includes(id))return {register:(r,...args)=>require(path.join(root,'src',id.replace('../','')+'.js')).register(def=>r({...def,handler:Object.assign(def.handler,{auditFile:'src/'+id.replace('../','')+'.js',auditExport:'register'})}),...args)};
+      if (['../commands/expansion','../commands/automation','../commands/security'].includes(id))return {register:(r,...args)=>require(path.join(root,'src',id.replace('../','')+'.js')).register(def=>r({...def,handler:Object.assign(def.handler,{auditFile:'src/'+id.replace('../','')+'.js',auditExport:'register'})}),...args)};
       if (id === '../core/commandRegistry') return { register, registry };
       if (id === '../middlewares/permissions')
         return { LEVELS: { USER: 0, GROUP_ADMIN: 1, BOT_ADMIN: 2, OWNER: 3 } };

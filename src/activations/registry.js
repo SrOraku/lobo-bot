@@ -85,7 +85,7 @@ add(
   'Bem-vindo com imagem',
   'grupo',
   (...a) => require('../handlers/groupEvents').handleGroupParticipantsUpdate(...a),
-  { aliases: ['welcome', 'bem-vindo'], legacyColumn: 'welcome', default: true, bulkSafe: true },
+  { aliases: ['welcome', 'bem-vindo','boasvindas','boas-vindas'], legacyColumn: 'welcome', default: true, bulkSafe: true },
 );
 add(
   'despedida',
@@ -136,4 +136,5 @@ for (const id of [
     bulkSafe: true,
     permission: 'delegated',
   });
+for(const[id,name]of [['antiroubo','Anti-Roubo administrativo'],['antipromote','Anti-Promote'],['antidemote','Anti-Demote'],['antimasskick','Anti-remoção em massa'],['antimasspromote','Anti-promoção em massa'],['lockname','Nome protegido'],['lockdesc','Descrição protegida'],['lockpic','Foto protegida'],['antiedit','Anti-Edit'],['somenteadmins','Comandos somente para admins']])add(id,name,'LOBO SECURITY',(...args)=>require('../security/groups/service').security().engine.process(...args),{security:true,default:false,bulkSafe:false});
 module.exports = { registerFeature, feature, list };

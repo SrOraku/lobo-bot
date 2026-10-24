@@ -18,6 +18,7 @@ async function checkStartup() {
   }
   assert.equal(typeof baileys.Browsers.ubuntu, 'function');
   assert.equal(typeof baileys.DisconnectReason.loggedOut, 'number');
+  assert.equal(typeof baileys.WAMessageStubType.GROUP_CHANGE_ICON,'number');
 
   const Database = require('better-sqlite3');
   const db = new Database(':memory:');

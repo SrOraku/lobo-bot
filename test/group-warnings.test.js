@@ -41,6 +41,7 @@ test('ações automáticas só removem na quinta, delete não adverte e sobrepos
     '../activations/access': { resolveActor: async () => ({ admin, owner: false, botAdmin, phone: '5511999999999@s.whatsapp.net' }) },
     '../activations/store': { getStore: () => ({ get: () => ({ options: { antilink_mode: mode, antilinkgrupo_mode: mode } }) }) },
     '../moderation/warnings': { getWarningStore: () => warnings },
+    '../security/groups/service':{security:()=>({permissions:{context:async()=>({identify:async()=>({known:true,inGroup:true}),bot:{canonical:'bot'}}),isProtectedUser:()=>false},store:{get:()=>({pausedUntil:0}),now:()=>Date.now(),audit(){}},engine:{operation:async(s,g,event,run)=>run()}})},
   };
   const loaded = { exports: {} }, native = createRequire(file);
   vm.runInNewContext(fs.readFileSync(file, 'utf8'), { module: loaded, require: id => modules[id] || native(id) });

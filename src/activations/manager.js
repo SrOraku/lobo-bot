@@ -5,7 +5,7 @@ function groupId(value) {
     throw Error('Grupo inválido.');
   return value;
 }
-function createManager(store) {
+function createManager(store, {security} = {}) {
   const repository = () => store || require('./store').getStore();
   function states(jid) {
     const p = repository().get(jid);
@@ -42,7 +42,7 @@ function createManager(store) {
     }
     if (Object.hasOwn(options, 'inactivity_days') && (!Number.isInteger(options.inactivity_days) || options.inactivity_days < 1 || options.inactivity_days > 90))
       throw Error('Informe um número inteiro de 1 a 90 dias.');
-    if (!actor?.owner && !actor?.admin)
+    if (!actor?.owner && !actor?.admin && (actor?.securityLevel||0)<2)
       throw Error('Somente administradores do grupo ou donos podem alterar ativações.');
     const defs = names.map((name) => {
       const f = registry.feature(name);
@@ -50,9 +50,15 @@ function createManager(store) {
       if (f.source === 'sector') throw Error('Setores são informativos e não podem ser alterados. Use o comando setores.');
       return f;
     });
+    if(defs.some(f=>f.security)&&!actor.owner&&(actor.securityLevel||0)<2)throw Error('Somente administradores autorizados configuram LOBO SECURITY.');
+    if(repository().get(jid).features.antiroubo&&!actor.owner&&(actor.securityLevel||0)<2)throw Error('Anti-Roubo exige autorização administrativa do Lobo-bot.');
+    const engine=defs.some(f=>f.security)?(security?(typeof security==='function'?security():security):!store?require('../security/groups/service').security().engine:null):null;
+    const prepared=engine?await engine.prepare(jid,defs,enabled,actor):null;
+    if(!engine&&enabled&&defs.some(f=>f.security&&['antiroubo','lockname','lockdesc','lockpic'].includes(f.id)))throw Error('LOBO SECURITY requer contexto e metadata recentes.');
     const changed = [],
       unchanged = [];
     const result = repository().update(jid, actor.phone || actor.jid || 'administrador', (current) => {
+      prepared?.apply(current);
       for (const f of defs) {
         if (enabled && f.botAdminRequired && !botAdmin)
           throw Error('Esta função exige que o bot seja administrador do grupo.');
@@ -63,6 +69,7 @@ function createManager(store) {
         for (const other of enabled ? f.incompatibilities || [] : [])
           if (current.features[other]) throw Error('Desative primeiro o recurso incompatível: ' + other);
         current.features[f.id] = enabled;
+        if(f.security&&previous!==enabled)engine?.auditActivation?.(jid,f.id,previous,enabled,actor);
         if (!enabled) {
           const disabled = new Set([f.id]);
           let expanded;
@@ -93,7 +100,7 @@ function createManager(store) {
         issues: [
           ...(typeof f.handler !== 'function' ? ['HANDLER_AUSENTE'] : []),
           ...(f.enabled && f.isConfigured && !f.isConfigured() ? ['CONFIGURACAO_INCOMPLETA'] : []),
-          ...(f.enabled && f.botAdminRequired && !botAdmin ? ['BOT_NAO_ADMIN'] : []),
+          ...(f.enabled && (f.botAdminRequired||f.security) && !botAdmin ? ['BOT_NAO_ADMIN'] : []),
           ...(f.enabled ? (f.dependencies || []).filter(id => !registry.feature(id) || !isEnabled(jid, id)).map(id => 'DEPENDENCIA:' + id) : []),
           ...(f.enabled ? (f.incompatibilities || []).filter(id => isEnabled(jid, id)).map(id => 'INCOMPATIVEL:' + id) : []),
         ],
@@ -113,7 +120,7 @@ function createManager(store) {
         registry
           .list()
           .filter((f) => (enabled ? f.bulkSafe : true))
-          .filter((f) => f.source !== 'sector')
+          .filter((f) => f.source !== 'sector'&&(!f.security||ctx?.actor?.owner||(ctx?.actor?.securityLevel||0)>=2))
           .map((f) => f.id),
         enabled,
         ctx,

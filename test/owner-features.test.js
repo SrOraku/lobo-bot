@@ -46,21 +46,18 @@ test('painel de donos recusa membros e reserva cadastro ao principal',async t=>{
 });
 
 test('antirroubo isola grupos, restaura mudança não autorizada e aceita autorizado',async t=>{
-  const db=new Database(':memory:');t.after(()=>db.close());runMigrations(db);
-  const file=require('node:path').join(__dirname,'../src/security/group-guard.js');
-  const native=require('node:module').createRequire(file),loaded={exports:{}};
-  const mocks={'../utils/database':{db},'../utils/owners':{ownerNumbers:()=>['5543920030769']}};
-  require('node:vm').runInNewContext(require('node:fs').readFileSync(file,'utf8'),{module:loaded,structuredClone,require:id=>mocks[id]||native(id)});
-  const guard=loaded.exports,A='1@g.us',B='2@g.us';
-  guard.save(A,{enabled:true,allowed:['5511999999999@s.whatsapp.net'],subject:'Original',desc:'Regras',restrict:true,announce:false},'owner','enable');
-  assert.equal(guard.get(B).enabled,false);
-  const calls=[],sock={user:{id:'bot'},groupUpdateSubject:async(_,value)=>calls.push(value)};
-  const resolveIdentity=async()=>({member:async value=>value==='bot'?{isAdmin:true}: {phoneNumber:value==='autorizado'?'5511999999999@s.whatsapp.net':'5511888888888@s.whatsapp.net'}});
-  await guard.enforce(sock,{id:A,author:'intruso',subject:'Modificado'},{resolveIdentity});
-  assert.deepEqual(calls,['Original']);assert.equal(guard.get(A).subject,'Original');
-  await guard.enforce(sock,{id:A,author:'autorizado',subject:'Novo nome'},{resolveIdentity});
-  assert.equal(guard.get(A).subject,'Novo nome');assert.equal(calls.length,1);
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM security_audit').get().n,3);
+ const db=new Database(':memory:');t.after(()=>db.close());runMigrations(db);
+ const service=require('../src/security/groups/service').createSecurity({db,owners:()=>['5543920030769'],botAdmin:()=>false});
+ const guard=require('../src/security/group-guard').createGuard(service),A='1@g.us',B='2@g.us',bot='5511977777777@s.whatsapp.net',trusted='5511999999999@s.whatsapp.net',intruder='5511888888888@s.whatsapp.net';
+ guard.save(A,{enabled:true,allowed:[trusted],subject:'Original',desc:'Regras',restrict:true,announce:false},'owner','enable');
+ assert.equal(guard.get(B).enabled,false);
+ const calls=[],meta={subject:'Modificado',participants:[{id:bot,admin:'admin'},{id:trusted,admin:'admin'},{id:intruder,admin:'admin'}]};
+ const sock={user:{id:bot},groupMetadata:async()=>structuredClone(meta),groupUpdateSubject:async(_,value)=>{calls.push(value);meta.subject=value;},sendMessage:async()=>{}};
+ await guard.enforce(sock,{id:A,author:intruder,subject:'Modificado'});
+ assert.deepEqual(calls,['Original']);assert.equal(guard.get(A).subject,'Original');
+ meta.subject='Novo nome';await guard.enforce(sock,{id:A,author:trusted,subject:'Novo nome'});
+ assert.equal(guard.get(A).subject,'Novo nome');assert.equal(calls.length,1);
+ assert.equal(db.prepare('SELECT COUNT(*) n FROM group_audit_log').get().n,2);
 });
 
 test('menus enviam capa de foto/GIF com texto e fazem fallback sem apagar comandos',async t=>{

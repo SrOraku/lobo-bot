@@ -24,7 +24,7 @@ function createInteraction({ now = Date.now, resolveActor, store, rateLimit } = 
     session.last = ctx.msg?.key?.id;
     try {
       const actor = await (resolveActor || require('./access').resolveActor)(sock, ctx);
-      if (!actor.owner && !actor.admin) { sessions.delete(id); await reply('🔒 Somente administradores do grupo e donos podem configurar.'); return true; }
+      if (!actor.owner && !actor.admin && (actor.securityLevel||0)<2) { sessions.delete(id); await reply('🔒 Somente administradores do grupo e donos podem configurar.'); return true; }
       const manager = require('./manager').createManager(store);
       if (session.stage === 'days') {
         const days = Number(input);

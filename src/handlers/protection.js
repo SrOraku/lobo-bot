@@ -7,7 +7,12 @@ async function handleProtection(sock, msg, { jid, sender, body, isGroup }) {
   if (!isGroup) return false;
   let deleted = false;
   async function remove(user) {
-    const response = await sock.groupParticipantsUpdate(jid, [user], 'remove');
+    const security=require('../security/groups/service').security();
+    const c=await security.permissions.context(sock,jid,sock.user?.id,sock.user?.lid,{force:true});
+    const target=await c.identify(user);
+    if(!target.inGroup||security.permissions.isProtectedUser(target)||security.store.get(jid).pausedUntil>security.store.now())throw Error('PROTECTED_OR_PAUSED');
+    const response = await security.engine.operation(sock,jid,{action:'REMOVE',target:user,value:null},()=>sock.groupParticipantsUpdate(jid,[user],'remove'));
+    security.store.audit(jid,{actor:c.bot.canonical,target:target.canonical,action:'AUTO_REMOVE',authorized:true,result:'APPLIED'});
     if (Array.isArray(response) && response.some(item => item.status && !['200', '201'].includes(String(item.status))))
       throw Error('WhatsApp recusou a remoção.');
   }
@@ -17,7 +22,7 @@ async function handleProtection(sock, msg, { jid, sender, body, isGroup }) {
     const candidate = matchingFeatures(data, body || data.body, enabled);
     if (!candidate.length && !['antifake', 'antispam', 'antiflood'].some(enabled)) return false;
     const actor = await require('../activations/access').resolveActor(sock, { jid, msg });
-    if (actor.owner || actor.admin) return false;
+    if (msg.key.fromMe || actor.owner || actor.admin || (actor.securityLevel||0)>=2) return false;
     const counter = track(jid, actor.phone || sender, body || data.body);
     if (enabled('antiflood') && counter.flood) candidate.push('antiflood');
     if (enabled('antispam') && counter.repeated) candidate.push('antispam');

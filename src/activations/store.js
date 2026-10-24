@@ -90,6 +90,7 @@ function createPolicyStore(db) {
   });
   return {
     get,
+    invalidate(jid){cache.delete(jid);},
     history(jid, limit = 10) {
       return db.prepare('SELECT feature,previous_state,new_state,actor,created_at FROM activation_audit WHERE group_jid=? ORDER BY id DESC LIMIT ?').all(jid, Math.max(1, Math.min(50, Number(limit) || 10)));
     },

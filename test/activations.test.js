@@ -122,7 +122,7 @@ test('dono é confirmado por identidade PN/LID e não pelo número logado', asyn
     user: { id: '5511888888888@s.whatsapp.net' },
     groupMetadata: async () => ({ participants: [] }),
   };
-  const ctx = (sender) => ({ msg: { key: { remoteJid: 'g@g.us', participant: sender } } });
+  const ctx = (sender) => ({ msg: { key: { remoteJid: '12099988@g.us', participant: sender } } });
   assert.equal((await resolveActor(sock, ctx('5543920030769@s.whatsapp.net'))).owner, true);
   assert.equal((await resolveActor(sock, ctx('5543920030769@lid'))).owner, false);
   assert.equal((await resolveActor(sock, ctx(sock.user.id))).owner, false);

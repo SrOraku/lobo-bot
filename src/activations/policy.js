@@ -33,7 +33,7 @@ function change(current, { action, target, value, owner, admin }) {
 function allowed(policy, key, actor) {
   if (actor.owner) return true;
   if (!policy.bot || key === 'dono') return false;
-  return key !== 'adm' || !!actor.admin;
+  return key !== 'adm' || !!actor.admin || (actor.securityLevel||0)>=2;
 }
 
 function commandSector(name, args = [], definition) {
