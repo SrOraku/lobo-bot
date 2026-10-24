@@ -158,19 +158,3 @@ A referência Esdeath disponibiliza distribuição compilada, sem fonte verific�
 O alvo usa o JID real da metadata, incluindo grupos com LID. O retorno do servidor precisa identificar cada participante e conter status de sucesso; respostas vazias, incompletas, recusadas ou destinadas a outra pessoa não geram sucesso. A metadata é consultada novamente, com tentativas curtas para propagação. Quando a saída não puder ser confirmada, o bot informa isso sem salvar banimento interno. Não é necessário reenviar o comando repetidamente: confira primeiro a lista do grupo.
 
 Os aliases PN/LID confirmados são bloqueados/liberados juntos, em transação SQLite isolada pelo chat. Perfis inexistentes são criados sem modificar nomes, saldos ou progresso dos registros existentes. Se a remoção ocorrer e o banco falhar, a resposta informa o resultado parcial, sem alegar que o bloqueio foi salvo. Falha ao enviar a mensagem de confirmação não desfaz o banimento já persistido. Não há migration nem exclusão de dados nesta edição.
-
-
-## Capa do menu principal diretamente nos arquivos — v1.8.4
-
-Na pasta que contém package.json, abra src/assets/ e coloque seu arquivo com um destes nomes exatos:
-
-- `src/assets/menu-principal.gif` — GIF verdadeiro, não uma foto apenas renomeada.
-- `src/assets/menu-principal.mp4` — alternativa em vídeo.
-
-Não é necessário enviar ao ChatGPT nem usar !fotomenu. Depois de instalar esta versão e reiniciar o processo para carregar o código novo, basta substituir o arquivo; a próxima abertura de !menu lê o conteúdo atualizado. Até 8 MB de entrada. GIF limitado a dimensões de até 4096 por lado. A capa é normalizada para MP4 H.264 sem áudio, até 12 segundos, com até 640 pixels por lado, para reprodução como GIF no WhatsApp. A conversão precisa do FFmpeg já incluído nas dependências do projeto.
-
-Prioridade no menu principal: GIF local, MP4 local, capa cadastrada por !fotomenu, animação oficial e JPG de fallback. O arquivo local tem prioridade inclusive se a capa padrão tiver sido desativada anteriormente por !fotomenu remover. Para deixar de usá-lo, remova/renomeie o GIF/MP4 local. Os submenus mantêm o comportamento anterior, sem receber automaticamente a nova capa local. !fotomenu continua funcionando para as capas cadastradas.
-
-A conversão fica em data/menu/file-cache/ com nome derivado do conteúdo. Substituir o arquivo atualiza a capa mesmo que o nome seja igual. Aberturas simultâneas compartilham a conversão; só o cache gerado por este módulo é limpo, mantendo dados e mídias cadastradas. Arquivo inválido, timeout ou falha de envio preserva o menu em texto e as capas alternativas. Detalhes seguros ficam no log como menu-cover, sem incluir conteúdo do arquivo ou stderr bruto.
-
-Esses dois arquivos locais são ignorados pelo Git e não fazem parte do conjunto gerenciado pelo atualizador; atualizações automáticas preservam a escolha do dono. A animação oficial em menu-principal.mp4.b64.parts permanece como fallback e não precisa ser editada. Nenhuma alteração no banco, sessão, jogos, RP ou economia.

@@ -1,5 +1,3 @@
-> **Capa por arquivo — v1.8.4:** coloque `menu-principal.gif` ou `menu-principal.mp4` em `src/assets/` para trocar a animação do menu principal, sem comandos no WhatsApp. Veja [prioridade e limites](MENUS.md#capa-do-menu-principal-diretamente-nos-arquivos--v184).
-
 > **Correção v1.8.3:** download de atualizações com retentativas limitadas, fallback oficial por blob e diagnóstico por arquivo; divergência de manifesto é informada como falha de integridade.
 
 > **Correção v1.8.2:** `!ban` remove o participante do grupo e mantém o bloqueio interno somente após confirmação do WhatsApp. `!kick` continua removendo sem bloquear comandos.
