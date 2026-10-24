@@ -35,7 +35,7 @@ async function boot({
     else log.log('✅ Código já atualizado. Iniciando o bot.');
   } catch(error) {
     // These states cannot safely start a second runtime or partially restored code.
-    if(['BUSY','STALE_LOCK','ROLLBACK_FAILED'].includes(error.code))throw error;
+    if(['BUSY','STALE_LOCK','ROLLBACK_FAILED','LOCK_INVALID','LOCK_UNSAFE','LOCK_LOST'].includes(error.code))throw error;
     recover();
     log.warn('⚠️ Atualização indisponível. Iniciando a versão local preservada. Consulte updates/last-error.json se existir.');
   }
@@ -45,6 +45,8 @@ async function boot({
 if(require.main===module)boot().catch(error=>{
   const code=error.code||(/^[A-Z_]+$/.test(error.message)?error.message:'START_UPDATE_FAILED');
   console.error(`❌ Inicialização interrompida (${code}). Verifique o log e a pasta updates; não apague sessões ou banco.`);
+  if(code==='BUSY')console.error('⚠️ Outra atualização está ativa. Aguarde sua conclusão e confira se há outra instância usando esta instalação.');
+  if(code==='LOCK_INVALID')console.error('⚠️ A trava está incompleta ou corrompida. Preserve updates/ para diagnóstico; não apague backups ou apply-journal.json.');
   process.exitCode=1;
 });
 module.exports={boot,checkRelease};

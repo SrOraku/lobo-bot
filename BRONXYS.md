@@ -102,3 +102,16 @@ Se a instalação antiga falha com `BACKUP_SYMLINK`, ela ainda usa o atualizador
 ### Informações das músicas (1.5.5)
 
 `play`, `play_audio`, `play_video`, `ytmp3`, `ytmp4` e `playdoc` enviam o arquivo com um painel separado de título, duração, publicação, canal e descrição fornecida pela fonte. Com Bronxys, a busca de metadados seleciona o vídeo e o mesmo URL é enviado ao baixador. A descrição não é resumida pelo bot: mensagens longas são divididas preservando o texto. Dados ausentes são identificados; uma falha de consulta não impede baixar a mídia. A fonte pode fornecer uma descrição incompleta; o bot não reconstrói trechos ausentes. Não há progresso fictício de 100%.
+
+
+## Inicialização interrompida por STALE_LOCK — corrigida na v1.8.1
+
+Uma queda durante download, instalação ou validação podia deixar `updates/update.lock` mesmo sem alterações no código ativo. O inicializador antigo bloqueava indefinidamente o próximo início. A nova versão confirma que o processo responsável terminou, arquiva a trava obsoleta e continua automaticamente. PID ativo ou identidade duvidosa continua bloqueando com BUSY; JSON vazio/corrompido gera LOCK_INVALID. Não apague toda a pasta updates.
+
+As travas novas são diretórios não vazios publicados atomicamente com `owner.json`; o arquivo JSON legado continua sendo reconhecido. Identidade do processo no Linux detecta PID reaproveitado. Registros `retired-lock-*` preservam a identificação da trava recuperada e impedem que dois recuperadores removam uma trava recém-criada. Nenhuma credencial é gravada nesses registros.
+
+Se houver `apply-journal.json`, só há restauração sob posse exclusiva da trava. Todos os hashes do backup são conferidos antes de alterar os arquivos; uma versão em teste da aplicação interrompida é cancelada após restaurar. Banco, sessão, .env e configurações privadas não são apagados ou substituídos pela recuperação do código.
+
+**Para instalar a correção:** pare o servidor, envie e extraia o ZIP atualizado na raiz do projeto, substituindo o código, e mantenha `.env`, `sessions/`, `data/`, `storage/` e `updates/` existentes. Confira se `package.json` está na mesma pasta de `atualizar.sh`. Inicie com `bash atualizar.sh`. Se aparecer LOCK_INVALID, preserve a pasta updates para diagnóstico: não exclua backups nem o diário de aplicação.
+
+Os avisos de `npm audit` são separados do erro de trava. Não execute `npm audit fix --force` como tratamento de STALE_LOCK, pois pode trocar dependências incompatíveis.

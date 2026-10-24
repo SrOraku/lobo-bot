@@ -1,3 +1,5 @@
+> **Correção v1.8.1:** recuperação automática de travas de atualização abandonadas, sem apagar sessão ou banco.
+
 > **v1.8.0 — LOBO SECURITY:** [proteções por grupo, confiança, auditoria, snapshots e limites reais](src/security/groups/README.md). Jogos, RP e economia permanecem intactos.
 
 > **Expansão v1.7.0:** [auditoria, comandos, migrations, compatibilidade e limites](EXPANSAO.md). WoK coin permanece a moeda única por chat.
@@ -10,7 +12,7 @@
 
 ## Inicialização com atualização
 
-No painel Bronxys, você pode usar **`bash atualizar.sh`** como comando de inicialização, na raiz que contém package.json. Ele verifica a versão oficial, usa staging/validação/backup do atualizador existente e inicia o supervisor com a sessão e os dados atuais. Se já estiver atualizado, inicia diretamente; se a rede falhar antes da aplicação, inicia a versão local preservada. Lock ativo, lock interrompido sem recuperação ou falha de rollback impedem iniciar por segurança. `npm start` continua disponível para iniciar sem a verificação remota.
+No painel Bronxys, você pode usar **`bash atualizar.sh`** como comando de inicialização, na raiz que contém package.json. Ele verifica a versão oficial, usa staging/validação/backup do atualizador existente e inicia o supervisor com a sessão e os dados atuais. Se já estiver atualizado, inicia diretamente; se a rede falhar antes da aplicação, inicia a versão local preservada. Travas de processos comprovadamente encerrados são recuperadas automaticamente. Se houver aplicação interrompida, o backup é validado e restaurado antes de iniciar. Uma atualização ativa, trava inválida ou falha de restauração continua impedindo iniciar por segurança. `npm start` continua disponível para iniciar sem a verificação remota.
 
 ## API Bronxys
 

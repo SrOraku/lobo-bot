@@ -19,11 +19,13 @@ function target(root, name) {
   }
   return current;
 }
-function recover(root) {
+function restore(root) {
   const journal = path.join(root, 'updates/apply-journal.json');
   if (!fs.existsSync(journal)) return false;
   const record = JSON.parse(fs.readFileSync(journal, 'utf8'));
   if (!/^backup-[\w-]+$/.test(record.backup) || !Array.isArray(record.saved)) throw Error('RECOVERY_INVALID_JOURNAL');
+  const pending = path.join(root, 'updates/pending-release.json');
+  if (fs.existsSync(pending) && JSON.parse(fs.readFileSync(pending, 'utf8')).backup !== record.backup) throw Error('RECOVERY_PENDING_MISMATCH');
   const backup = target(root, 'updates/' + record.backup);
   const { managedPath } = require('./source');
   // Validate every backup before changing any live file.
@@ -49,9 +51,17 @@ function recover(root) {
   const state = path.join(root, 'updates/state.json');
   if (record.previous) write(state, JSON.stringify(record.previous));
   else fs.rmSync(state, { force: true });
+  fs.rmSync(pending, { force: true });
   fs.unlinkSync(journal);
-  // The journal was recovered before runtime startup; its updater lock is obsolete.
-  fs.rmSync(path.join(root, 'updates/update.lock'), { force: true });
   return true;
+}
+function recover(root, { lease } = {}) {
+  const journal = target(root, 'updates/apply-journal.json');
+  const lock = target(root, 'updates/update.lock');
+  if (!lease && !fs.existsSync(journal) && !fs.existsSync(lock)) return false;
+  // Even a journal must never be restored while another updater is applying it.
+  const owned = lease || require('./lock').acquireLock(root, { action: 'recovery' });
+  try { owned.assertOwned(); return restore(root); }
+  finally { if (!lease) owned.release(); }
 }
 module.exports = { recover, write, target };

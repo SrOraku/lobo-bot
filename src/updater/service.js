@@ -19,7 +19,10 @@ function describeFailure(error, stage) {
     (/^[A-Z][A-Z0-9_]{1,48}$/.test(String(error.code || '')) ? error.code : null);
   const status = error.response?.status;
   let reason = 'Não consegui concluir esta etapa.';
-  if (code === 'EALLOWREMOTE' || code === 'EALLOWGIT') reason = 'A hospedagem bloqueou o download de uma dependência. Solicite ao suporte a liberação da dependência oficial do Baileys (libsignal).';
+  if (code === 'BUSY') reason = 'Outra atualização está ativa ou não foi possível confirmar que terminou. Aguarde antes de reiniciar.';
+  else if (code === 'LOCK_INVALID') reason = 'A trava de atualização está incompleta ou corrompida. Preserve updates/ para diagnóstico; não apague backups ou o diário de aplicação.';
+  else if (code === 'LOCK_UNSAFE' || code === 'LOCK_LOST') reason = 'Não foi possível confirmar a posse segura da trava de atualização.';
+  else if (code === 'EALLOWREMOTE' || code === 'EALLOWGIT') reason = 'A hospedagem bloqueou o download de uma dependência. Solicite ao suporte a liberação da dependência oficial do Baileys (libsignal).';
   else if (code === 'ENOSPC') reason = 'Falta espaço em disco para preparar a atualização e o backup.';
   else if (['EACCES','EPERM'].includes(code)) reason = 'O processo não tem permissão para gravar nos arquivos da instalação.';
   else if (code === 'BACKUP_SYMLINK') reason = 'Há um link simbólico dentro da sessão ou dos dados. O backup foi interrompido para não copiar arquivos externos. Verifique os volumes e atalhos da instalação.';
@@ -97,22 +100,11 @@ class UpdateService {
     if (this.needsRestart) throw new UpdateError('Reinicie o bot pelo painel antes de outra atualização.', 'RESTART_REQUIRED');
     this.running = true;
     let lock, stage, phase = 'preparação';
-    const lockPath = path.join(this.directory, 'update.lock');
     try {
       if (!semver.satisfies(this.nodeVersion, '>=22.12.0')) throw new UpdateError('Configure Node.js 22.12 ou superior no painel do servidor.');
       await safeTarget(this.root, 'updates'); await fs.mkdir(this.directory, { recursive: true });
-      try { lock = await fs.open(lockPath, 'wx'); }
-      catch (e) {
-        if (e.code !== 'EEXIST') throw e;
-        const previous = await readJSON(lockPath);
-        let alive = true;
-        if (Number.isInteger(previous?.pid) && previous.pid > 0) {
-          try { process.kill(previous.pid, 0); } catch (error) { if (error.code === 'ESRCH') alive = false; }
-        }
-        if (alive) throw new UpdateError('Outra instância está atualizando o bot.', 'BUSY');
-        throw new UpdateError('Uma atualização anterior foi interrompida. Confira o backup e remova updates/update.lock pelo painel antes de tentar novamente.', 'STALE_LOCK');
-      }
-      await lock.writeFile(JSON.stringify({ pid: process.pid, at: Date.now() }));
+      lock = require('./lock').acquireLock(this.root, { action });
+      require('./recovery').recover(this.root, { lease: lock });
       if(await readJSON(path.join(this.directory,'pending-release.json')))throw new UpdateError('A versão está em teste. Aguarde três minutos de runtime saudável; se o supervisor ainda é antigo, reinicie uma vez pelo painel.','RELEASE_IN_TRIAL');
       stage = await fs.mkdtemp(path.join(this.directory, 'stage-'));
       let files, sha = null, targetVersion;
@@ -189,6 +181,7 @@ class UpdateService {
       phase = 'testes críticos';
       await this._run('npm', ['test'], stage);
       phase = 'backup e aplicação';
+      lock.assertOwned();
       const result = await this._apply(stage, files, { action, sha, version: targetVersion || pkg.version, reuseDependencies, integrity });
       this.needsRestart = true;
       return result;
@@ -200,7 +193,10 @@ class UpdateService {
       throw new UpdateError(`Etapa: ${diagnostic.stage}. Código: ${diagnostic.code}. ${diagnostic.reason} Os arquivos anteriores foram preservados.`, diagnostic.code);
     } finally {
       if (stage) await fs.rm(stage, { recursive: true, force: true }).catch(() => {});
-      if (lock) { await lock.close().catch(() => {}); await fs.rm(lockPath, { force: true }).catch(() => {}); }
+      if (lock) {
+        try { lock.release(); }
+        catch (error) { this.logger.error?.({ code: error.code || 'LOCK_RELEASE_FAILED' }, 'Não foi possível liberar a trava de atualização com segurança.'); }
+      }
       this.running = false;
     }
   }

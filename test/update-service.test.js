@@ -116,6 +116,18 @@ test('filesystem lock and in-process guard reject concurrent updates across two 
   await assert.rejects(other.update('bot'), { code: 'BUSY' }); release(); await pending; await f.preserved();
 });
 
+test('orphan legacy update lock is recovered automatically before staging without changing private data', async t => {
+  const f = await fixture(t);
+  const child = require('node:child_process').spawnSync(process.execPath, ['-e', '']);
+  assert.equal(child.status, 0);
+  await f.put('updates/update.lock', JSON.stringify({ pid: child.pid, at: Date.now() - 60000 }));
+  await f.service.update('bot');
+  assert.equal(await f.read('src/index.js'), 'new code');
+  await f.preserved();
+  assert.ok((await fs.readdir(path.join(f.root, 'updates'))).some(name => name.startsWith('retired-lock-')));
+  await assert.rejects(fs.lstat(path.join(f.root, 'updates/update.lock')), { code: 'ENOENT' });
+});
+
 test('protected files and source symlinks cannot overwrite external paths', async t => {
   const f = await fixture(t, { contents: { '.env': 'do not apply' } }); await assert.rejects(f.service.update('bot')); await f.preserved();
   const g = await fixture(t); const external = await fs.mkdtemp(path.join(os.tmpdir(), 'lobo-outside-'));

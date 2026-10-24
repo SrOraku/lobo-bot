@@ -7,13 +7,16 @@ function createHealth(root,{now=Date.now,period=180000,maxCrashes=3}={}){
  function pending(){return read(pendingFile);}
  function rollback(reason='startup_crash'){
   const state=pending();if(!state)return false;
+  const lease=require('./lock').acquireLock(root,{action:'rollback'});
+  try {
   if(!/^backup-[\w-]+$/.test(state.backup||''))throw Error('HEALTH_INVALID_BACKUP');
   const record=read(target(root,`updates/${state.backup}/release.json`));if(!record||!Array.isArray(record.saved))throw Error('HEALTH_INVALID_BACKUP');
   const badFile=path.join(root,'updates/bad-releases.json'),bad=read(badFile,[]);
-  write(path.join(root,'updates/apply-journal.json'),JSON.stringify(record));recover(root);
+  write(path.join(root,'updates/apply-journal.json'),JSON.stringify(record));recover(root,{lease});
   write(badFile,JSON.stringify([...bad,{sha:state.sha,version:state.toVersion,reason,at:now()}].slice(-20)));
   write(path.join(root,'updates/rollback.json'),JSON.stringify({...state,reason,at:now()}));
   fs.rmSync(pendingFile,{force:true});return true;
+  } finally {lease.release();}
  }
  return {pending,rollback,
   ready(){const state=pending();if(state){state.readyAt=now();write(pendingFile,JSON.stringify(state));}return !!state;},
