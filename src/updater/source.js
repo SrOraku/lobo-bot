@@ -27,12 +27,33 @@ async function request(url, binary = false) {
   return response.data;
 }
 
-async function githubSnapshot({ get = request } = {}) {
-  const commit = await get(`${API}/commits/main`);
+function downloadError(message, code, file, original) {
+  const error = Object.assign(new Error(message), { code, updateFile: file.path });
+  const status = original?.response?.status;
+  if (Number.isInteger(status)) error.response = { status };
+  return error;
+}
+
+async function retryRequest(run, wait) {
+  for (let attempt = 0; ; attempt++) {
+    try { return await run(); }
+    catch (error) {
+      const status = error.response?.status;
+      const transient = [408, 429, 500, 502, 503, 504].includes(status) ||
+        ['ENOTFOUND', 'EAI_AGAIN', 'ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'ERR_NETWORK'].includes(error.code);
+      if (!transient || attempt >= 2) throw error;
+      await wait(attempt === 0 ? 500 : 1500);
+    }
+  }
+}
+
+async function githubSnapshot({ get = request, wait = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+  const fetch = (url, binary = false) => retryRequest(() => get(url, binary), wait);
+  const commit = await fetch(`${API}/commits/main`);
   const sha = commit?.sha;
   const tree = commit?.commit?.tree?.sha;
   if (![sha, tree].every(v => /^[a-f0-9]{40}$/.test(v || ''))) throw new Error('Referência inválida do repositório.');
-  const root = await get(`${API}/git/trees/${tree}`);
+  const root = await fetch(`${API}/git/trees/${tree}`);
   if (!Array.isArray(root.tree) || root.truncated) throw new Error('Árvore incompleta do repositório.');
   const files = [];
   const add = (item, prefix = '') => {
@@ -48,7 +69,7 @@ async function githubSnapshot({ get = request } = {}) {
   for (const name of ROOT_DIRS) {
     const directory = root.tree.find(e => e.path === name && e.type === 'tree' && e.mode === '040000');
     if (!directory) continue;
-    const nested = await get(`${API}/git/trees/${directory.sha}?recursive=1`);
+    const nested = await fetch(`${API}/git/trees/${directory.sha}?recursive=1`);
     if (!Array.isArray(nested.tree) || nested.truncated) throw new Error('Diretório incompleto na atualização.');
     for (const item of nested.tree) if (item.type !== 'tree') add(item, `${name}/`);
   }
@@ -59,11 +80,31 @@ async function githubSnapshot({ get = request } = {}) {
   return { sha, files, async download(file) {
     if (!files.includes(file)) throw new Error('Arquivo não pertence ao manifesto.');
     const url = `https://raw.githubusercontent.com/${REPOSITORY}/${sha}/${file.path.split('/').map(encodeURIComponent).join('/')}`;
-    const data = Buffer.from(await get(url, true));
-    const digest = createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex');
-    if (data.length > 2 * 1024 * 1024 || digest !== file.sha) throw new Error('Falha na integridade de um arquivo da atualização.');
-    return data;
+    const validate = data => {
+      if (data.length > 2 * 1024 * 1024) throw downloadError('Arquivo da atualização excede o limite.', 'DOWNLOAD_FILE_TOO_LARGE', file);
+      const digest = createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex');
+      if (digest !== file.sha) throw downloadError('Falha na integridade de um arquivo da atualização.', 'DOWNLOAD_HASH_MISMATCH', file);
+      return data;
+    };
+    let rawFailure;
+    try { return validate(Buffer.from(await fetch(url, true))); }
+    catch (error) { rawFailure = error; }
+    // Same repository and pinned blob hash: a transient raw/CDN failure must not
+    // require accepting unverified bytes or downloading from an arbitrary URL.
+    try {
+      const blob = await fetch(`${API}/git/blobs/${file.sha}`);
+      const content = typeof blob?.content === 'string' ? blob.content.replace(/\s/g, '') : '';
+      if (blob?.sha !== file.sha || blob.encoding !== 'base64' || !/^[A-Za-z0-9+/]*={0,2}$/.test(content) || blob.size > 2 * 1024 * 1024) {
+        throw downloadError('Resposta inválida ao baixar o arquivo pela API do GitHub.', 'DOWNLOAD_INVALID_BLOB', file);
+      }
+      return validate(Buffer.from(content, 'base64'));
+    } catch (error) {
+      if (error.updateFile) throw error;
+      if (rawFailure.updateFile) throw rawFailure;
+      const code = /^[A-Z][A-Z0-9_]{1,48}$/.test(String(error.code || '')) ? error.code : 'DOWNLOAD_FAILED';
+      throw downloadError('Não foi possível baixar o arquivo pelas origens oficiais do GitHub.', code, file, error.response ? error : rawFailure);
+    }
   } };
 }
 
-module.exports = { REPOSITORY, ROOT_FILES, ROOT_DIRS, managedPath, githubSnapshot };
+module.exports = { REPOSITORY, ROOT_FILES, ROOT_DIRS, managedPath, githubSnapshot, retryRequest };

@@ -1,3 +1,5 @@
+> **Correção v1.8.3:** download de atualizações com retentativas limitadas, fallback oficial por blob e diagnóstico por arquivo; divergência de manifesto é informada como falha de integridade.
+
 > **Correção v1.8.2:** `!ban` remove o participante do grupo e mantém o bloqueio interno somente após confirmação do WhatsApp. `!kick` continua removendo sem bloquear comandos.
 
 > **Correção v1.8.1:** recuperação automática de travas de atualização abandonadas, sem apagar sessão ou banco.

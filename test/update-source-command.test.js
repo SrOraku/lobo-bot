@@ -79,7 +79,7 @@ function sourceFixture({ corrupt = false, truncated = false } = {}) {
     if (url.includes('d'.repeat(40))) return { tree: [{ ...check, path: 'check-startup.js' }] };
     throw new Error('unexpected request');
   };
-  return { calls, get };
+  return { calls, get, bodies };
 }
 
 test('GitHub snapshot downloads only allowlisted files from a pinned commit and verifies blob hashes', async () => {
@@ -94,6 +94,81 @@ test('GitHub integrity failure or incomplete tree stops the update', async () =>
   const f = sourceFixture({ corrupt: true }); const snapshot = await githubSnapshot({ get: f.get });
   await assert.rejects(snapshot.download(snapshot.files[0]), /integridade/);
   await assert.rejects(githubSnapshot({ get: sourceFixture({ truncated: true }).get }), /incompleta/);
+});
+
+test('transient raw failures retry twice then use the exact pinned GitHub blob', async () => {
+  const f = sourceFixture(), waits = [], urls = [];
+  const get = async (url, binary) => {
+    if (binary) { urls.push(url); throw Object.assign(Error('connection lost'), { code: 'ECONNRESET' }); }
+    if (url.includes('/git/blobs/')) {
+      urls.push(url); const bytes = f.bodies.get('package.json');
+      return { sha: url.split('/').at(-1), encoding: 'base64', size: bytes.length, content: bytes.toString('base64') };
+    }
+    return f.get(url, binary);
+  };
+  const source = await githubSnapshot({ get, wait: async ms => waits.push(ms) });
+  const file = source.files.find(item => item.path === 'package.json');
+  assert.equal((await source.download(file)).toString(), '{}');
+  assert.deepEqual(waits, [500, 1500]); assert.equal(urls.length, 4);
+  assert.ok(urls.at(-1).endsWith('/git/blobs/' + file.sha));
+});
+
+test('a truncated raw response can recover only through bytes matching the expected blob hash', async () => {
+  const f = sourceFixture(); let fallback = 0;
+  const source = await githubSnapshot({ get: async (url, binary) => {
+    if (binary) return Buffer.from('truncated');
+    if (url.includes('/git/blobs/')) { fallback++; const bytes = f.bodies.get('package.json'); return { sha: url.split('/').at(-1), encoding: 'base64', content: bytes.toString('base64') }; }
+    return f.get(url, binary);
+  }, wait: async () => {} });
+  assert.equal((await source.download(source.files[0])).toString(), '{}'); assert.equal(fallback, 1);
+});
+
+for (const [name, blob] of [
+  ['wrong SHA', sha => ({ sha: '0'.repeat(40), encoding: 'base64', content: 'e30=' })],
+  ['invalid encoding', sha => ({ sha, encoding: 'utf8', content: '{}' })],
+  ['malformed base64', sha => ({ sha, encoding: 'base64', content: '!!!' })],
+  ['oversized blob', sha => ({ sha, encoding: 'base64', content: 'e30=', size: 3 * 1024 * 1024 })],
+]) test(`fallback rejects ${name} without accepting unverified bytes`, async () => {
+  const f = sourceFixture(); const source = await githubSnapshot({ get: async (url, binary) => {
+    if (binary) throw Error('raw failed');
+    if (url.includes('/git/blobs/')) return blob(url.split('/').at(-1));
+    return f.get(url, binary);
+  }, wait: async () => {} });
+  await assert.rejects(source.download(source.files[0]), error => error.code === 'DOWNLOAD_INVALID_BLOB' && error.updateFile === 'package.json');
+});
+
+test('fallback content hash mismatch remains a hard failure with a safe file diagnostic', async () => {
+  const f = sourceFixture(); const source = await githubSnapshot({ get: async (url, binary) => {
+    if (binary) return Buffer.from('corrupt raw');
+    if (url.includes('/git/blobs/')) return { sha: url.split('/').at(-1), encoding: 'base64', content: Buffer.from('corrupt blob').toString('base64') };
+    return f.get(url, binary);
+  }, wait: async () => {} });
+  await assert.rejects(source.download(source.files[0]), { code: 'DOWNLOAD_HASH_MISMATCH', updateFile: 'package.json' });
+});
+
+test('all official download attempts exhausted produces a bounded file-specific error', async () => {
+  const f = sourceFixture(), waits = []; let attempts = 0;
+  const source = await githubSnapshot({ get: async (url, binary) => {
+    if (binary || url.includes('/git/blobs/')) { attempts++; throw Object.assign(Error('secret transport details'), { response: { status: 503 } }); }
+    return f.get(url, binary);
+  }, wait: async ms => waits.push(ms) });
+  await assert.rejects(source.download(source.files[0]), error => error.updateFile === 'package.json' && error.response.status === 503 && !error.message.includes('secret'));
+  assert.equal(attempts, 6); assert.deepEqual(waits, [500, 1500, 500, 1500]);
+});
+
+test('metadata request retries transient rate limiting without changing the pinned commit', async () => {
+  const f = sourceFixture(); let calls = 0;
+  const source = await githubSnapshot({ get: async (url, binary) => {
+    if (url.endsWith('/commits/main') && calls++ < 2) throw Object.assign(Error('rate'), { response: { status: 429 } });
+    return f.get(url, binary);
+  }, wait: async () => {} });
+  assert.equal(calls, 3); assert.equal(source.sha, 'a'.repeat(40));
+});
+
+test('permission refusal does not loop retrying the same endpoint', async () => {
+  const { retryRequest } = require('../src/updater/source'); let calls = 0;
+  await assert.rejects(retryRequest(async () => { calls++; throw Object.assign(Error('denied'), { response: { status: 403 } }); }, async () => assert.fail('must not wait')), /denied/);
+  assert.equal(calls, 1);
 });
 
 test('atualização concluída avisa antes de solicitar reinício automático', async () => {

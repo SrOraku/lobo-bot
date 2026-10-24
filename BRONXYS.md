@@ -115,3 +115,12 @@ Se houver `apply-journal.json`, só há restauração sob posse exclusiva da tra
 **Para instalar a correção:** pare o servidor, envie e extraia o ZIP atualizado na raiz do projeto, substituindo o código, e mantenha `.env`, `sessions/`, `data/`, `storage/` e `updates/` existentes. Confira se `package.json` está na mesma pasta de `atualizar.sh`. Inicie com `bash atualizar.sh`. Se aparecer LOCK_INVALID, preserve a pasta updates para diagnóstico: não exclua backups nem o diário de aplicação.
 
 Os avisos de `npm audit` são separados do erro de trava. Não execute `npm audit fix --force` como tratamento de STALE_LOCK, pois pode trocar dependências incompatíveis.
+
+
+## Falha no download ou manifesto — v1.8.3
+
+A mensagem UPDATE_FAILED na etapa download não identificava o arquivo e também podia esconder uma divergência de SHA-256 do manifesto, porque a etapa não era atualizada antes da verificação de integridade. A versão nova distingue DOWNLOAD_HASH_MISMATCH, DOWNLOAD_INVALID_BLOB, RELEASE_HASH_MISMATCH e erros de rede/HTTP. updates/last-error.json inclui o caminho gerenciado do arquivo, sem URLs privadas, tokens ou stderr bruto.
+
+Falhas transitórias de rede/HTTP recebem até três tentativas por endpoint, com esperas de 500ms e 1500ms. Se raw.githubusercontent.com continuar falhando, a fonte alternativa é exclusivamente a API de blobs do mesmo repositório oficial, pelo hash imutável do arquivo. Os bytes sempre precisam corresponder ao hash Git esperado e depois ao manifesto SHA-256; o fallback não desliga nenhuma verificação nem aceita URL enviada pelo chat. Erro de permissão 403 não gera loop de tentativas no mesmo endpoint.
+
+A atualização continua em staging até que todas as verificações passem. Se ambos os caminhos falharem, a versão local permanece. Divergência de manifesto significa publicação incompleta/inconsistente: não remova o manifesto para contornar a proteção. O ZIP atualizado substitui o código mantendo .env, sessions/, data/, storage/ e updates/. Depois inicie com bash atualizar.sh. Não houve mudança no banco ou nas sessões nesta correção.

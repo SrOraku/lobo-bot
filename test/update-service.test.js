@@ -128,6 +128,25 @@ test('orphan legacy update lock is recovered automatically before staging withou
   await assert.rejects(fs.lstat(path.join(f.root, 'updates/update.lock')), { code: 'ENOENT' });
 });
 
+test('download error records failing file and leaves active code and private data unchanged', async t => {
+  const f = await fixture(t);
+  f.source.download = async file => { throw Object.assign(Error('unsafe upstream details'), { code: 'DOWNLOAD_HASH_MISMATCH', updateFile: file.path }); };
+  await assert.rejects(f.service.update('bot'), error => error.code === 'DOWNLOAD_HASH_MISMATCH' && error.message.includes('Arquivo:'));
+  const diagnostic = JSON.parse(await f.read('updates/last-error.json'));
+  assert.ok(diagnostic.file); assert.equal(diagnostic.code, 'DOWNLOAD_HASH_MISMATCH');
+  assert.ok(!JSON.stringify(diagnostic).includes('unsafe'));
+  assert.equal(await f.read('src/index.js'), 'old code'); await f.preserved();
+  assert.ok(!f.calls.length);
+});
+
+test('a stale published manifest reports integrity stage and exact file, never a generic download error', async t => {
+  const f = await fixture(t, { contents: { 'manifest.json': JSON.stringify({ version: '3.4.0', files: { 'package.json': '0'.repeat(64) } }) } });
+  await assert.rejects(f.service.update('bot'), { code: 'RELEASE_HASH_MISMATCH' });
+  const diagnostic = JSON.parse(await f.read('updates/last-error.json'));
+  assert.equal(diagnostic.stage, 'verificação de integridade'); assert.equal(diagnostic.file, 'package.json');
+  assert.equal(f.calls.length, 0); assert.equal(await f.read('src/index.js'), 'old code'); await f.preserved();
+});
+
 test('protected files and source symlinks cannot overwrite external paths', async t => {
   const f = await fixture(t, { contents: { '.env': 'do not apply' } }); await assert.rejects(f.service.update('bot')); await f.preserved();
   const g = await fixture(t); const external = await fs.mkdtemp(path.join(os.tmpdir(), 'lobo-outside-'));

@@ -32,12 +32,20 @@ function describeFailure(error, stage) {
   else if (code === 'EXDEV' || code === 'EBUSY') reason = 'A hospedagem não permitiu trocar o diretório de dependências. Ele pode estar em um volume separado ou em uso.';
   else if (code === 'EROFS') reason = 'A instalação ou um volume está somente para leitura.';
   else if (code === 'ENOMEM') reason = 'Memória insuficiente para instalar as dependências.';
+  else if (code === 'DOWNLOAD_HASH_MISMATCH') reason = 'O arquivo recebido não corresponde ao hash do GitHub. A atualização foi cancelada antes da aplicação.';
+  else if (code === 'DOWNLOAD_INVALID_BLOB') reason = 'O GitHub não devolveu um arquivo válido na tentativa alternativa de download.';
+  else if (code === 'DOWNLOAD_FILE_TOO_LARGE') reason = 'Um arquivo da atualização excede o limite seguro de download.';
+  else if (['RELEASE_HASH_MISMATCH','INVALID_RELEASE_MANIFEST','MANIFEST_FILE_MISSING','MANIFEST_UNEXPECTED_FILE','MANIFEST_VERSION_MISMATCH'].includes(code)) reason = 'O manifesto publicado não corresponde aos arquivos da versão. A atualização foi cancelada antes da aplicação; aguarde uma publicação corrigida.';
   else if (status === 403 || status === 429) reason = 'O GitHub limitou ou recusou o acesso deste servidor. Aguarde e tente novamente.';
   else if (status === 404) reason = 'O GitHub não encontrou um arquivo ou referência necessário à atualização.';
-  else if (['ENOTFOUND','ETIMEDOUT','ECONNRESET'].includes(code)) reason = 'Falha de rede ao acessar o GitHub ou o registro npm.';
+  else if ([408,500,502,503,504].includes(status)) reason = 'O GitHub ou a conexão da hospedagem ficou temporariamente indisponível, mesmo após novas tentativas.';
+  else if (code === 'DOWNLOAD_FAILED') reason = 'Não consegui baixar o arquivo pelo endereço raw nem pela API oficial do GitHub.';
+  else if (['ENOTFOUND','EAI_AGAIN','ETIMEDOUT','ECONNRESET','ECONNABORTED','ERR_NETWORK'].includes(code)) reason = 'Falha de rede ao acessar o GitHub ou o registro npm.';
   else if (stage === 'instalação de dependências') reason = 'O npm não conseguiu instalar as dependências. Consulte o erro npm no console da hospedagem.';
   else if (stage === 'verificação de inicialização') reason = 'A versão preparada falhou na verificação de inicialização; ela não foi aplicada.';
-  return { stage, code: code || (status ? 'HTTP_' + status : 'UPDATE_FAILED'), reason };
+  return { stage, code: code || (status ? 'HTTP_' + status : 'UPDATE_FAILED'), reason,
+    ...(Number.isInteger(status) && status >= 100 && status <= 599 ? { httpStatus: status } : {}),
+    ...(managedPath(error.updateFile) ? { file: error.updateFile } : {}) };
 }
 
 async function exists(file) { try { await fs.lstat(file); return true; } catch (e) { if (e.code === 'ENOENT') return false; throw e; } }
@@ -144,6 +152,7 @@ class UpdateService {
         targetVersion = latest.version;
         files = [{ path: 'package.json' }, { path: 'package-lock.json' }];
       }
+      phase = 'verificação de integridade';
       const integrity=action==='bot'?(await require('./integrity').verifyStage(stage,files)).mode:'NPM_LOCKFILE';
       const pkg = await readJSON(path.join(stage, 'package.json'));
       if (pkg?.name !== 'lobo-bot' || !semver.valid(pkg.version) || !semver.satisfies(this.nodeVersion, pkg.engines?.node || '>=22.12.0')) {
@@ -190,7 +199,7 @@ class UpdateService {
       const diagnostic = describeFailure(error, phase);
       this.logger.error?.(diagnostic, 'Falha na atualização do bot.');
       await atomicWrite(path.join(this.directory, 'last-error.json'), JSON.stringify({ ...diagnostic, at: new Date().toISOString() }), 0o600).catch(() => {});
-      throw new UpdateError(`Etapa: ${diagnostic.stage}. Código: ${diagnostic.code}. ${diagnostic.reason} Os arquivos anteriores foram preservados.`, diagnostic.code);
+      throw new UpdateError(`Etapa: ${diagnostic.stage}. Código: ${diagnostic.code}.${diagnostic.file ? ` Arquivo: ${diagnostic.file}.` : ''} ${diagnostic.reason} Os arquivos anteriores foram preservados.`, diagnostic.code);
     } finally {
       if (stage) await fs.rm(stage, { recursive: true, force: true }).catch(() => {});
       if (lock) {
