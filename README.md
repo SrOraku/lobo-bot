@@ -1,3 +1,5 @@
+> **Correção v1.8.2:** `!ban` remove o participante do grupo e mantém o bloqueio interno somente após confirmação do WhatsApp. `!kick` continua removendo sem bloquear comandos.
+
 > **Correção v1.8.1:** recuperação automática de travas de atualização abandonadas, sem apagar sessão ou banco.
 
 > **v1.8.0 — LOBO SECURITY:** [proteções por grupo, confiança, auditoria, snapshots e limites reais](src/security/groups/README.md). Jogos, RP e economia permanecem intactos.

@@ -31,40 +31,12 @@ function requireGroupAdmin(fn,action='settings') {
 // ============================
 // BAN
 // ============================
-const ban = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg, sender } = ctx;
-  const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-  if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem deseja banir!\n_Exemplo: !ban @usuário_` }, { quoted: msg });
-
-  const target = cleanJid(mentioned);
-  if (await require('../utils/owners').protectedOwner(sock, target, jid))
-    return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser alvo de punições.') }, { quoted: msg });
-  db.setBanned(target, 1);
-  require('../security/groups/service').security().store.audit(jid,{actor:ctx.sender,target,action:'BOT_BAN',authorized:true,result:'APPLIED'});
-
-  await sock.sendMessage(jid, {
-    text: `🔨 🚫 *@${getNumber(target)}* foi *BANIDO* do bot!\n\n_Nenhum comando será respondido para esse usuário._`,
-    mentions: [target]
-  }, { quoted: msg });
-},'ban');
+const ban = require('./group-removal').createRemovalCommand('ban');
 
 // ============================
 // UNBAN
 // ============================
-const unban = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg } = ctx;
-  const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-  if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem deseja desbanir!` }, { quoted: msg });
-
-  const target = cleanJid(mentioned);
-  db.setBanned(target, 0);
-  require('../security/groups/service').security().store.audit(jid,{actor:ctx.sender,target,action:'BOT_UNBAN',authorized:true,result:'APPLIED'});
-
-  await sock.sendMessage(jid, {
-    text: `✅ 🔓 *@${getNumber(target)}* foi *DESBANIDO*!`,
-    mentions: [target]
-  }, { quoted: msg });
-});
+const unban = require('./group-removal').createUnbanCommand();
 
 // ============================
 // MUTE
@@ -107,26 +79,7 @@ const unmute = requireGroupAdmin(async (sock, ctx) => {
 // ============================
 // KICK
 // ============================
-const kick = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg } = ctx;
-  const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-  if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem deseja remover!` }, { quoted: msg });
-
-  const target = cleanJid(mentioned);
-  if (await require('../utils/owners').protectedOwner(sock, target, jid))
-    return sock.sendMessage(jid, { text: require('../core/response').warn('DONO PROTEGIDO', 'O dono do bot não pode ser alvo de punições.') }, { quoted: msg });
-  const botAdm = await isBotAdmin(sock, jid);
-  if (!botAdm) return sock.sendMessage(jid, { text: `❌ O bot precisa ser admin do grupo para remover membros!` }, { quoted: msg });
-
-  await sleep(500);
-  await require('../security/groups/service').security().performParticipants(sock,ctx,[target],'remove');
-
-  await sock.sendMessage(jid, {
-    text: `👢 🚪 *@${getNumber(target)}* foi *REMOVIDO* do grupo!\n\n_A matilha não tolera fraqueza!_ 🐺`,
-    mentions: [target]
-  }, { quoted: msg });
-
-},'remove');
+const kick = require('./group-removal').createRemovalCommand('kick');
 
 // ============================
 // ADD

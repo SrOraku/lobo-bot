@@ -147,3 +147,14 @@ A referência Esdeath disponibiliza distribuição compilada, sem fonte verific�
 ## v1.3.1 — comandos curtos opcionais
 
 `!atalhos` lista somente atalhos com destinos reais carregados e sem conflito com comandos existentes. Comandos completos e aliases anteriores continuam funcionando. `!família criar Nome`, `!familia criar Nome` e `!fam cr Nome` usam a mesma função. `!família Alcateia Criar Nome` também aceita o namespace extra, sem exigi-lo. Outros exemplos: `!inv`, `!cart`, `!trab`, `!prof`, `!profs`, `!tr`, `!atq`, `!ev`, `!cla cr Nome`, `!up b`, `!ds add número` e `!capa`. A forma curta é resolvida antes de aplicar permissões e cooldowns; não cria rotas privilegiadas paralelas nem novas carteiras. Argumentos livres, nomes próprios e valores são preservados. Em conflitos, o comando/alias já existente sempre ganha.
+
+
+## Banimento do grupo — v1.8.2
+
+`!ban @usuario` ou `!ban` respondendo a uma mensagem agora solicita a remoção real do grupo. Antes, esse comando apenas marcava o usuário como bloqueado para comandos. O comportamento anterior de bloqueio é mantido, mas só é salvo após o WhatsApp aceitar a remoção e uma consulta recente confirmar que o participante saiu. O bot precisa ser administrador e a hierarquia LOBO SECURITY continua obrigatória. Dono, próprio bot e participantes protegidos não podem ser removidos por nível inferior.
+
+`!kick`/`!remover` usa a mesma confirmação de saída, sem bloquear comandos. `!unban` libera os comandos somente neste grupo e não readiciona o participante ao WhatsApp. Todos os nomes antigos permanecem disponíveis. Não existe bloqueio automático de reentrada por convite nesta correção.
+
+O alvo usa o JID real da metadata, incluindo grupos com LID. O retorno do servidor precisa identificar cada participante e conter status de sucesso; respostas vazias, incompletas, recusadas ou destinadas a outra pessoa não geram sucesso. A metadata é consultada novamente, com tentativas curtas para propagação. Quando a saída não puder ser confirmada, o bot informa isso sem salvar banimento interno. Não é necessário reenviar o comando repetidamente: confira primeiro a lista do grupo.
+
+Os aliases PN/LID confirmados são bloqueados/liberados juntos, em transação SQLite isolada pelo chat. Perfis inexistentes são criados sem modificar nomes, saldos ou progresso dos registros existentes. Se a remoção ocorrer e o banco falhar, a resposta informa o resultado parcial, sem alegar que o bloqueio foi salvo. Falha ao enviar a mensagem de confirmação não desfaz o banimento já persistido. Não há migration nem exclusão de dados nesta edição.
