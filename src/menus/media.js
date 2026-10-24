@@ -18,10 +18,21 @@ async function readSafeFiles(files) {
 async function sendMenu(sock, ctx, text, {
   getMedia = () => require('../security/settings').get('menu-media',null),
   directory = path.join(__dirname,'../../data/menu'),
+  manualDirectory = path.join(__dirname,'../assets'),
+  manualCacheDirectory = path.join(__dirname,'../../data/menu/file-cache'),
   defaultParts = DEFAULT_VIDEO_PARTS,
   defaultFile = path.join(__dirname,'../assets/menu-principal.jpg'),
   useDefault = () => !require('../security/settings').get('menu-default-disabled',false)
 } = {}) {
+  // Explicit files override the main cover without changing SQLite settings.
+  // They are user files (not updater-managed), so automatic updates preserve them.
+  if (!ctx.args?.length) {
+    const video = await require('./file-cover').loadFileCover({ directory: manualDirectory, cacheDirectory: manualCacheDirectory });
+    if (video) {
+      try { return await sock.sendMessage(ctx.jid,{video,gifPlayback:true,caption:text,mimetype:'video/mp4'},{quoted:ctx.msg}); }
+      catch { /* Keep the registered/default cover and text fallback available. */ }
+    }
+  }
   const media = getMedia();
   if (media && /^[a-f0-9-]+\.(jpg|mp4)$/.test(media.file) && ['image','video'].includes(media.type)) {
     try {

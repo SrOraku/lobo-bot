@@ -51,3 +51,7 @@ auth/
 backups/
 *.pem
 *.key
+
+# Capa local escolhida pelo dono; preservada fora do pacote oficial de update.
+src/assets/menu-principal.gif
+src/assets/menu-principal.mp4
