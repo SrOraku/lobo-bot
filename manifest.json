@@ -77,7 +77,7 @@
     "scripts/update-and-start.js": "c89b5c97a77173d993281b473ae3949421f5e2f698945f2c9aa0f33ef43517b7",
     "src/activations/access.js": "8b26fbe02aa0653ae1f342be050dbdd9102d04802545353e0408078833cb380a",
     "src/activations/gate.js": "bdcbb3b4398d955df86bdba0306a08ea5d44e71e543f5da58930b6d05c75eb88",
-    "src/activations/interaction.js": "66483d545da1f31427e97a86d3c44d4c00ff19982201b2d6e0ebdf634571d0ba",
+    "src/activations/interaction.js": "b98a6eba16a8f684fdf12f9be33f3d3e4f456fced6c370c71428c623e207c017",
     "src/activations/manager.js": "b830047cb287c1d6459eb5118de0d1e3b6a119ff6b32becee98eba0a8bbfd671",
     "src/activations/message-rules.js": "894ddd73566aaf651b75128ab02da199d9ee156acf10b8a969fde7c29dfcc912",
     "src/activations/policy.js": "6475e3a8a2e865ba2d4f3f512168614eaa72cdf33e3408449e09fc7d7bcb5abf",

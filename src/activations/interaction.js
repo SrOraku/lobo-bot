@@ -15,7 +15,7 @@ function createInteraction({ now = Date.now, resolveActor, store, rateLimit } = 
     Object.assign(sessions.get(key(ctx)), { stage: 'days', feature: 'antiinatividade', previous });
   }
   function confirmation(feature, previous) {
-    return `*${feature.name}*\n*Estado atual:* ${badge(previous)}\n*Alteração proposta:* ${previous ? 'Desativar' : 'Ativar'}\n${feature.id === 'autodownload' ? 'Links de Instagram, Facebook, TikTok, Kwai, Threads, X/Twitter, YouTube, Spotify, SoundCloud e iFunny.\nUsa a cota da API Bronxys. Links bloqueados pelo AntiLink não são baixados.\n' : ''}*Confirmar alteração?*\n     🟢 ${mono(1)} — *SIM*\n     🔴 ${mono(2)} — *NÃO*\n> 🐺 Responda em até ${mono('2 minutos')}.`;
+    return `*${feature.name}*\n*Estado atual:* ${badge(previous)}\n*Alteração proposta:* ${previous ? 'Desativar' : 'Ativar'}\n${feature.id === 'autodownload' ? 'Links de Instagram, Facebook, TikTok, Kwai, Threads, X/Twitter, YouTube, Spotify, SoundCloud e iFunny.\nUsa a cota da API Bronxys. Links bloqueados pelo AntiLink não são baixados.\n' : ''}🌹 *Deseja ${previous ? 'desativar' : 'ativar'} esta função?* 🐺\n     🟢 ${mono(1)} — *SIM*\n       _Confirmar e ${previous ? 'desativar' : 'ativar'}._\n     🔴 ${mono(2)} — *NÃO*\n       _Cancelar e manter como está._\n> 🌹 Nada muda antes da confirmação. Responda em até ${mono('2 minutos')}.`;
   }
   function requestFeature(ctx, name, previous) {
     const feature = registry.feature(name);
