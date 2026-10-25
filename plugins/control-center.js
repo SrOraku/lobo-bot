@@ -18,7 +18,7 @@ module.exports = {
     const service = controlCenter();
     await service.start(sock);
 
-    readyListener = () => service.heartbeatAll().catch(() => {});
+    readyListener = () => service.start(sock).catch(() => {});
     messageListener = ({ jid, isGroup, body }) => {
       if (!isGroup || typeof body !== 'string') return;
       const prefix = config.get('PREFIX') || '!';
