@@ -19,7 +19,7 @@ async function sendMenu(sock, ctx, text, {
   getMedia = () => require('../security/settings').get('menu-media',null),
   directory = path.join(__dirname,'../../data/menu'),
   defaultParts = DEFAULT_VIDEO_PARTS,
-  defaultFile = path.join(__dirname,'../assets/src/menus/media.js'),
+  defaultFile = path.join(__dirname,'../assets/logo.gif'), 
   useDefault = () => !require('../security/settings').get('menu-default-disabled',false)
 } = {}) {
   const media = getMedia();
