@@ -10,10 +10,8 @@ const terminal = require('./utils/quiet-console').installQuietConsole();
 // +5543920030769
 // ============================================================
 
-const pino      = require('pino');
 const path      = require('path');
 const fs        = require('fs');
-const readline  = require('readline');
 const { CacheMessageStore } = require('./utils/message-store');
 
 // Baileys 7 é ESM. O restante do Lobo-bot continua CommonJS,
@@ -58,9 +56,25 @@ const store = new CacheMessageStore();
 const SESSION_DIR = path.join(__dirname, '../sessions', config.get('SESSION_NAME'));
 fs.mkdirSync(SESSION_DIR, { recursive: true });
 
-let sock              = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT   = config.getNumber('MAX_RECONNECT') || 10;
+const { hasSavedSession, resetIncompletePairing, createLifecycle } = require('./connection/lifecycle');
+const { logConnection, baileysLogger } = require('./config/logger');
+let commonReady = null, pairingNumberPromise = null, shuttingDown = false;
+const configuredReconnect = config.getNumber('MAX_RECONNECT');
+const MAX_RECONNECT = Number.isInteger(configuredReconnect) ? Math.max(0, Math.min(100, configuredReconnect)) : 10;
+const lifecycle = createLifecycle({
+  maxReconnect: MAX_RECONNECT,
+  reconnect: () => startBot(),
+  onState: state => logConnection(state.code === 515
+    ? 'WhatsApp solicitou reinício (515). Reconectando com as credenciais salvas.'
+    : `Reconectando ao WhatsApp: tentativa ${state.attempt}/${MAX_RECONNECT} em ${state.delay / 1000}s.`, state),
+  onError: (error, code) => logger.error({ component: 'connection', code: error.code || code }, 'Falha no ciclo de conexão; a sessão foi preservada.'),
+  onFatal: code => {
+    logger.error({ component: 'connection', code }, code === 'LOGGED_OUT'
+      ? 'Sessão desvinculada pelo WhatsApp. Preserve sessions/ e confira os aparelhos conectados.'
+      : 'Não foi possível reconectar com segurança. O supervisor poderá reiniciar o processo.');
+    process.exit(1);
+  },
+});
 
 // ============================================================
 // HELPER: PERGUNTAR NO TERMINAL
@@ -77,7 +91,6 @@ async function startBot() {
   const makeWASocket = baileys.default || baileys.makeWASocket;
   const {
     useMultiFileAuthState,
-    DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     Browsers,
@@ -87,24 +100,26 @@ async function startBot() {
     throw new Error('Baileys 7 não carregou makeWASocket corretamente.');
   }
 
-  printBanner();
-  logger.info(`🐺 Iniciando ${BOT_NAME}...`);
-
-  // Redis
-  await cache.initRedis();
-
-  // Carregar todos os comandos no registry
-  loadAllCommands();
-  logger.info('🗡️  Comandos carregados no registry');
+  if (!commonReady) commonReady = (async () => {
+    printBanner();
+    await cache.initRedis();
+    loadAllCommands();
+    require('./activations/store').getStore().preload();
+  })();
+  await commonReady;
 
   const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
+  if (resetIncompletePairing(state.creds)) {
+    await saveCreds();
+    logConnection('Pareamento anterior incompleto. Preparando uma nova tentativa com as chaves existentes.');
+  }
   const { version, isLatest } = await fetchLatestBaileysVersion();
   logger.info(`📦 Baileys v${version.join('.')} | Atualizado: ${isLatest}`);
 
-  const jaConectado = !!state.creds?.registered;
-  const silentLogger = pino({ level: 'error', redact: ['creds','auth','session','key','*.privKey','*.rootKey','*.chainKey','*.privateKey'] });
+  const jaConectado = hasSavedSession(state.creds);
+  const silentLogger = baileysLogger();
 
-  sock = makeWASocket({
+  const currentSocket = makeWASocket({
     version,
     logger: silentLogger,
     printQRInTerminal: false,
@@ -126,12 +141,63 @@ async function startBot() {
     },
   });
 
-  store.bind(sock.ev);
+  let pluginsReady = Promise.resolve();
+  const session = lifecycle.attach(currentSocket, { saveCreds, beforeReconnect: () => pluginsReady, onOpen: async () => {
+    await pluginsReady;
+    if (!session.isActive()) return;
+    require('./games/gartic').gartic().resume(currentSocket);
+    const user = currentSocket.user;
+    const botDescription = config.get('BOT_DESCRIPTION');
+    if (botDescription && typeof currentSocket.updateProfileStatus === 'function') {
+      await currentSocket.updateProfileStatus(botDescription).catch(error => logger.warn({ code: error.code || 'PROFILE_STATUS_FAILED' }, 'Não foi possível atualizar a descrição do WhatsApp.'));
+    }
+    if (!session.isActive()) return;
+    bus.emit(EVENTS.BOT_READY, { user });
+    logConnection('ONLINE — WhatsApp conectado. Acompanhando os comandos dos grupos.');
+    terminal.interactive(require('./menus/render').connectionNotice());
+    if (process.connected) process.send({ type: 'lobo:ready' });
+    require('./utils/file-log').record('bot', { result: 'runtime_ready' });
+    const ownerJid = config.get('BOT_OWNER');
+    if (ownerJid) await currentSocket.sendMessage(`${ownerJid}@s.whatsapp.net`, { text: require('./menus/render').connectionNotice() }).catch(() => {});
+  } });
+  store.bind(currentSocket.ev);
 
-  // ── Carregar plugins após socket criado ──────────────────
-  await loadAllPlugins(sock);
-  require('./activations/store').getStore().preload();
+  // ============================================================
+  // EVENTOS DO SOCKET
+  // ============================================================
 
+  // ── Mensagens ────────────────────────────────────────────────
+  session.listen('messages.update',updates=>{require('./security/groups/service').security().engine.edits(currentSocket,updates,(jid,id)=>store.loadMessage(jid,id)).catch(error=>logger.error({component:'security',code:error.code||'EDIT_EVENT_FAILED'},'Falha no evento de edição.'));});
+  session.listen('messages.upsert', async ({ messages, type }) => {
+    await pluginsReady;
+    if (!session.isActive()) return;
+    for (const msg of messages) {
+      if(type==='notify'&&msg.messageStubType===(await loadBaileys()).WAMessageStubType.GROUP_CHANGE_ICON)require('./security/groups/service').security().engine.picture(currentSocket,msg).catch(error=>logger.error({component:'security',code:error.code||'PICTURE_EVENT_FAILED'},'Falha no evento de foto.'));
+      if (!msg.message) continue;
+
+      if (type !== 'notify') continue;
+      setImmediate(() =>
+        session.isActive() && handleMessage(currentSocket, msg).catch(err => logger.error({ err }, '❌ handleMessage'))
+      );
+    }
+  });
+
+  // ── Participantes de grupo ───────────────────────────────────
+  session.listen('group-participants.update', async (update) => {
+    setImmediate(() =>
+      session.isActive() && handleGroupParticipantsUpdate(currentSocket, update).catch(err => logger.error({ err }, '❌ groupParticipants'))
+    );
+  });
+
+  // ── Grupos atualizados ───────────────────────────────────────
+  session.listen('groups.update', async (updates) => {
+    setImmediate(() =>
+      session.isActive() && handleGroupsUpdate(currentSocket, updates).catch(err => logger.error({ err }, '❌ groupsUpdate'))
+    );
+  });
+
+  pluginsReady = loadAllPlugins(currentSocket);
+  await pluginsReady;
   // ============================================================
   // PAIR CODE — apenas na primeira vez
   // ============================================================
@@ -139,10 +205,14 @@ async function startBot() {
     await sleep(2000);
 
     // Sempre escolher no console: o dono e configurações antigas não são o alvo.
-    const numero = await require('./utils/pairing-number').choosePairingNumber(askQuestion);
+    if (!session.isActive() || hasSavedSession(state.creds)) return currentSocket;
+    if (!pairingNumberPromise) pairingNumberPromise = require('./utils/pairing-number').choosePairingNumber(askQuestion);
+    const numero = await pairingNumberPromise;
+    if (!session.isActive() || hasSavedSession(state.creds)) return currentSocket;
 
     try {
-      const code = await sock.requestPairingCode(numero);
+      const code = await currentSocket.requestPairingCode(numero);
+      if (!session.isActive()) return currentSocket;
       const fmt  = code?.match(/.{1,4}/g)?.join('-') || code;
 
       terminal.interactive(`
@@ -177,102 +247,14 @@ async function startBot() {
 🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹
 `);
     } catch (err) {
-      logger.error(`❌ Erro ao gerar código: ${err.message}`);
-      logger.info('💡 Dica: confirme que o número está correto e tente novamente.');
-      process.exit(1);
+      if (!session.isActive()) return currentSocket;
+      logger.error({ component: 'connection', code: err.code || 'PAIRING_CODE_FAILED' }, 'Não foi possível gerar o código. Confira o número escolhido e a conexão.');
+      throw err;
     }
   }
 
-  // ============================================================
-  // EVENTOS DO SOCKET
-  // ============================================================
 
-  // ── Conexão ─────────────────────────────────────────────────
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect } = update;
-
-    if (connection === 'close') {
-      const code         = lastDisconnect?.error?.output?.statusCode;
-      const shouldReconn = code !== DisconnectReason.loggedOut;
-
-      logger.warn(`🔴 Conexão encerrada | código: ${code} | reconectar: ${shouldReconn}`);
-
-      if (shouldReconn && reconnectAttempts < MAX_RECONNECT) {
-        reconnectAttempts++;
-        const delay = Math.min(reconnectAttempts * 3000, 30_000);
-        logger.info(`🔄 Tentativa ${reconnectAttempts}/${MAX_RECONNECT} em ${delay / 1000}s...`);
-        await sleep(delay);
-        return startBot();
-      }
-
-      if (code === DisconnectReason.loggedOut) {
-        logger.error('❌ Sessão encerrada! Delete a pasta sessions/ e reinicie.');
-      } else {
-        logger.error('❌ Máximo de reconexões atingido. Encerrando.');
-      }
-      process.exit(1);
-
-    } else if (connection === 'open') {
-      require('./games/gartic').gartic().resume(sock);
-      reconnectAttempts = 0;
-      const user = sock.user;
-      logger.info(`✅ Conectado como: ${user?.name || user?.id}`);
-      logger.info(`🌹 ${BOT_NAME} online e pronto!`);
-
-      // Aplicar automaticamente a descrição/Sobre configurada do bot
-      const botDescription = config.get('BOT_DESCRIPTION');
-      if (botDescription && typeof sock.updateProfileStatus === 'function') {
-        await sock.updateProfileStatus(botDescription)
-          .then(() => logger.info('📝 Descrição do WhatsApp atualizada.'))
-          .catch((err) => logger.warn(`⚠️ Não foi possível atualizar a descrição: ${err.message}`));
-      }
-
-      bus.emit(EVENTS.BOT_READY, { user });
-
-      console.log(require('./menus/render').connectionNotice());
-
-      // Notificar dono
-      const ownerJid = config.get('BOT_OWNER');
-      if (ownerJid) {
-        await sock.sendMessage(`${ownerJid}@s.whatsapp.net`, {
-          text: require('./menus/render').connectionNotice()
-        }).catch(() => {});
-      }
-    }
-  });
-
-  // ── Credenciais ─────────────────────────────────────────────
-  sock.ev.on('creds.update', saveCreds);
-
-  // ── Mensagens ────────────────────────────────────────────────
-  sock.ev.on('messages.update',updates=>{require('./security/groups/service').security().engine.edits(sock,updates,(jid,id)=>store.loadMessage(jid,id)).catch(error=>logger.error({component:'security',code:error.code||'EDIT_EVENT_FAILED'},'Falha no evento de edição.'));});
-  sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    for (const msg of messages) {
-      if(type==='notify'&&msg.messageStubType===(await loadBaileys()).WAMessageStubType.GROUP_CHANGE_ICON)require('./security/groups/service').security().engine.picture(sock,msg).catch(error=>logger.error({component:'security',code:error.code||'PICTURE_EVENT_FAILED'},'Falha no evento de foto.'));
-      if (!msg.message) continue;
-
-      if (type !== 'notify') continue;
-      setImmediate(() =>
-        handleMessage(sock, msg).catch(err => logger.error({ err }, '❌ handleMessage'))
-      );
-    }
-  });
-
-  // ── Participantes de grupo ───────────────────────────────────
-  sock.ev.on('group-participants.update', async (update) => {
-    setImmediate(() =>
-      handleGroupParticipantsUpdate(sock, update).catch(err => logger.error({ err }, '❌ groupParticipants'))
-    );
-  });
-
-  // ── Grupos atualizados ───────────────────────────────────────
-  sock.ev.on('groups.update', async (updates) => {
-    setImmediate(() =>
-      handleGroupsUpdate(sock, updates).catch(err => logger.error({ err }, '❌ groupsUpdate'))
-    );
-  });
-
-  return sock;
+  return currentSocket;
 }
 
 // ============================================================
@@ -281,30 +263,25 @@ async function startBot() {
 process.on('uncaughtException',err=>{require('./utils/file-log').record('error',{code:err.code||'UNCAUGHT',message:err.message,stack:err.stack});logger.error({code:err.code||'UNCAUGHT'},'Erro fatal; o supervisor reiniciará o runtime.');process.exit(1);});
 process.on('unhandledRejection',err=>{require('./utils/file-log').record('error',{code:'UNHANDLED_REJECTION',message:err?.message,stack:err?.stack});process.exit(1);});
 
-process.on('SIGINT', async () => {
-  logger.info('🛑 Encerrando bot (SIGINT)...');
-  try { await sock?.end(); } catch {}
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logConnection(`Encerrando conexão (${signal}). Preservando a sessão.`);
+  try { await lifecycle.stop(); } catch (error) { logger.error({ code: error.code || 'SHUTDOWN_CREDS_FAILED' }, 'Não foi possível concluir o salvamento da sessão.'); }
   for (const plugin of require('./core/pluginLoader').loadedPlugins.values()) {
     try { await plugin.onUnload?.(); } catch (error) { logger.error({ code: error.code || error.name }, 'Falha ao finalizar plugin.'); }
   }
-  try { db.db.close();     } catch {}
+  store.destroy();
+  try { db.db.close(); } catch { /* Database may already be closed after a fatal error. */ }
   process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  logger.info('🛑 Encerrando bot (SIGTERM)...');
-  try { await sock?.end(); } catch {}
-  for (const plugin of require('./core/pluginLoader').loadedPlugins.values()) {
-    try { await plugin.onUnload?.(); } catch (error) { logger.error({ code: error.code || error.name }, 'Falha ao finalizar plugin.'); }
-  }
-  try { db.db.close();     } catch {}
-  process.exit(0);
-});
+}
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ============================================================
 // INICIAR
 // ============================================================
-startBot().then(()=>{if(process.connected)process.send({type:'lobo:ready'});require('./utils/file-log').record('bot',{result:'runtime_ready'});}).catch((err) => {
-  logger.error({ err }, '❌ Falha crítica ao iniciar o bot');
+startBot().catch((err) => {
+  logger.error({ component: 'connection', code: err.code || 'START_FAILED' }, 'Falha crítica ao iniciar o bot; a sessão foi preservada.');
   process.exit(1);
 });

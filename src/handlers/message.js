@@ -70,7 +70,7 @@ async function processMessage(sock, msg) {
     const parts   = body.slice(PREFIX.length).trim().split(/\s+/);
     const command = parts.shift().toLowerCase();
 
-    const ctx = { jid, sender, senderNumber, pushName, isGroup, args: parts, body, command, msg, msgType, user, BOT_NAME, PREFIX };
+    const ctx = { jid, sender, senderNumber, pushName, groupName: isGroup ? db.getGroup(jid)?.name : null, isGroup, args: parts, body, command, msg, msgType, user, BOT_NAME, PREFIX };
     await execute(command, sock, ctx);
     try {
       const progress=require('../progression/service').progression();

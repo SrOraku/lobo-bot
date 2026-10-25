@@ -65,6 +65,7 @@ async function executeCommand(commandName, sock, ctx) {
   commandName = resolved.command;
   ctx = {...ctx,command:commandName,args:resolved.args,argText:resolved.args.join(' ')};
   const cmd = registry.get(commandName);
+  if (cmd || pluginCommands[commandName]) logCommand(ctx.sender, commandName, ctx.isGroup ? ctx.jid : null, { userName: ctx.pushName, groupName: ctx.groupName, prefix: config.get('PREFIX') });
   if (cmd && !await require('../activations/gate').checkActivation(sock,ctx,commandName,cmd)) return;
 
   // Verificar plugins dinamicamente
@@ -119,7 +120,6 @@ async function executeCommand(commandName, sock, ctx) {
   if(cmd.feature && !require('../activations/manager').manager.isEnabled(ctx.jid,cmd.feature)) return;
   // Executar
   try {
-    logCommand(ctx.sender, commandName, ctx.isGroup ? ctx.jid : null);
     const administrative={ban:'remove',mute:'mute',kick:'remove',promover:'promote',rebaixar:'demote',advertir:'warn',abrirgrupo:'settings',fechargrupo:'settings',limparinatividade:'remove',add:'add'};
     if(ctx.isGroup&&administrative[cmd.name]){
       try{await require('../security/groups/service').security().permissions.guardCommand(sock,ctx,administrative[cmd.name]);}

@@ -1,3 +1,5 @@
+> **Console e conexão — v1.8.5:** comandos dos grupos voltam a aparecer no console, com status ONLINE e reconexão após pareamento. Suas alterações de menus e mídias foram preservadas.
+
 > **Correção v1.8.3:** download de atualizações com retentativas limitadas, fallback oficial por blob e diagnóstico por arquivo; divergência de manifesto é informada como falha de integridade.
 
 > **Correção v1.8.2:** `!ban` remove o participante do grupo e mantém o bloqueio interno somente após confirmação do WhatsApp. `!kick` continua removendo sem bloquear comandos.

@@ -124,3 +124,18 @@ A mensagem UPDATE_FAILED na etapa download não identificava o arquivo e também
 Falhas transitórias de rede/HTTP recebem até três tentativas por endpoint, com esperas de 500ms e 1500ms. Se raw.githubusercontent.com continuar falhando, a fonte alternativa é exclusivamente a API de blobs do mesmo repositório oficial, pelo hash imutável do arquivo. Os bytes sempre precisam corresponder ao hash Git esperado e depois ao manifesto SHA-256; o fallback não desliga nenhuma verificação nem aceita URL enviada pelo chat. Erro de permissão 403 não gera loop de tentativas no mesmo endpoint.
 
 A atualização continua em staging até que todas as verificações passem. Se ambos os caminhos falharem, a versão local permanece. Divergência de manifesto significa publicação incompleta/inconsistente: não remova o manifesto para contornar a proteção. O ZIP atualizado substitui o código mantendo .env, sessions/, data/, storage/ e updates/. Depois inicie com bash atualizar.sh. Não houve mudança no banco ou nas sessões nesta correção.
+
+
+## Console de comandos e conexão — v1.8.5
+
+O console mostra resumos de comandos recebidos: horário, prefixo/comando, grupo (nome disponível no banco ou JID) e usuário. Exemplo: `[09:45:10] 🐺 CMD !menu | Grupo: Alcateia | Usuário: Ana`. Comandos de plugins e pedidos barrados por cooldown/permissões também aparecem; essa linha confirma recebimento, não execução bem-sucedida. Argumentos e conteúdo das conversas não são impressos. Mensagens comuns sem comando não são copiadas ao console. Dumps de sessão, chaves e ruído de bibliotecas continuam ocultos. Erros reais permanecem visíveis; detalhes estruturados ficam nos logs.
+
+LOG_COMMANDS=true é o padrão mesmo em instalações sem a variável. LOG_COMMANDS=false desliga os resumos; não apaga erros nem os avisos de conexão. LOG_LEVEL controla os demais registros. O pareamento inicial continua pedindo explicitamente o número no console, separado do cadastro dos donos.
+
+O Baileys instalado pode completar o pareamento com account+me, sem registered=true. me.id sozinho não basta: requestPairingCode também cria um me provisório. A nova verificação preserva sessões completas e limpa apenas me/pairingCode de uma tentativa incompleta, mantendo as chaves existentes, para que a biblioteca não tente login com identidade provisória. Não remove pastas nem bancos.
+
+Listeners de conexão e credenciais são instalados antes dos awaits de plugins e pareamento. Gravações são serializadas e concluídas antes da reconexão; falha de gravação impede continuar silenciosamente. O código 515 do transporte é exibido como reinício solicitado pelo WhatsApp, seguido de reconexão, em vez de dump JSON. Outros erros continuam visíveis. Uma sessão salva completa não pede outro código; sem pareamento concluído, gerar código continua sendo necessário.
+
+Reconexões têm tentativas limitadas/backoff, evitam callbacks de sockets antigos e aguardam a inicialização anterior dos plugins. Redis/comandos/ativações são inicializados uma vez por runtime. SIGINT/SIGTERM salvam credenciais e impedem reconexão durante encerramento. O supervisor recebe readiness apenas quando a conexão realmente abre.
+
+A configuração não garante autenticar conta desvinculada, revogada ou bloqueada pelo WhatsApp. A validação automatizada usa eventos/credenciais fictícios; não conecta ao WhatsApp real. Menus, mídia principal, jogos, RP e economia não foram modificados por esta edição.
