@@ -179,7 +179,7 @@ Menus, HUDs e avisos compartilham o tema simétrico 🌹 & 🐺. Cabeçalhos e d
 
 No !ativacoes, cada função exibe somente `〔 🟢 〕` ou `〔 🔴 〕` no indicador, sem números ou palavras dentro dele. Pendências de permissão/configuração ficam fora do indicador. A barra representa a proporção de funções disponíveis, sem prometer segurança absoluta. Os setores continuam informativos em !setores e não podem ser desligados.
 
-Use !ativacoes antilink (ou outra função do registro) para abrir a confirmação. Responda `1` para SIM/confirmar ou `2` para NÃO/cancelar. Nada é salvo antes da confirmação; permissões e estado são revalidados. A escolha numérica antiga continua compatível. Inatividade continua pedindo de 1 a 90 dias, sem sufixo. Valores de dias, IDs e respostas dos jogos mantêm suas regras próprias: não são confundidos com confirmações. Comandos diretos continuam aceitando on/off, 1/0 e também 2 como desativar.
+Envie o número exibido antes da função para abrir a confirmação. !ativacoes antilink (ou outra função do registro) também funciona. Responda `1` para SIM/confirmar ou `2` para NÃO/cancelar. Nada é salvo antes da confirmação; permissões e estado são revalidados. A escolha numérica antiga continua compatível. Inatividade continua pedindo de 1 a 90 dias, sem sufixo. Valores de dias, IDs e respostas dos jogos mantêm suas regras próprias: não são confundidos com confirmações. Comandos diretos continuam aceitando on/off, 1/0 e também 2 como desativar.
 
 A saudação e o relógio usam o horário de São Paulo. Nome, cargo, nível, saldo e XP do menu vêm do contexto existente, sem consultar novamente o banco. Ping só aparece quando há medição disponível; !ping continua mostrando suas métricas reais. Não há valores de latência ou saldos inventados.
 

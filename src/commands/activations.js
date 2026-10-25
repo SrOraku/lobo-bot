@@ -129,7 +129,7 @@ function createActivationHandler({
         const available = item.enabled && state === '🟢' && policy.bot && typeof item.handler === 'function';
         if (available) enabled++;
         if (item.enabled && !available) pending++;
-        lines.push(`  🛡️ *${item.name}:* ${badge(available)}${item.enabled && !available ? ' ⚠️ pendente' : ''}${item.mode ? ' • ' + mono(item.mode) : ''}\n     ▸ ${command(p + 'ativacoes ' + item.id)}`);
+        lines.push(`  ${mono(number)} 🛡️ *${item.name}:* ${badge(available)}${item.enabled && !available ? ' ⚠️ pendente' : ''}${item.mode ? ' • ' + mono(item.mode) : ''}\n     ▸ ${command(p + 'ativacoes ' + item.id)}`);
         categories.set(item.category, lines);
       }
       const sections = [
@@ -139,7 +139,7 @@ function createActivationHandler({
         sections.push(block(category.toUpperCase(), lines));
       const percent = number ? Math.round(enabled / number * 100) : 0;
       sections.push(DIVIDER, `📊 *Proteção:* ${mono(progress(enabled, number) + ' ' + percent + '%')}\n*Funções ativas:* ${mono(enabled)} / ${mono(number)} • *Pendentes:* ${mono(pending)}\n📅 *Inatividade:* ${mono(policy.options.inactivity_days)} dias.`,
-        `${center('*Como configurar:*')}\n_Escolha o comando sob a função._\n🟢 Digite ${mono(1)} para *SIM / Confirmar*\n🔴 Digite ${mono(2)} para *NÃO / Cancelar*\n⏳ Confirmação válida por ${mono('2 minutos')}.`,
+        `${center('*Como configurar:*')}\n_Envie o número da função ou use o comando abaixo dela._\n🟢 Digite ${mono(1)} para *SIM / Confirmar*\n🔴 Digite ${mono(2)} para *NÃO / Cancelar*\n⏳ Confirmação válida por ${mono('2 minutos')}.`,
         '> 🌹 _A barra conta funções disponíveis; não garante segurança absoluta. Permissões e proteção contra abuso continuam obrigatórias._');
       (interaction || require('../activations/interaction').interaction()).open(ctx);
       return reply(frameMenu('PAINEL DE ATIVAÇÕES', sections));

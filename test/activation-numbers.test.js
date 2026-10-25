@@ -7,7 +7,7 @@ const { createPolicyStore } = require('../src/activations/store');
 const { createInteraction } = require('../src/activations/interaction');
 const { createActivationHandler } = require('../src/commands/activations');
 
-test('painel sem índices usa seleção por nome e preserva 1 SIM e 2 NÃO', async t => {
+test('painel numerado mantém seleção por nome e preserva 1 SIM e 2 NÃO', async t => {
   const db = new Database(':memory:'); t.after(() => db.close()); runMigrations(db);
   const store = createPolicyStore(db), actor = { admin: true, botAdmin: true, phone: '5511999999999@s.whatsapp.net', groupName: 'Matilha' };
   const ui = createInteraction({ store, resolveActor: async () => actor });
@@ -19,9 +19,8 @@ test('painel sem índices usa seleção por nome e preserva 1 SIM e 2 NÃO', asy
   assert.ok(panel.includes('Proteção:') && panel.includes('%'));
   assert.ok(panel.includes('`〔 🔴 〕`') && panel.includes('`〔 🟢 〕`'));
   assert.ok(!/〔\s*(?:[0-9]|ON|OFF)/u.test(panel));
-  for (const line of panel.split('\n').filter(line => /AntiLink geral|AntiFake brasileiro/u.test(line))) {
-    assert.doesNotMatch(line, /`[12]`/u);
-  }
+  const features = require('../src/activations/registry').list().filter(item => item.source !== 'sector');
+  for (const [index, feature] of features.entries()) assert.ok(panel.includes('`' + (index + 1) + '` 🛡️ *' + feature.name + ':*'), feature.id);
   ctx.args = ['anti-link']; ctx.msg.key.id = 'select'; await handler(sock, ctx);
   assert.ok(messages.at(-1).includes('`1`') && messages.at(-1).includes('`2`'));
   assert.equal(store.get(ctx.jid).features.antilink, false);
