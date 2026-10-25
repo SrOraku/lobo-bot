@@ -105,7 +105,7 @@ class UpdateService {
   async update(action) {
     if (!['bot', 'baileys'].includes(action)) throw new UpdateError('Use atualizar bot ou atualizar baileys.');
     if (this.running) throw new UpdateError('Já existe uma atualização em andamento.', 'BUSY');
-    if (this.needsRestart) throw new UpdateError('Reinicie o bot pelo painel antes de outra atualização.', 'RESTART_REQUIRED');
+    if (this.needsRestart) throw new UpdateError('Os arquivos novos já foram aplicados e aguardam reinício. Use atualizar bot para concluir o reinício supervisionado.', 'RESTART_REQUIRED');
     this.running = true;
     let lock, stage, phase = 'preparação';
     try {
@@ -113,7 +113,7 @@ class UpdateService {
       await safeTarget(this.root, 'updates'); await fs.mkdir(this.directory, { recursive: true });
       lock = require('./lock').acquireLock(this.root, { action });
       require('./recovery').recover(this.root, { lease: lock });
-      if(await readJSON(path.join(this.directory,'pending-release.json')))throw new UpdateError('A versão está em teste. Aguarde três minutos de runtime saudável; se o supervisor ainda é antigo, reinicie uma vez pelo painel.','RELEASE_IN_TRIAL');
+      if(await readJSON(path.join(this.directory,'pending-release.json')))throw new UpdateError('A versão está no período de saúde. Aguarde três minutos de conexão estável antes de outra atualização.','RELEASE_IN_TRIAL');
       stage = await fs.mkdtemp(path.join(this.directory, 'stage-'));
       let files, sha = null, targetVersion;
       if (action === 'bot') {

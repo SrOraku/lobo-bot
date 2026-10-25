@@ -20,6 +20,14 @@ function start({spawn=fork,exit=code=>process.exit(code),ask=question=>require('
  const stop=()=>{stopping=true;cancel(relaunchTimer);cancel(healthTimer);child?.kill('SIGTERM');};
  process.once('SIGTERM',stop);process.once('SIGINT',stop);launch();return {stop};
 }
-function canRestart(){return process.env.LOBO_SUPERVISED==='1'&&process.connected&&typeof process.send==='function';}
-function requestRestart(){if(!canRestart())return false;process.send({type:'lobo:restart'});return true;}
+function canRestart({channel=process,supervised=process.env.LOBO_SUPERVISED==='1'}={}){return !!(supervised&&channel.connected&&typeof channel.send==='function');}
+function requestRestart(options={}){
+ if(!canRestart(options))return Promise.resolve(false);
+ const channel=options.channel||process;
+ return new Promise(resolve=>{
+  const done=accepted=>{clearTimeout(timer);resolve(accepted);};
+  const timer=setTimeout(()=>done(false),options.timeoutMs??5000);
+  try{channel.send({type:'lobo:restart'},error=>done(!error));}catch{done(false);}
+ });
+}
 module.exports={start,canRestart,requestRestart};

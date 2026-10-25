@@ -139,3 +139,16 @@ Listeners de conexão e credenciais são instalados antes dos awaits de plugins 
 Reconexões têm tentativas limitadas/backoff, evitam callbacks de sockets antigos e aguardam a inicialização anterior dos plugins. Redis/comandos/ativações são inicializados uma vez por runtime. SIGINT/SIGTERM salvam credenciais e impedem reconexão durante encerramento. O supervisor recebe readiness apenas quando a conexão realmente abre.
 
 A configuração não garante autenticar conta desvinculada, revogada ou bloqueada pelo WhatsApp. A validação automatizada usa eventos/credenciais fictícios; não conecta ao WhatsApp real. Menus, mídia principal, jogos, RP e economia não foram modificados por esta edição.
+
+
+## Atualizar só pelo WhatsApp — v1.8.6
+
+Com o processo iniciado por `npm start` (tudo em minúsculas), `!atualizar bot` consulta a origem oficial, baixa para staging, confere os hashes, executa validações, faz backup, aplica código e solicita ao supervisor o reinício do processo WhatsApp. A sessão, .env, configurações e bancos são reutilizados. Não se apaga data/, storage/ nem sessions/ para instalar atualizações.
+
+O aviso de conclusão é uma tentativa limitada a cinco segundos. Se o envio falhar ou ficar pendente, o reinício ainda é solicitado. A confirmação IPC do pedido também é limitada; backpressure não é confundido com recusa. Quando o pedido não for confirmado, o bot informa que os arquivos já estão atualizados e permite repetir `!atualizar bot` para concluir só o reinício. Não anuncia falha de instalação depois de código aplicado apenas porque uma notificação falhou.
+
+`!atualizar status` mostra se o supervisor está ativo e se há reinício pendente. Em instalações antigas iniciadas diretamente por src/runtime.js, a configuração única é deixar o campo de inicialização da hospedagem como `npm start` e iniciar uma vez. Depois não é necessário entrar no painel a cada atualização. A execução direta sem supervisor não pode prometer reinício automático.
+
+Se a versão estiver nos três minutos de saúde, aguarde conexão estável antes de atualizar novamente. Rede indisponível, publicação com hashes inválidos ou erro real de validação continuam cancelando a aplicação; essa proteção não é burlada. Nesses casos use `!atualizar status` e o diagnóstico em updates/last-error.json. Mudanças no GitHub precisam estar publicadas em main com manifesto atualizado. O bot não pode baixar uma versão que ainda não foi publicada.
+
+A v1.8.6 não modifica menus, capas, jogos, economia, RP, banco ou sessão. Fortalece somente o pedido de atualização/reinício, as respostas e os testes.

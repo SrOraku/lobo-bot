@@ -1,3 +1,5 @@
+> **Atualização pelo WhatsApp — v1.8.6:** `!atualizar bot` aplica os arquivos e pede reinício mesmo se o aviso no WhatsApp falhar. Um reinício pendente pode ser concluído repetindo o comando, sem reinstalação ou exclusão de dados.
+
 > **Console e conexão — v1.8.5:** comandos dos grupos voltam a aparecer no console, com status ONLINE e reconexão após pareamento. Suas alterações de menus e mídias foram preservadas.
 
 > **Correção v1.8.3:** download de atualizações com retentativas limitadas, fallback oficial por blob e diagnóstico por arquivo; divergência de manifesto é informada como falha de integridade.
