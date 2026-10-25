@@ -35,6 +35,15 @@ async function processMessage(sock, msg) {
     body = body.trim();
     if (msg.key.fromMe && !body.startsWith(PREFIX) && !/^\d+$/.test(body)) return;
 
+    if (isGroup) {
+      const service = require('../integrations/control-center').controlCenter();
+      const central = await service.authorizeGroup(sock, jid);
+      if (!central.allowed) {
+        if (body.startsWith(PREFIX)) await service.notifyDenied(sock, jid, central, msg);
+        return;
+      }
+    }
+
     if(await require('../automation/anti-pv').createAntiPV(db).handle(sock,msg,{jid,sender,isGroup}))return;
     await require('../services/universal-currency').linkMessageWallet(db,sock,msg,{jid,sender,isGroup});
     db.upsertUser(sender, pushName);
