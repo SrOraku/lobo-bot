@@ -1,3 +1,5 @@
+> **Mídia local:** `!sfundo [sticker]`, `!toimg`, `!tomp3`, `!qc`, `!efeito` e `!hidetag` integrados aos menus. [Dependências, remoção local sem Python e limites](src/ui/MIDIA-LOCAL.md).
+
 > **LOBO-BOT v1.0.0:** a versão oficial permanece fixa em `1.0.0`; as atualizações são identificadas pelo commit e pela integridade dos arquivos, sem depender de aumentar esse número.
 
 > **Visual simétrico 🌹 & 🐺:** menus, HUDs e mensagens usam molduras de até 26 colunas, valores monoespaçados, saudação por horário e reações temáticas. No painel, escolha `!ativacoes função` e responda `1` para SIM/confirmar ou `2` para NÃO/cancelar. As compatibilidades anteriores permanecem. Veja [o padrão visual, os limites e como continuar em outra conta do ChatGPT](src/ui/README.md).

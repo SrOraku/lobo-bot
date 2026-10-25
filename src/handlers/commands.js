@@ -149,6 +149,7 @@ function loadAllCommands() {
   require('../commands/expansion').register(r);
   require('../commands/automation').register(r,commands);
   require('../commands/security').register(r,commands);
+  require('../commands/local-media').register(r,commands);
   commandsLoaded=true;
 
 }

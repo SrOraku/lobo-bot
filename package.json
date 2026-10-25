@@ -12,12 +12,13 @@
     "check:syntax": "node scripts/check-syntax.js",
     "check:startup": "node scripts/check-startup.js",
     "audit:commands": "node scripts/audit-commands.js",
-    "lint": "eslint src/ui src/services/economy.js src/services/universal-currency.js src/core/keyed-queue.js src/core/plugin-contract.js src/middlewares/command-limits.js src/integrations/bronxys/*.js src/commands/bronxys-config.js src/handlers/autoDownload.js src/progression src/economy src/automation src/events src/games/modules src/games/registry.js src/services/lastfm.js src/services/transcription.js src/updater/source.js src/updater/lock.js src/updater/recovery.js src/updater/health.js src/updater/integrity.js src/security/groups src/commands/security.js src/commands/group-removal.js src/connection/lifecycle.js src/utils/activity-logger.js src/commands/update.js src/updater/supervisor.js src/commands/wok-donation.js src/security/wok-donation.js",
+    "lint": "eslint src/commands/local-media.js src/ui src/services/economy.js src/services/universal-currency.js src/core/keyed-queue.js src/core/plugin-contract.js src/middlewares/command-limits.js src/integrations/bronxys/*.js src/commands/bronxys-config.js src/handlers/autoDownload.js src/progression src/economy src/automation src/events src/games/modules src/games/registry.js src/services/lastfm.js src/services/transcription.js src/updater/source.js src/updater/lock.js src/updater/recovery.js src/updater/health.js src/updater/integrity.js src/security/groups src/commands/security.js src/commands/group-removal.js src/connection/lifecycle.js src/utils/activity-logger.js src/commands/update.js src/updater/supervisor.js src/commands/wok-donation.js src/security/wok-donation.js",
     "check": "npm run lint && npm run check:syntax && npm test && npm run check:startup",
     "security": "npm audit --omit=dev --audit-level=critical",
     "docs": "node scripts/audit-commands.js",
     "release:manifest": "node scripts/build-manifest.js",
-    "release:verify": "node scripts/check-manifest.js"
+    "release:verify": "node scripts/check-manifest.js",
+    "test:background": "node --test test/background-inference.integration.js"
   },
   "dependencies": {
     "@distube/ytdl-core": "^4.14.4",
@@ -45,7 +46,8 @@
     "sharp": "^0.33.3",
     "uuid": "^9.0.1",
     "youtubei.js": "18.3.0",
-    "yt-search": "^2.10.4"
+    "yt-search": "^2.10.4",
+    "@imgly/background-removal-node": "1.4.5"
   },
   "devDependencies": {
     "eslint": "^9.39.5",
@@ -65,7 +67,11 @@
   "license": "MIT",
   "displayName": "🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑",
   "overrides": {
-    "libsignal": "https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7"
+    "libsignal": "https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7",
+    "@imgly/background-removal-node": {
+      "sharp": "$sharp",
+      "onnxruntime-node": "1.16.3"
+    }
   },
   "allowScripts": {
     "@ffmpeg-installer/linux-x64@4.1.0": true,

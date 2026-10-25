@@ -35,6 +35,7 @@ async function checkStartup() {
     background: { r: 0, g: 0, b: 0, alpha: 1 } } }).png().toBuffer();
   assert.ok(image.length > 0);
   fs.accessSync(require('@ffmpeg-installer/ffmpeg').path, fs.constants.X_OK);
+  assert.equal(typeof require('@imgly/background-removal-node').removeBackground, 'function');
 
   console.log(`✅ Dependências e APIs verificadas no Node ${process.versions.node}.`);
   console.log('✅ SQLite, imagens e FFmpeg disponíveis. Nenhuma sessão ou dado do bot foi alterado.');
