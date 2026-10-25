@@ -103,7 +103,7 @@ test('duplicate receipt is presented as already processed with the original post
   const f = fixture({ result: { amount: 1000, after: 1500, duplicate: true } });
   await f.handler(f.sock, f.ctx);
   assert.match(f.sent.at(-1).text, /Emissão já processada/);
-  assert.match(f.sent.at(-1).text, /Carteira após essa operação: 1500/);
+  assert.ok(f.sent.at(-1).text.includes('*Carteira após essa operação:* `1500`'));
 });
 
 test('known issuance validation is readable without claiming success', async () => {

@@ -5,6 +5,53 @@ const Database = require('better-sqlite3');
 const { runMigrations } = require('../src/config/migrations');
 const { createPolicyStore } = require('../src/activations/store');
 const { createInteraction } = require('../src/activations/interaction');
+const { createActivationHandler } = require('../src/commands/activations');
+
+test('painel sem índices usa seleção por nome e preserva 1 SIM e 2 NÃO', async t => {
+  const db = new Database(':memory:'); t.after(() => db.close()); runMigrations(db);
+  const store = createPolicyStore(db), actor = { admin: true, botAdmin: true, phone: '5511999999999@s.whatsapp.net', groupName: 'Matilha' };
+  const ui = createInteraction({ store, resolveActor: async () => actor });
+  const handler = createActivationHandler({ store, interaction: ui, resolveActor: async () => actor });
+  const messages = [], sock = { sendMessage: async (_, content) => messages.push(content.text) };
+  const ctx = { jid: '120000@g.us', sender: actor.phone, msg: { key: { id: 'menu' } }, args: [] };
+  await handler(sock, ctx);
+  const panel = messages.at(-1);
+  assert.ok(panel.includes('Proteção:') && panel.includes('%'));
+  assert.ok(panel.includes('`〔 🔴 〕`') && panel.includes('`〔 🟢 〕`'));
+  assert.ok(!/〔\s*(?:[0-9]|ON|OFF)/u.test(panel));
+  for (const line of panel.split('\n').filter(line => /AntiLink geral|AntiFake brasileiro/u.test(line))) {
+    assert.doesNotMatch(line, /`[12]`/u);
+  }
+  ctx.args = ['anti-link']; ctx.msg.key.id = 'select'; await handler(sock, ctx);
+  assert.ok(messages.at(-1).includes('`1`') && messages.at(-1).includes('`2`'));
+  assert.equal(store.get(ctx.jid).features.antilink, false);
+  ctx.msg.key.id = 'cancel'; await ui.handle(sock, ctx, '2');
+  assert.equal(store.get(ctx.jid).features.antilink, false);
+  ctx.msg.key.id = 'select-again'; await handler(sock, ctx);
+  ctx.msg.key.id = 'confirm'; await ui.handle(sock, ctx, '1');
+  assert.equal(store.get(ctx.jid).features.antilink, true);
+  ctx.msg.key.id = 'disable-proposal'; await handler(sock, ctx);
+  ctx.msg.key.id = 'cancel-disable'; await ui.handle(sock, ctx, '2');
+  assert.equal(store.get(ctx.jid).features.antilink, true);
+  assert.equal(store.get('130000@g.us').features.antilink, false);
+  store.update(ctx.jid, 'fixture', policy => { policy.features.antipromote = true; return policy; });
+  actor.botAdmin = false; ctx.args = []; ctx.msg.key.id = 'limited-panel';
+  const before = structuredClone(store.get(ctx.jid)); await handler(sock, ctx);
+  assert.ok(messages.at(-1).includes('*Anti-Promote:* `〔 🔴 〕` ⚠️ pendente'));
+  assert.deepEqual(store.get(ctx.jid), before);
+});
+
+test('atalhos explícitos aceitam 2 como NÃO sem retirar 0/off legados', async t => {
+  const db = new Database(':memory:'); t.after(() => db.close()); runMigrations(db);
+  const store = createPolicyStore(db), actor = { admin: true, botAdmin: true, phone: 'admin' };
+  const handler = createActivationHandler({ store, resolveActor: async () => actor, featureId: 'antilink' });
+  const sock = { sendMessage: async () => {} }, ctx = { jid: '120000@g.us', msg: {}, args: ['1'] };
+  for (const off of ['2', '0', 'off']) {
+    ctx.args = ['1']; await handler(sock, ctx); assert.equal(store.get(ctx.jid).features.antilink, true);
+    ctx.args = [off]; await handler(sock, ctx); assert.equal(store.get(ctx.jid).features.antilink, false);
+  }
+});
+
 test('seleção numérica confirma, cancela, isola grupos e revalida permissões', async t => {
   const db = new Database(':memory:'); t.after(() => db.close()); runMigrations(db);
   const store = createPolicyStore(db); let clock = 100, admin = true, botAdmin = true, event = 0;
@@ -48,7 +95,7 @@ test('inatividade solicita dias após confirmar, aceita 1 e 90 e rejeita 0 e 91'
   const send = input => { ctx.msg = { key: { id: String(++event) } }; return ui.handle(sock, ctx, input); };
   const number = require('../src/activations/registry').list().findIndex(f => f.id === 'antiinatividade') + 1;
   ui.open(ctx); await send(String(number)); await send('1');
-  assert.ok(messages.at(-1).includes('1 a 90'));
+  assert.ok(messages.at(-1).replace(/[`*_]/g, '').includes('1 a 90'));
   assert.equal(store.get(ctx.jid).features.antiinatividade, false);
   for (const value of ['0', '91', '999999999999999999999']) {
     await send(value); assert.equal(store.get(ctx.jid).features.antiinatividade, false);

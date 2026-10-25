@@ -1,53 +1,37 @@
 import { BOT_NAME, BOT_DESCRIPTION, OWNER_NUMBER, DEV_SIGNATURE } from './game/constants.js';
 
-const RULE = '═══✦════❖════♆════❖════✦═══';
-const CONTENT_WIDTH = 34;
+import { panelHeader, sectionHeading, contentLine, commandLine, TOP, BOTTOM, DIVIDER } from './presentation.js';
 
 function linesOf(value) {
   return (Array.isArray(value) ? value : [value]).filter(value => value !== undefined && value !== null)
     .flatMap(value => String(value).split(/\r?\n/));
 }
 
-function wrap(value, width = CONTENT_WIDTH) {
-  const words = String(value).trim().split(/\s+/).filter(Boolean);
-  const result = [];
-  let row = '';
-  for (const word of words) {
-    const candidate = row ? `${row} ${word}` : word;
-    if (row && [...candidate].length > width) { result.push(row); row = word; }
-    else row = candidate;
-  }
-  if (row) result.push(row);
-  return result.length ? result : [''];
-}
-
-function bodyRows(value) { return linesOf(value).flatMap(line => wrap(line).map(row => row ? `║ ${row}` : '║')); }
-
 /** Shared text-only presentation; this helper never interprets a command. */
 export function formatMenu({ title = 'MENU DA ALCATEIA', botName = BOT_NAME, botDescription = BOT_DESCRIPTION, ownerNumber = OWNER_NUMBER,
-  subtitle = [], sections = [], signature = '' } = {}) {
-  const output = [`╔${RULE}╗`, ...bodyRows(`🐺 ${title}`), ...bodyRows(subtitle)];
+  subtitle = [], sections = [], signature = '', prefix = '', tip = '💡 _Escolha um comando da matilha._' } = {}) {
+  const output = [panelHeader(title), ...linesOf(subtitle).filter(Boolean).map(contentLine)];
   for (const section of sections) {
-    if (section.title) {
-      const [heading, ...continuation] = wrap(section.title, 26);
-      output.push(`╠═❖═〔 ${heading} 〕═❖═╣`, ...bodyRows(continuation));
-    } else output.push(`╠${RULE}╣`);
-    output.push(...bodyRows(section.lines || []));
+    if (section.title) output.push(sectionHeading(section.title));
+    else output.push(DIVIDER);
+    output.push(...linesOf(section.lines || []).flatMap(row => commandLine(row, prefix)).filter(Boolean));
   }
-
-  output.push(`╚${RULE}╝`);
+  output.push(BOTTOM, `> 🌹 ${tip}`);
   return output.join('\n');
 }
 
 /** Restyle an existing menu template while preserving its command text. */
 export function decorateMenuText(text, { title = 'MENU DA ALCATEIA', botName = BOT_NAME,
   botDescription = BOT_DESCRIPTION, ownerNumber = OWNER_NUMBER, signature = '' } = {}) {
+  if (String(text).startsWith(TOP)) return String(text);
   const subtitle = [];
   const sections = [];
   let current = { title: '', lines: [] };
   for (const raw of linesOf(text)) {
     const row = raw.trim();
     const label = row.match(/〔\s*(.*?)\s*〕/u)?.[1];
+    const flatHeading = row.match(/^(?:🌹)?[═━─]{2,}\[\s*(.+?)\s*\][═━─]{2,}(?:🌹|🐺)?$/u);
+    if (flatHeading) { subtitle.push(flatHeading[1]); continue; }
     if (/^(?:🌹)?╔/u.test(row)) {
       if (label) subtitle.push(label);
       continue;

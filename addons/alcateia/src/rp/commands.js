@@ -1,5 +1,5 @@
-import { DEV_SIGNATURE, header } from '../game/constants.js';
 import { formatMenu } from '../menu-style.js';
+import { panel, progress, mono } from '../presentation.js';
 
 const COMMANDS = new Set([
   'rp', 'profissoes', 'profissao', 'trabalhar', 'acao', 'carteira', 'transferir',
@@ -12,13 +12,17 @@ function clean(value, fallback = 'nenhum', max = 100) {
 }
 
 function money(value) {
-  return `${Number.isFinite(value) ? value.toLocaleString('pt-BR') : '—'} WoK coin`;
+  return mono(`${Number.isFinite(value) ? value.toLocaleString('pt-BR') : '—'} WoK coin`);
+}
+
+function change(value) {
+  return Number.isFinite(value) && value >= 0 ? money(value).replace(/^`/, '`+') : money(value);
 }
 
 function frame(title, lines) {
   const contents = lines.filter(value => value !== undefined && value !== null);
   if (!contents.some(value => value.includes('WoK coin'))) contents.push('💰 Economia compartilhada: WoK coin.');
-  return `${header(title)}\n${contents.join('\n')}`;
+  return panel(title, contents);
 }
 
 function nameOf(value, fallback = 'jogador') {
@@ -75,7 +79,7 @@ export function isRPCommand(command, args = []) {
 export function rpMenu(config = {}) {
   const p = config.prefix || '!';
   return formatMenu({ title: 'MENU RP DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
-    ownerNumber: config.ownerNumber, subtitle: [
+    ownerNumber: config.ownerNumber, prefix: p, subtitle: [
     '🌹 Viva sua história. Honre sua família.', '💰 A carteira WoK coin é a mesma dos lobisomens.',
   ], signature: '', sections: [
     { title: '🐺 SUA NOVA JORNADA', lines: [
@@ -106,8 +110,10 @@ function profileText(result, at) {
   return frame('PERFIL RP', [
     `🐺 ${clean(player.name, 'Lobo')}`,
     `⭐ Profissão: ${job ? nameOf(job) : rp.jobId ? clean(rp.jobId) : 'nenhuma'} • XP: ${rp.experience}`,
-    `⚡ Energia RP: ${rp.energy}/100 • 🍽️ Saciedade RP: ${rp.hunger}/100`,
-    `💎 Saúde RP: ${rp.health}/100 • HP lobisomem: ${player.hp}/100`,
+    `⚡ Energia RP: ${rp.energy}/100 ${progress(rp.energy)}`,
+    `🍽️ Saciedade RP: ${rp.hunger}/100 ${progress(rp.hunger)}`,
+    `💎 Saúde RP: ${rp.health}/100 ${progress(rp.health)}`,
+    `🐺 HP lobisomem: ${player.hp}/100 ${progress(player.hp)}`,
     `💰 Carteira: ${money(player.coins)}`,
     `🏆 Reputação: ${rp.reputation} • Procurado: ${rp.wanted}`,
     `⏳ Prisão: ${rp.jailedUntil > at ? duration(rp.jailedUntil - at) : 'livre'}`,
@@ -120,14 +126,14 @@ function profileText(result, at) {
 function jobsText(result, config) {
   const prefix = config?.prefix || '!';
   const lines = (result.jobs || []).slice(0, PAGE_SIZE).flatMap(job => [
-    `⭐ ${clean(job.id)} • ${clean(job.name)} [${clean(job.category)}]`,
+    `⭐ ${mono(clean(job.id))} • *${clean(job.name)}* ${mono(clean(job.category))}`,
     `💰 ${salaryOf(job)} • ⏳ ${duration(job.cooldownMs ?? job.cooldown)}`,
     `⭐ XP mínimo: ${job.experienceRequired || 0}`,
-    `🐺 ${clean(job.description, 'Consulte a profissão para conhecer sua função.', 180)}`,
+    `🐺 _${clean(job.description, 'Consulte a profissão para conhecer sua função.', 180)}_`,
   ]);
   if (!lines.length) lines.push('🐺 Nenhuma profissão encontrada para esse filtro.');
   return formatMenu({ title: 'PROFISSÕES RP', botName: config?.botName, botDescription: config?.botDescription,
-    ownerNumber: config?.ownerNumber,
+    ownerNumber: config?.ownerNumber, prefix,
     subtitle: '⭐ Talento, respeito e influência', signature: '',
     sections: [{ title: '📚 CARREIRAS DA CIDADE', lines },
       { title: '🧭 ESCOLHA SEU CAMINHO', lines: [...pageFooter('profissoes', result, prefix),
@@ -137,13 +143,13 @@ function jobsText(result, config) {
 function shopText(result, config) {
   const prefix = config?.prefix || '!';
   const lines = (result.items || []).slice(0, PAGE_SIZE).flatMap(item => [
-    `💎 ${clean(item.id)} • ${clean(item.name)}`,
+    `💎 ${mono(clean(item.id))} • *${clean(item.name)}*`,
     `💰 ${money(item.price)}`,
-    `🐺 ${itemDescription(item)}`,
+    `🐺 _${itemDescription(item)}_`,
   ]);
   if (!lines.length) lines.push('🐺 Nenhum item nessa página.');
   return formatMenu({ title: 'LOJA RP', botName: config?.botName, botDescription: config?.botDescription,
-    ownerNumber: config?.ownerNumber,
+    ownerNumber: config?.ownerNumber, prefix,
     subtitle: '🌹 Elegância, conforto e prestígio', signature: '',
     sections: [{ title: '🛍️ VITRINE DA ALCATEIA', lines },
       { title: '💳 ESCOLHA SEU TESOURO', lines: [...pageFooter('rploja', result, prefix),
@@ -179,25 +185,25 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
         `🐺 ${clean(player.name, 'Lobo')}, sua história começou.`,
         `💰 Carteira compartilhada: ${money(player.coins)}`,
         '🌹 O RP utiliza o saldo existente, sem novo bônus de cadastro.',
-        `⭐ Comece com ${p}profissoes e ${p}rp perfil.`,
+        `⭐ Comece com *${p}profissoes* e *${p}rp perfil*.`,
       ]);
       break;
     case 'rp-profile': text = profileText(response, at); break;
     case 'rp-jobs': text = jobsText(response, ctx.config); break;
     case 'rp-job':
       text = frame('PROFISSÃO RP', [
-        `⭐ ${nameOf(response.job)}`, `🐺 ${clean(response.job.description, 'Sua profissão foi atualizada.', 180)}`,
+        `⭐ ${nameOf(response.job)}`, `🐺 _${clean(response.job.description, 'Sua profissão foi atualizada.', 180)}_`,
         `💰 Pagamento: ${salaryOf(response.job)} • ⏳ ${duration(response.job.cooldownMs ?? response.job.cooldown)}`,
         `⭐ XP mínimo: ${response.job.experienceRequired || 0} • Função: ${clean(response.job.roleActionName, 'ação da profissão')}`,
-        `⚔️ Trabalhe com ${p}trabalhar. Ação: ${p}acao [@jogador].`,
+        `⚔️ Trabalhe com *${p}trabalhar*. Ação: *${p}acao* ${mono('[@jogador]')}.`,
         `💰 Carteira: ${money(player.coins)}`,
       ]);
       break;
     case 'rp-work': {
       const reward = response.reward;
       text = frame('TRABALHO RP', [
-        `⭐ ${nameOf(response.job)}`, `🐺 ${clean(reward.description, reward.event === 'fine' ? 'Sua ação RP terminou em multa e prisão fictícias.' : 'Expediente concluído.', 200)}`,
-        `💰 Resultado: ${money(reward.amount ?? reward.coinChange ?? reward.salary)} • XP: +${reward.xp ?? reward.experienceGain ?? 0}`,
+        `⭐ ${nameOf(response.job)}`, `🐺 _${clean(reward.description, reward.event === 'fine' ? 'Sua ação RP terminou em multa e prisão fictícias.' : 'Expediente concluído.', 200)}_`,
+        `💰 Resultado: ${change(reward.amount ?? reward.coinChange ?? reward.salary)} • XP: +${reward.xp ?? reward.experienceGain ?? 0}`,
         reward.fine ? `⚔️ Multa RP: ${money(reward.fine)}` : undefined,
         reward.jailedUntil > at ? `⏳ Prisão RP: ${duration(reward.jailedUntil - at)}` : undefined,
         `💰 Carteira: ${money(player.coins)}`,
@@ -207,8 +213,8 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
     case 'rp-action': {
       const result = response.result;
       text = frame('AÇÃO RP', [
-        `⭐ ${nameOf(response.job)}`, `🐺 ${clean(result.message, 'Ação concluída.', 300)}`,
-        Number.isFinite(result.amount ?? result.coinChange) ? `💰 Resultado: ${money(result.amount ?? result.coinChange)}` : undefined,
+        `⭐ ${nameOf(response.job)}`, `🐺 _${clean(result.message, 'Ação concluída.', 300)}_`,
+        Number.isFinite(result.amount ?? result.coinChange) ? `💰 Resultado: ${change(result.amount ?? result.coinChange)}` : undefined,
         result.experienceGain ? `⭐ XP: +${result.experienceGain}` : undefined,
         result.healthGain ? `💎 Saúde RP recuperada: +${result.healthGain}` : undefined,
         result.wantedReduction ? `⚔️ Procura RP reduzida em ${result.wantedReduction}.` : undefined,
@@ -227,7 +233,7 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
       break;
     case 'rp-use':
       text = frame('ITEM RP', [`💎 ${nameOf(response.result.item)}`,
-        `🐺 ${clean(response.result.message, effectsText(response.result.effects) || 'Item utilizado.', 250)}`,
+        `🐺 _${clean(response.result.message, effectsText(response.result.effects) || 'Item utilizado.', 250)}_`,
         Number.isFinite(response.result.remaining) ? `💎 Restam: ${response.result.remaining}` : undefined,
         `💰 Carteira: ${money(player.coins)}`]);
       break;
@@ -235,9 +241,9 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
       const rp = response.rp || player.rp;
       const entries = Object.entries(rp.inventory || {}).filter(([, count]) => count > 0);
       text = frame('INVENTÁRIO RP', [
-        ...(entries.length ? entries.slice(0, PAGE_SIZE).map(([id, count]) => `💎 ${clean(id)} × ${count}`) : ['🐺 Seu inventário está vazio.']),
+        ...(entries.length ? entries.slice(0, PAGE_SIZE).map(([id, count]) => `💎 ${mono(clean(id))} × ${count}`) : ['🐺 Seu inventário está vazio.']),
         entries.length > PAGE_SIZE ? `🐺 Exibindo ${PAGE_SIZE} de ${entries.length} tipos de item.` : undefined,
-        `💰 Carteira: ${money(player.coins)}`, `💎 Use ${p}usar ITEM.`,
+        `💰 Carteira: ${money(player.coins)}`, `💎 Use *${p}usar* ${mono('ITEM')}.`,
       ]);
       break;
     }
@@ -246,9 +252,9 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
       text = frame((response.invite.type || response.invite.kind) === 'marriage' ? 'PEDIDO DE CASAMENTO RP' : 'CONVITE DE FAMÍLIA RP', [
         `🐺 Para: ${nameOf(response.target)}`,
         response.invite.relation ? `🌹 Parentesco: ${clean(response.invite.relation)}` : undefined,
-        `⭐ Convite: ${clean(response.invite.id)}`,
-        `🐺 ${p}familia aceitar ${clean(response.invite.id)}`,
-        `🌹 ${p}familia recusar ${clean(response.invite.id)}`,
+        `⭐ Convite: ${mono(clean(response.invite.id))}`,
+        `▸ *${p}familia aceitar* ${mono(clean(response.invite.id))}`,
+        `▸ *${p}familia recusar* ${mono(clean(response.invite.id))}`,
         `⏳ Expira em ${duration(response.invite.expiresAt - at)}.`,
       ]);
       break;

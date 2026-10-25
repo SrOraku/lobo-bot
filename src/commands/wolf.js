@@ -2,6 +2,9 @@
 const db = require('../utils/database');
 const { BOT_NAME, wolvesBar, validateStrategy, calculateBattle, cleanJid, getNumber, formatDate, sleep } = require('../utils/helpers');
 const cache = require('../utils/cache');
+const { mono, progress, command, numericText, card, block, flavor } = require('../ui/text');
+
+const wolfHud = alive => `🐺 *Lobos vivos:* ${mono(`${alive}/100`)}\n${progress(alive, 100)}`;
 
 const BATTLE_TIMEOUT = parseInt(process.env.BATTLE_TIMEOUT) || 60;
 const CURE_COST = 200; // gold para curar todos os lobos
@@ -32,29 +35,20 @@ async function verEstrategia(sock, ctx) {
     : '0.0';
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════════╗
-║  🐺 *ESTRATÉGIA DE BATALHA*  ║
-╚══════════════════════════╝
-
-
-
-👤 *Guerreiro:* ${targetName}
-${wolvesBar(strat.wolves_alive)}
-
-*⚔️ DISTRIBUIÇÃO DOS 100 LOBOS:*
-┌──────────────────────────
-│ 🗡️ *Ataque:* ${strat.attack} lobos
-│ 🛡️ *Defesa:* ${strat.defense} lobos  
-│ 🔄 *Contra-ataque:* ${strat.counter} lobos
-└──────────────────────────
-
-*📊 HISTÓRICO:*
-• 🏆 Vitórias: *${strat.total_victories}*
-• ⚔️ Batalhas: *${strat.total_attacks}*
-• 📈 Win Rate: *${winRate}%*
-
-_Use_ *!mudar estrategia ataque:X defesa:Y contra:Z*
-_para redistribuir seus lobos!_`,
+    text: card('🐺 ESTRATÉGIA DE BATALHA', [
+      `👤 *Guerreiro:* ${targetName}\n${wolfHud(strat.wolves_alive)}`,
+      block('DISTRIBUIÇÃO', [
+        `*Lobos da formação:* ${mono(100)}`,
+        `🗡️ *Ataque:* ${mono(strat.attack)} lobos`,
+        `🛡️ *Defesa:* ${mono(strat.defense)} lobos`,
+        `🔄 *Contra-ataque:* ${mono(strat.counter)} lobos`,
+      ]),
+      block('HISTÓRICO', [
+        `🏆 *Vitórias:* ${mono(strat.total_victories)}`,
+        `⚔️ *Batalhas:* ${mono(strat.total_attacks)}`,
+        `📈 *Win Rate:* ${mono(`${winRate}%`)}`,
+      ]),
+    ], { tip: `_Redistribua seus lobos:_ ${command('!mudar estrategia ataque:X defesa:Y contra:Z')}` }),
     mentions: [target]
   }, { quoted: msg });
 }
@@ -91,14 +85,14 @@ async function mudarEstrategia(sock, ctx) {
 
   if (attack === undefined || defense === undefined || counter === undefined) {
     return sock.sendMessage(jid, {
-      text: `❌ 🐺 *Como usar:*\n\n*!mudar estrategia ataque:40 defesa:30 contra:30*\n\n_A soma deve ser sempre 100!_`
+      text: `❌ *Ação Inválida!* _Informe as três posições da matilha; a soma deve ser ${mono(100)}._\n> 💡 *Use assim:* ${command('!mudar estrategia ataque:40 defesa:30 contra:30')}`
     }, { quoted: msg });
   }
 
   const validation = validateStrategy(attack, defense, counter);
   if (!validation.valid) {
     return sock.sendMessage(jid, {
-      text: `❌ 🐺 *Estratégia inválida!*\n\n${validation.error}\n\n_Exemplo: !mudar estrategia ataque:40 defesa:35 contra:25_`
+      text: `❌ *Estratégia inválida!* _${numericText(validation.error)}_\n> 💡 *Use assim:* ${command('!mudar estrategia ataque:40 defesa:35 contra:25')}`
     }, { quoted: msg });
   }
 
@@ -107,22 +101,13 @@ async function mudarEstrategia(sock, ctx) {
   const tactics = getTacticLabel(attack, defense, counter);
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════════╗
-║  ⚙️ *ESTRATÉGIA ATUALIZADA!*  ║
-╚══════════════════════════╝
-
-
-
-🐺 *Sua matilha foi reorganizada!*
-
-🗡️ *Ataque:* ${attack} lobos
-🛡️ *Defesa:* ${defense} lobos
-🔄 *Contra-ataque:* ${counter} lobos
-
-🎯 *Estilo:* ${tactics}
-
-_Sua estratégia está pronta para a batalha!_
-_Uuuuuuwooooo! 🐺_`
+    text: card('⚙️ ESTRATÉGIA ATUALIZADA', [
+      '✅ _Sua matilha foi reorganizada para a próxima batalha._',
+      `🗡️ *Ataque:* ${mono(attack)} lobos`,
+      `🛡️ *Defesa:* ${mono(defense)} lobos`,
+      `🔄 *Contra-ataque:* ${mono(counter)} lobos`,
+      `🎯 *Estilo:* ${tactics}`,
+    ], { tip: '_Estratégia pronta. Uuuuuuwooooo! 🐺_' })
   }, { quoted: msg });
 }
 
@@ -144,14 +129,14 @@ const activeBattles = new Set();
 async function atacar(sock, ctx) {
   const { jid, sender, msg, pushName, args } = ctx;
   if (!ctx.isGroup) {
-    return sock.sendMessage(jid, { text: `❌ Este comando só pode ser usado em grupos!` }, { quoted: msg });
+    return sock.sendMessage(jid, { text: `❌ *Ação Inválida!* _Este comando só pode ser usado em grupos._` }, { quoted: msg });
   }
 
   // Verificar se há menção
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
   if (!mentioned) {
     return sock.sendMessage(jid, {
-      text: `❌ 🐺 Mencione seu oponente!\n\n_Exemplo:_ *!atacar @usuário*`
+      text: `❌ *Ação Inválida!* _Mencione seu oponente._\n> 💡 *Use assim:* ${command('!atacar @usuário')}`
     }, { quoted: msg });
   }
 
@@ -159,12 +144,12 @@ async function atacar(sock, ctx) {
 
   if (defender === sender) {
     return sock.sendMessage(jid, {
-      text: `🐺 Você não pode atacar a si mesmo, Lobo Tolo! 😂`
+      text: `❌ *Ação Inválida!* _Lobo, escolha outro oponente; você não pode atacar a si mesmo._`
     }, { quoted: msg });
   }
 
   if (require('../services/economy').economy().activeEffect(defender,'shield'))
-    return sock.sendMessage(jid,{text:'🛡️ Este participante está protegido por um escudo ativo.'},{quoted:msg});
+    return sock.sendMessage(jid,{text:'⏳ *Aguarde um instante!* _Este participante está protegido por um escudo ativo._'},{quoted:msg});
 
   // Anti-cooldown de batalha (30s entre batalhas)
   const battleKey = `battle_${sender}`;
@@ -175,7 +160,7 @@ async function atacar(sock, ctx) {
     const remaining = Math.ceil((BATTLE_TIMEOUT - (Date.now() - lastBattle) / 1000));
     if (remaining > 0) {
       return sock.sendMessage(jid, {
-        text: `⏳ 🐺 Seus lobos estão descansando!\n\nAguarde *${remaining}s* para atacar novamente.`
+        text: `⏳ *Aguarde um instante!* _Seus lobos estão descansando; novo ataque em ${mono(`${remaining}s`)}._`
       }, { quoted: msg });
     }
   }
@@ -183,7 +168,7 @@ async function atacar(sock, ctx) {
   // Checar se já está em batalha
   if (activeBattles.has(jid+':'+sender)) {
     return sock.sendMessage(jid, {
-      text: `⚔️ Você já está em uma batalha!`
+      text: `⏳ *Aguarde um instante!* _Você já está em uma batalha._`
     }, { quoted: msg });
   }
 
@@ -197,12 +182,12 @@ async function atacar(sock, ctx) {
   // Checar lobos vivos
   if (atkStrat.wolves_alive <= 0) {
     return sock.sendMessage(jid, {
-      text: `💀 Seus lobos estão todos mortos! Use *!curarlobos* para ressuscitá-los.\n💰 Custo: *${CURE_COST} WoK coin*`
+      text: `💀 *Matilha sem lobos vivos!* _Recupere sua formação antes de lutar._\n💰 *Custo:* ${mono(`${CURE_COST} WoK coin`)}\n> ▸ ${command('!curarlobos')}`
     }, { quoted: msg });
   }
   if (defStrat.wolves_alive <= 0) {
     return sock.sendMessage(jid, {
-      text: `💀 @${getNumber(defender)} não tem lobos vivos para lutar! Escolha outro oponente.`,
+      text: `💀 *Oponente indisponível:* @${getNumber(defender)}\n_Esse participante não tem lobos vivos; escolha outro oponente._`,
       mentions: [defender]
     }, { quoted: msg });
   }
@@ -216,7 +201,11 @@ async function atacar(sock, ctx) {
 
   // Anunciar batalha
   await sock.sendMessage(jid, {
-    text: `🌙 ╔══════════════════════╗\n║  ⚔️ *BATALHA INICIADA!* ║\n╚══════════════════════╝\n\n🗡️ *Atacante:* @${getNumber(sender)}\n🛡️ *Defensor:* @${getNumber(defender)}\n\n_A lua cheia guia as matilhas..._\n_Que a batalha comece! 🐺_`,
+    text: card('⚔️ BATALHA INICIADA', [
+      `🗡️ *Atacante:* @${getNumber(sender)}`,
+      `🛡️ *Defensor:* @${getNumber(defender)}`,
+      '_A lua cheia guia as matilhas. Que a batalha comece! 🐺_',
+    ], { tip: '_Aguarde o resultado da batalha._' }),
     mentions: [sender, defender]
   });
 
@@ -269,31 +258,17 @@ async function atacar(sock, ctx) {
   })();
 
   const winnerText = result.winner === 'attacker'
-    ? `🏆 *VITÓRIA de @${getNumber(sender)}!*\n💰 Prêmio: *+${goldPrize} WoK coin*`
+    ? `🏆 *Vitória de @${getNumber(sender)}!*\n💰 *Prêmio:* ${mono(`+${goldPrize} WoK coin`)}`
     : result.winner === 'defender'
-    ? `🛡️ *DEFESA VITORIOSA de @${getNumber(defender)}!*\n💰 Prêmio: *+${goldPrize} WoK coin*`
-    : `⚖️ *EMPATE! Ambas as matilhas se igualaram!*`;
+    ? `🛡️ *Defesa vitoriosa de @${getNumber(defender)}!*\n💰 *Prêmio:* ${mono(`+${goldPrize} WoK coin`)}`
+    : `⚖️ *Empate!* _As duas matilhas se igualaram._`;
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════════╗
-║   ⚔️ *RESULTADO DA BATALHA*   ║
-╚══════════════════════════╝
-
-
-
-🗡️ *@${getNumber(sender)}*
-${wolvesBar(result.atkWolvesAfter)} 
-_(-${result.defDamage} lobos perdidos)_
-
-🛡️ *@${getNumber(defender)}*
-${wolvesBar(result.defWolvesAfter)}
-_(-${result.atkDamage} lobos perdidos)_
-
-━━━━━━━━━━━━━━━━━━━━━━
-${winnerText}
-━━━━━━━━━━━━━━━━━━━━━━
-
-_Uuuuuuwooooo! 🐺🌕_`,
+    text: card('⚔️ RESULTADO DA BATALHA', [
+      `🗡️ *@${getNumber(sender)}*\n${wolfHud(result.atkWolvesAfter)}\n*Perdas:* ${mono(`-${result.defDamage}`)} lobos`,
+      `🛡️ *@${getNumber(defender)}*\n${wolfHud(result.defWolvesAfter)}\n*Perdas:* ${mono(`-${result.atkDamage}`)} lobos`,
+      block('RESULTADO', [winnerText, flavor(result.winner === 'attacker' ? 'win' : 'loss')]),
+    ], { tip: '_Uuuuuuwooooo! 🐺🌕_' }),
     mentions: [sender, defender]
   });
   } finally {
@@ -318,27 +293,20 @@ async function meusLobos(sock, ctx) {
     ? ((strat.total_victories / strat.total_attacks) * 100).toFixed(1) : '0.0';
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════════╗
-║    🐺 *MINHA MATILHA*    ║
-╚══════════════════════════╝
-
-
-
-👤 *${pushName}*
-${wolvesBar(strat.wolves_alive)}
-
-*⚔️ ESTRATÉGIA ATUAL:*
-🗡️ Ataque: *${strat.attack}* lobos
-🛡️ Defesa: *${strat.defense}* lobos
-🔄 Contra-ataque: *${strat.counter}* lobos
-
-*📊 BATALHAS:*
-🏆 Vitórias: *${strat.total_victories}*
-⚔️ Total: *${strat.total_attacks}*
-📈 Win Rate: *${winRate}%*
-💰 WoK coin: *${user?.gold || 0}*
-
-_${strat.wolves_alive <= 0 ? '💀 Seus lobos estão mortos! Use !curarlobos' : strat.wolves_alive <= 30 ? '⚠️ Atenção! Poucos lobos restantes!' : '✅ Matilha pronta para batalha!'}_`
+    text: card('🐺 MINHA MATILHA', [
+      `👤 *${pushName}*\n${wolfHud(strat.wolves_alive)}`,
+      block('ESTRATÉGIA', [
+        `🗡️ *Ataque:* ${mono(strat.attack)} lobos`,
+        `🛡️ *Defesa:* ${mono(strat.defense)} lobos`,
+        `🔄 *Contra-ataque:* ${mono(strat.counter)} lobos`,
+      ]),
+      block('BATALHAS', [
+        `🏆 *Vitórias:* ${mono(strat.total_victories)}`,
+        `⚔️ *Total:* ${mono(strat.total_attacks)}`,
+        `📈 *Win Rate:* ${mono(`${winRate}%`)}`,
+        `💰 *WoK coin:* ${mono(user?.gold || 0)}`,
+      ]),
+    ], { tip: `_${strat.wolves_alive <= 0 ? '💀 Seus lobos estão mortos! Use !curarlobos' : strat.wolves_alive <= 30 ? '⚠️ Atenção! Poucos lobos restantes!' : '✅ Matilha pronta para batalha!'}_` })
   }, { quoted: msg });
 }
 
@@ -350,22 +318,17 @@ async function rankLobos(sock, ctx) {
   const top = db.topWolves();
 
   const lines = top.map((p, i) => {
-    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`;
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : mono(`${i + 1}º`);
     const name = p.name || getNumber(p.jid);
     const wr = p.total_attacks > 0 ? ((p.total_victories / p.total_attacks) * 100).toFixed(0) : 0;
-    return `${medal} *${name}*\n    🏆 ${p.total_victories} vitórias | 📈 ${wr}% WR`;
-  }).join('\n\n');
+    return `${medal} *${name}*\n🏆 ${mono(p.total_victories)} vitórias • 📈 ${mono(`${wr}%`)} WR`;
+  }).join('\n');
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════════╗
-║   🌕 *RANKING 100 LOBISOMENS*  ║
-╚══════════════════════════╝
-
-
-
-${lines || '📭 Ainda não há batalhas registradas!'}
-
-_Quem vai dominar a matilha? 🐺_`
+    text: card('🌕 RANKING DE LOBOS', [
+      `*Lobisomens:* ${mono(100)}`,
+      lines || '📭 _Ainda não há batalhas registradas._',
+    ], { tip: '_Quem vai dominar a matilha? 🐺_' })
   }, { quoted: msg });
 }
 
@@ -379,20 +342,24 @@ async function curarLobos(sock, ctx) {
 
   if (!strat || strat.wolves_alive >= 100) {
     return sock.sendMessage(jid, {
-      text: `🐺 Sua matilha já está com todos os *100 lobos* vivos! Não precisa curar.`
+      text: `✅ *Matilha completa!* _Seus ${mono(100)} lobos estão vivos; não é necessário curar._`
     }, { quoted: msg });
   }
 
   if ((user?.gold || 0) < CURE_COST) {
     return sock.sendMessage(jid, {
-      text: `💸 Você precisa de *${CURE_COST} WoK coin* para curar sua matilha!\n\nVocê tem: *${user?.gold || 0} WoK coin*\n\n_Use !daily para ganhar WoK coin diariamente!_`
+      text: `⏳ *Saldo insuficiente!*\n💰 *Custo:* ${mono(`${CURE_COST} WoK coin`)}\n*Sua carteira:* ${mono(`${user?.gold || 0} WoK coin`)}\n> _Receba a recompensa diária:_ ${command('!daily')}`
     }, { quoted: msg });
   }
 
   require('../services/economy').economy().buy(sender,{id:2,price:CURE_COST},msg.key?.id);
 
   await sock.sendMessage(jid, {
-    text: `✅ 🐺 *Matilha Curada!*\n\nSeus 100 lobos foram ressuscitados!\n💰 Custo: *-${CURE_COST} WoK coin*\n\n_Uuuuuuwooooo! 🐺🌕_`
+    text: card('✅ MATILHA CURADA', [
+      `_Seus ${mono(100)} lobos voltaram à formação._`,
+      `💰 *Custo:* ${mono(`-${CURE_COST} WoK coin`)}`,
+      wolfHud(100),
+    ], { tip: '_Uuuuuuwooooo! 🐺🌕_' })
   }, { quoted: msg });
 }
 
@@ -408,7 +375,7 @@ async function resetarLobos(sock, ctx) {
   db.upsertStrategy(target, 34, 33, 33);
 
   await sock.sendMessage(jid, {
-    text: `✅ 🔄 Lobos de @${getNumber(target)} foram resetados para 100!`,
+    text: `✅ *Concluído!* _Lobos de @${getNumber(target)} restaurados para ${mono(100)}._`,
     mentions: [target]
   }, { quoted: msg });
 }
@@ -419,42 +386,29 @@ async function resetarLobos(sock, ctx) {
 async function infoJogo(sock, ctx) {
   const { jid, msg } = ctx;
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════════════╗
-║  🐺 *100 LOBISOMENS - GUIA*  ║
-╚══════════════════════════════╝
-
-
-
-*📖 COMO JOGAR:*
-
-Cada jogador possui *100 lobos* distribuídos em 3 posições:
-
-🗡️ *Ataque* - Lobos que atacam o inimigo
-🛡️ *Defesa* - Lobos que protegem a matilha
-🔄 *Contra-ataque* - Lobos que contra-atacam
-
-*📐 REGRA FUNDAMENTAL:*
-A soma das 3 posições deve ser sempre *100*!
-
-*⚙️ COMANDOS:*
-▸ *!mudar estrategia ataque:X defesa:Y contra:Z*
-  → Define sua estratégia de batalha
-
-▸ *!atacar @usuário*
-  → Ataca outro jogador!
-
-▸ *!lobos* → Ver sua matilha
-▸ *!estrategia* → Ver estratégia atual
-▸ *!curarlobos* → Curar lobos (${CURE_COST} WoK coin)
-▸ *!ranklobos* → Ranking de batalhas
-
-*⚔️ MECÂNICA:*
-• Ataque vs Defesa do inimigo
-• Contra-ataque pode ferir o atacante
-• Lobos mortos = sem batalha
-• Vencer = ganhar WoK coin!
-
-_Que a lua cheia guie sua matilha! 🌕🐺_`
+    text: card('🐺 GUIA DOS LOBOS', [
+      block('COMO JOGAR', [
+        `_Cada jogador possui ${mono(100)} lobos em ${mono(3)} posições._`,
+        '🗡️ *Ataque* — _Avança sobre o inimigo._',
+        '🛡️ *Defesa* — _Protege a matilha._',
+        '🔄 *Contra-ataque* — _Responde à ofensiva._',
+        `📐 *Regra:* _A soma das ${mono(3)} posições deve ser ${mono(100)}._`,
+      ]),
+      block('COMANDOS', [
+        `▸ ${command('!mudar estrategia ataque:X defesa:Y contra:Z')}\n_Define sua estratégia de batalha._`,
+        `▸ ${command('!atacar @usuário')}\n_Ataca outro jogador._`,
+        `▸ ${command('!lobos')} — _Ver sua matilha._`,
+        `▸ ${command('!estrategia')} — _Ver estratégia atual._`,
+        `▸ ${command('!curarlobos')} — _Curar lobos._\n*Custo:* ${mono(`${CURE_COST} WoK coin`)}`,
+        `▸ ${command('!ranklobos')} — _Ranking de batalhas._`,
+      ]),
+      block('MECÂNICA', [
+        '_Ataque contra a defesa inimiga._',
+        '_O contra-ataque pode ferir o atacante._',
+        '_Lobos sem vida não entram em batalha._',
+        '_Vencer rende WoK coin._',
+      ]),
+    ], { tip: '_Que a lua cheia guie sua matilha! 🌕🐺_' })
   }, { quoted: msg });
 }
 

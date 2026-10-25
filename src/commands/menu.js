@@ -3,6 +3,7 @@ const config = require('../config');
 const { CATEGORIES, CATEGORY_ALIASES, buildCatalog } = require('../menus/catalog');
 const { IDENTITY, frameMenu, clean, uptime } = require('../menus/render');
 const { version } = require('../../package.json');
+const { block, command, mono, greeting, clock, center } = require('../ui/text');
 function getCatalog() {
   return buildCatalog(
     require('../core/commandRegistry').listAll(),
@@ -13,22 +14,24 @@ function createMenu({
   catalog = getCatalog,
   prefix = () => config.get('PREFIX'),
   online = () => process.uptime(),
+  at = () => new Date(),
 } = {}) {
   return async function menu(sock, ctx) {
     const p = prefix(),
       all = catalog();
+    const instant = at();
     const raw = String(ctx.args?.[0] || '').toLowerCase();
     const category = CATEGORY_ALIASES[raw] || raw;
     const categoryLines = Object.entries(CATEGORIES).map(
-      ([key, title]) => `┃ ${title.split(' ')[0]} *${p}menu ${key}*`,
+      ([key, title]) => `${title.split(' ')[0]} ${command(p + 'menu ' + key)}`,
     );
     let title, sections;
     if (!category) {
       title = 'MENU PRINCIPAL DA MATILHA';
       sections = [
-        `👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}`,
-        `╭─── ❖ *CATEGORIAS* ❖ ───╮\n${categoryLines.join('\n')}\n╰────────────────────╯`,
-        `📖 _Use ${p}menu + categoria para visualizar seus comandos._\n⚡ _${p}atalhos — versões abreviadas._`,
+        `${center('_' + greeting(instant) + ', lobo(a)!_')}\n👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}\n${[ctx.senderLevelName || ['Membro', 'Admin do grupo', 'Admin do bot', 'Dono'][ctx.senderLevel], ctx.user?.level !== undefined ? '*Nível:* ' + mono(ctx.user.level) : null, ctx.user?.gold !== undefined ? '*WoK coin:* ' + mono(ctx.user.gold) : null, ctx.user?.xp !== undefined ? '*XP:* ' + mono(ctx.user.xp) : null].filter(Boolean).join(' • ')}\n🕒 *Hora:* ${mono(clock(instant))}${ctx.ping !== undefined ? ' • *Ping:* ' + mono(ctx.ping + ' ms') : ''}`,
+        block('CATEGORIAS', categoryLines),
+        `> 📖 _Escolha uma categoria com_ ${command(p + 'menu categoria')}.\n> ⚡ ${command(p + 'atalhos')} — _versões abreviadas._`,
       ];
     } else if (!CATEGORIES[category]) {
       title = 'CATEGORIA NÃO ENCONTRADA';
@@ -44,7 +47,7 @@ function createMenu({
         ]
           .filter(Boolean)
           .join(' • ');
-        return `┃ ➤ *${usage}* — _${c.description}_${flags ? ` [${flags}]` : ''}${c.aliases?.length ? `\n┃ ↳ ${c.aliases.map((a) => '*' + p + a + '*').join(' • ')}` : ''}${c.details?.length ? '\n' + c.details.map((row) => '┃ ↳ *' + p + c.name + ' ' + row + '*').join('\n') : ''}`;
+        return `     ▸ ${command(usage)}\n       _${c.description}${flags ? ` • ${flags}` : ''}_${c.aliases?.length ? `\n       ↳ ${c.aliases.map((a) => command(p + a)).join(' • ')}` : ''}${c.details?.length ? '\n' + c.details.map((row) => '│   ▸ ' + command(p + c.name + ' ' + row)).join('\n') : ''}`;
       });
       sections = [
         lines.length ? lines.join('\n') : '➤ Nenhum comando desta categoria está instalado.',
@@ -75,9 +78,9 @@ function createMenu({
         );
       if (category === 'info')
         sections.push(
-          `⭐ Versão: ${version}\n⏱️ Uptime: ${uptime(online())}\n📜 Comandos: ${all.length}\n👑 Dono: +${config.get('BOT_OWNER')}\n📞 +5543920030769`,
+          `⭐ *Versão:* ${mono(version)}\n⏱️ *Uptime:* ${mono(uptime(online()))}\n📜 *Comandos:* ${mono(all.length)}\n👑 *Dono:* ${mono('+' + config.get('BOT_OWNER'))}\n📞 ${mono('+5543920030769')}`,
         );
-      sections = [`👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}`, `╭─── ❖ *COMANDOS* ❖ ───╮\n${sections.join('\n\n')}\n╰────────────────────╯`, `📖 _Digite ${p}menu para voltar ao Menu Principal._`];
+      sections = [`${center('_' + greeting(instant) + ', lobo(a)!_')}\n👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}\n${[ctx.senderLevelName || ['Membro', 'Admin do grupo', 'Admin do bot', 'Dono'][ctx.senderLevel], ctx.user?.level !== undefined ? '*Nível:* ' + mono(ctx.user.level) : null, ctx.user?.gold !== undefined ? '*WoK coin:* ' + mono(ctx.user.gold) : null, ctx.user?.xp !== undefined ? '*XP:* ' + mono(ctx.user.xp) : null].filter(Boolean).join(' • ')}\n🕒 *Hora:* ${mono(clock(instant))}${ctx.ping !== undefined ? ' • *Ping:* ' + mono(ctx.ping + ' ms') : ''}`, block('COMANDOS', sections), `> 📖 _Volte à matilha com_ ${command(p + 'menu')}.`];
     }
     return require('../menus/media').sendMenu(sock,ctx,frameMenu(title,sections));
   };

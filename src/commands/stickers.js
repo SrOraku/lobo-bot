@@ -3,6 +3,7 @@ const { BOT_NAME } = require('../utils/helpers');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { command } = require('../ui/text');
 
 let baileysModulePromise = null;
 function loadBaileys() {
@@ -50,12 +51,12 @@ async function criarSticker(sock, ctx) {
   const media = await getQuotedMedia(sock, msg) || await getDirectMedia(sock, msg);
   if (!media) {
     return sock.sendMessage(jid, {
-      text: `🎭 Envie ou responda uma imagem/vídeo com *!sticker*!\n\n_Opções:_\n• !sticker - Criar figurinha normal\n• !s - Atalho`
+      text: `❌ *Ação inválida!* _Envie ou responda uma imagem/vídeo._\n> 💡 *Use assim:* ${command('!sticker')} _ou_ ${command('!s')}`
     }, { quoted: msg });
   }
 
   await sock.sendMessage(jid, {
-    text: `⏳ 🎭 Criando figurinha...\n_Aguarde!_`
+    text: `⏳ *Aguarde um instante!* _Criando sua figurinha…_`
   }, { quoted: msg });
 
   try {
@@ -98,7 +99,7 @@ async function criarSticker(sock, ctx) {
     fs.unlinkSync(tmpOutput);
 
   } catch (err) {
-    await sock.sendMessage(jid, { text: `❌ Erro ao criar figurinha!\n_${err.message}_` }, { quoted: msg });
+    await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Erro ao criar figurinha: ${err.message}_` }, { quoted: msg });
   }
 }
 
@@ -111,12 +112,12 @@ async function criarStickerAnimado(sock, ctx) {
   const media = await getQuotedMedia(sock, msg) || await getDirectMedia(sock, msg);
   if (!media || media.type !== 'videoMessage') {
     return sock.sendMessage(jid, {
-      text: `🎭 Envie ou responda um *vídeo* com *!stickeranim* para criar um sticker animado!`
+      text: `❌ *Ação inválida!* _Envie ou responda um vídeo para criar uma figurinha animada._\n> 💡 *Use assim:* ${command('!stickeranim')}`
     }, { quoted: msg });
   }
 
   await sock.sendMessage(jid, {
-    text: `⏳ 🎭 Criando sticker animado...\n_Pode demorar um pouco!_`
+    text: `⏳ *Aguarde um instante!* _Criando sua figurinha animada…_`
   }, { quoted: msg });
 
   try {
@@ -152,7 +153,7 @@ async function criarStickerAnimado(sock, ctx) {
     fs.unlinkSync(tmpOutput);
 
   } catch (err) {
-    await sock.sendMessage(jid, { text: `❌ Erro ao criar sticker animado!\n_${err.message}_` }, { quoted: msg });
+    await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Erro ao criar figurinha animada: ${err.message}_` }, { quoted: msg });
   }
 }
 
@@ -165,7 +166,7 @@ async function stickerParaImagem(sock, ctx) {
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   if (!quoted?.stickerMessage) {
     return sock.sendMessage(jid, {
-      text: `❌ Responda a um *sticker* com *!toimg*!`
+      text: `❌ *Ação inválida!* _Responda a uma figurinha._\n> 💡 *Use assim:* ${command('!toimg')}`
     }, { quoted: msg });
   }
 
@@ -178,10 +179,10 @@ async function stickerParaImagem(sock, ctx) {
 
     await sock.sendMessage(jid, {
       image: buffer,
-      caption: `🖼️ _Sticker convertido para imagem!_`
+      caption: `✅ *Concluído!* _Figurinha convertida para imagem._`
     }, { quoted: msg });
   } catch (err) {
-    await sock.sendMessage(jid, { text: `❌ Erro ao converter sticker!\n_${err.message}_` }, { quoted: msg });
+    await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Erro ao converter figurinha: ${err.message}_` }, { quoted: msg });
   }
 }
 

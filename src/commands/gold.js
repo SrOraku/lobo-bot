@@ -1,6 +1,7 @@
 'use strict';
 const db = require('../utils/database');
 const { formatNumber, cleanJid, getNumber } = require('../utils/helpers');
+const { card, mono, command } = require('../ui/text');
 const SHOP_ITEMS = [
   { id: 1, name: '💎 Premium 7 dias', price: 2000, description: 'XP dobrado por 7 dias' },
   { id: 2, name: '🐺 Cure Total de Lobos', price: 200, description: 'Restaura todos os 100 lobos' },
@@ -24,7 +25,12 @@ async function verGold(sock, ctx) {
   const gold = user?.gold || 0;
 
   await sock.sendMessage(jid, {
-    text: `💰 🐺 *@${getNumber(target)}* possui:\n\n✨ *${formatNumber(gold)} WoK coin* ✨\n\n_Use !daily para ganhar WoK coin diariamente!_\n_Use !loja para gastar sua WoK coin!_`,
+    text: card('💰 CARTEIRA', [
+      `*Lobo:* @${getNumber(target)}`,
+      `*Saldo:* ${mono(formatNumber(gold))} WoK coin`,
+      `│ ▸ ${command('!daily')} — _Recompensa diária_`,
+      `│ ▸ ${command('!loja')} — _Itens da matilha_`,
+    ], { tip: 'Acompanhe sua moeda universal neste chat.' }),
     mentions: [target]
   }, { quoted: msg });
 }
@@ -41,18 +47,24 @@ async function enviarGold(sock, ctx) {
 
   if (!mentioned || !amount || amount <= 0) {
     return sock.sendMessage(jid, {
-      text: `❌ Uso: *!enviargold @usuário 100*`
+      text: `❌ *Ação inválida!* _Informe o participante e a quantidade._\n> 💡 *Use assim:* ${command('!enviargold @usuário 100')}`
     }, { quoted: msg });
   }
 
   const target = cleanJid(mentioned);
-  if (target === sender) return sock.sendMessage(jid, { text: `❌ Você não pode enviar WoK coin para si mesmo!` }, { quoted: msg });
+  if (target === sender) return sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Você não pode enviar WoK coin para si mesmo._` }, { quoted: msg });
 
   try { require('../services/economy').economy().transfer(sender,target,amount,msg.key?.id); }
-  catch(error) { return sock.sendMessage(jid,{text:'❌ '+error.message},{quoted:msg}); }
+  catch(error) { return sock.sendMessage(jid,{text:'❌ *Ação inválida!* _'+error.message+'_'},{quoted:msg}); }
 
   await sock.sendMessage(jid, {
-    text: `💸 ✅ Transferência realizada!\n\n👤 De: @${getNumber(sender)}\n👤 Para: @${getNumber(target)}\n💰 Valor: *${formatNumber(amount)} WoK coin*\n\n_A matilha cuida dos seus!_ 🐺`,
+    text: card('💸 TRANSFERÊNCIA', [
+      '✅ *Concluído!* _A moeda chegou ao destino._',
+      `*De:* @${getNumber(sender)}`,
+      `*Para:* @${getNumber(target)}`,
+      `*Saída:* ${mono('-' + formatNumber(amount))} WoK coin`,
+      `*Entrada:* ${mono('+' + formatNumber(amount))} WoK coin`,
+    ], { tip: 'A matilha cuida dos seus. 🐺' }),
     mentions: [sender, target]
   }, { quoted: msg });
 }
@@ -67,19 +79,11 @@ async function rankGold(sock, ctx) {
   const lines = top.map((u, i) => {
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`;
     const name = u.name || getNumber(u.jid);
-    return `${medal} *${name}*\n    💰 ${formatNumber(u.gold)} WoK coin`;
-  }).join('\n\n');
+    return `${medal} *${name}*\n*Saldo:* ${mono(formatNumber(u.gold))} WoK coin`;
+  }).join('\n');
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════╗
-║  💰 *RANKING WoK COIN*  ║
-╚══════════════════════╝
-
-
-
-${lines || '📭 Nenhum usuário com WoK coin ainda!'}
-
-_Quem é o mais rico da matilha? 🐺_`
+    text: card('💰 RANKING', [lines || '📭 _Nenhum usuário com WoK coin ainda._'], { tip: 'Os maiores tesouros da matilha neste chat. 🐺' })
   }, { quoted: msg });
 }
 
@@ -90,12 +94,19 @@ async function daily(sock, ctx) {
   const { jid, sender, msg, pushName } = ctx;
   let result;
   try { result = require('../services/economy').economy().daily(sender,msg.key?.id); }
-  catch(error) { return sock.sendMessage(jid,{text:'❌ '+error.message},{quoted:msg}); }
-  if(!result.success) return sock.sendMessage(jid,{text:`⏳ Próximo daily em ${Math.ceil(result.remaining/60)} minutos.`},{quoted:msg});
+  catch(error) { return sock.sendMessage(jid,{text:'❌ *Ação inválida!* _'+error.message+'_'},{quoted:msg}); }
+  if(!result.success) return sock.sendMessage(jid,{text:`⏳ *Aguarde um instante!* _Próximo daily em_ ${mono(Math.ceil(result.remaining/60))} _minutos._`},{quoted:msg});
   const {premium:isPremium,gold:goldAmount,xp:xpAmount}=result;
 
   await sock.sendMessage(jid, {
-    text: `🌅 ✅ *Daily coletado, ${pushName}!*\n\n💰 *+${formatNumber(goldAmount)} WoK coin*\n⭐ *+${xpAmount} XP*\n${isPremium ? '\n👑 Bônus Premium aplicado!' : ''}\n\n_Volte amanhã para mais recompensas!_\n_Uuuuuuwooooo! 🐺🌕_`
+    text: card('🌅 RECOMPENSA DIÁRIA', [
+      `✅ *Daily coletado, ${pushName}!*`,
+      '_A lua recompensa sua presença na matilha._',
+      `*WoK coin:* ${mono('+' + formatNumber(goldAmount))}`,
+      `*XP:* ${mono('+' + xpAmount)}`,
+      `${isPremium ? '👑 _Bônus Premium aplicado!_' : ''}`,
+      '_Uuuuuuwooooo! 🐺🌕_',
+    ], { tip: 'Volte amanhã para mais recompensas.' })
   }, { quoted: msg });
 }
 
@@ -105,21 +116,16 @@ async function daily(sock, ctx) {
 async function loja(sock, ctx) {
   const { jid, msg } = ctx;
   const items = SHOP_ITEMS.map(item =>
-    `*[${item.id}]* ${item.name}\n    💰 *${formatNumber(item.price)} WoK coin*\n    _${item.description}_`
+    `│ ▸ ${mono(item.id)} *${item.name}*\n*Preço:* ${mono(formatNumber(item.price))} WoK coin\n_${item.description}_`
   ).join('\n\n');
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════╗
-║   🏪 *LOJA DA MATILHA*  ║
-╚══════════════════════╝
-
-
-
-${items}\n\n🛡️ Escudo econômico: !comprarescudo\n🚀 Boosts: !boosts
-
-━━━━━━━━━━━━━━━━━━━━
-_Use *!comprar [ID]* para comprar!_
-_Ex: !comprar 2_`
+    text: card('🏪 LOJA DA MATILHA', [
+      items,
+      `│ ▸ ${command('!comprarescudo')} — _Escudo econômico_`,
+      `│ ▸ ${command('!boosts')} — _Boosts ativos e catálogo_`,
+      `*Comprar:* ${command('!comprar [ID]')}`,
+    ], { tip: `Exemplo: ${command('!comprar 2')}` })
   }, { quoted: msg });
 }
 
@@ -133,33 +139,44 @@ async function comprar(sock, ctx) {
 
   if (!item) {
     return sock.sendMessage(jid, {
-      text: `❌ Item inválido! Use *!loja* para ver os itens disponíveis.`
+      text: `❌ *Ação inválida!* _Item não encontrado._\n> 💡 *Use assim:* ${command('!loja')} _para consultar os IDs._`
     }, { quoted: msg });
   }
 
   let effectMsg;
   try { effectMsg=require('../services/economy').economy().buy(sender,item,msg.key?.id).message; }
-  catch(error) { return sock.sendMessage(jid,{text:'❌ '+error.message},{quoted:msg}); }
+  catch(error) { return sock.sendMessage(jid,{text:'❌ *Ação inválida!* _'+error.message+'_'},{quoted:msg}); }
 
   await sock.sendMessage(jid, {
-    text: `✅ 🛒 *Compra realizada!*\n\n📦 ${item.name}\n💰 *-${formatNumber(item.price)} WoK coin*\n\n${effectMsg}\n\n_A matilha agradece! 🐺_`
+    text: card('🛒 COMPRA', [
+      '✅ *Concluído!* _Item adquirido para sua jornada._',
+      `*Item:* ${item.name}`,
+      `*Custo:* ${mono('-' + formatNumber(item.price))} WoK coin`,
+      effectMsg,
+    ], { tip: 'A matilha agradece. 🐺' })
   }, { quoted: msg });
 }
 
 async function premiumInfo(sock, ctx) {
   const { jid, msg } = ctx;
   await sock.sendMessage(jid, {
-    text: `👑 *VANTAGENS PREMIUM:*\n\n• ⭐ XP dobrado por mensagem\n• 💰 Daily dobrado (500 WoK coin)\n• 🐺 Título especial no perfil\n• ⚡ Acesso a comandos exclusivos\n\n_Compre na !loja por apenas 2000 WoK coin!_`
+    text: card('👑 PREMIUM', [
+      `*XP:* ${mono('2×')} _por mensagem_`,
+      `*Daily:* ${mono('500')} WoK coin _com bônus_`,
+      '🐺 _Título especial no perfil_',
+      '⚡ _Acesso a comandos exclusivos_',
+      `*Preço:* ${mono('2000')} WoK coin`,
+    ], { tip: `Consulte ${command('!loja')} para comprar.` })
   }, { quoted: msg });
 }
 
 async function titulos(sock,ctx) {
   const items=require('../services/economy').economy().titles(ctx.sender);
-  return sock.sendMessage(ctx.jid,{text:require('../menus/render').frameMenu('🌕 TÍTULOS',items.length?items.map(item=>`${item.equipped?'✅':'🐾'} ${item.title_name} • ${item.title_id}`):['Você ainda não adquiriu títulos.'])},{quoted:ctx.msg});
+  return sock.sendMessage(ctx.jid,{text:require('../menus/render').frameMenu('🌕 TÍTULOS',items.length?items.map(item=>`${item.equipped?'✅':'🐾'} *${item.title_name}* • ${mono(item.title_id)}`):['Você ainda não adquiriu títulos.'])},{quoted:ctx.msg});
 }
 async function titulo(sock,ctx) {
-  if(ctx.args.length!==2 || ctx.args[0]!=='usar') return sock.sendMessage(ctx.jid,{text:'Use '+require('../config').get('PREFIX')+'titulo usar ID'},{quoted:ctx.msg});
-  try { require('../services/economy').economy().equip(ctx.sender,ctx.args[1]);return sock.sendMessage(ctx.jid,{text:'🌕 Título equipado.'},{quoted:ctx.msg}); }
-  catch(error) { return sock.sendMessage(ctx.jid,{text:'❌ '+error.message},{quoted:ctx.msg}); }
+  if(ctx.args.length!==2 || ctx.args[0]!=='usar') return sock.sendMessage(ctx.jid,{text:'❌ *Ação inválida!* _Informe o título que deseja usar._\n> 💡 *Use assim:* '+command(require('../config').get('PREFIX')+'titulo usar ID')},{quoted:ctx.msg});
+  try { require('../services/economy').economy().equip(ctx.sender,ctx.args[1]);return sock.sendMessage(ctx.jid,{text:'✅ *Concluído!* _Título equipado para sua jornada._'},{quoted:ctx.msg}); }
+  catch(error) { return sock.sendMessage(ctx.jid,{text:'❌ *Ação inválida!* _'+error.message+'_'},{quoted:ctx.msg}); }
 }
 module.exports = { verGold, enviarGold, rankGold, daily, loja, comprar, premiumInfo, titulos, titulo };

@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { createMenu } = require('../src/commands/menu');
 const { CATEGORIES, buildCatalog } = require('../src/menus/catalog');
 const { IDENTITY } = require('../src/menus/render');
+const { width, plain, BOTTOM } = require('../src/ui/text');
 const addon = require('../plugins/alcateia-rp');
 // O timer de manutenção do antiflood não deve prender este processo de teste.
 const interval = global.setInterval;
@@ -22,6 +23,7 @@ async function render(args = [], prefix = '!!', extra = {}) {
     prefix: () => prefix,
     online: () => 3661,
     now: () => 5,
+    at: () => new Date('2026-10-25T12:00:00Z'),
   });
   await handler(
     { sendMessage: async (jid, content, options) => sent.push({ jid, content, options }) },
@@ -34,22 +36,27 @@ async function render(args = [], prefix = '!!', extra = {}) {
 for (const category of ['', ...Object.keys(CATEGORIES)]) {
   test(`menu ${category || 'principal'} preserva moldura, identidade e prefixo`, async () => {
     const text = await render(category ? [category] : []);
-    assert.ok(text.startsWith('╔═══❖♆❖═══🐺═══❖♆❖═══╗\n'));
-    assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐺❖═══╝'));
+    assert.ok(text.startsWith('╭'));
+    assert.ok(text.split('\n').filter(line => /^[╭╰├]/u.test(line)).every(line => width(line) <= 26));
+    assert.ok(text.includes(BOTTOM));
+    assert.ok(text.split('\n').at(-1).startsWith('> '));
     for (const value of Object.values(IDENTITY)) assert.ok(!text.includes(value));
     assert.ok(text.includes('!!menu'));
     assert.ok(!text.includes('!menu ') || text.includes('!!menu '));
     assert.ok(text.length < 6000);
     for (const command of entries.filter((c) => c.category === category))
-      assert.ok(text.includes('┃ ➤ *!!' + command.name), command.name);
+      assert.ok(text.includes('     ▸ *!!' + command.name), command.name);
   });
 }
-test('principal compacto só mostra usuário e categorias, sem dados técnicos', async () => {
+test('principal compacto mostra perfil disponível e categorias sem inventar métricas', async () => {
   const text = await render();
-  for (const c of Object.keys(CATEGORIES)) assert.ok(text.includes('!!menu ' + c));
+  for (const c of Object.keys(CATEGORIES)) assert.ok(plain(text).includes('!!menu ' + c));
   for (const name of ['ban', 'treino', 'trabalhar', 'sticker', 'ytmp3'])
     assert.ok(!text.includes('!!' + name));
   assert.ok(text.includes('👤 *Usuário:* Teste'));
+  const profile = await render([], '!', { user: { level: 7, gold: 1540, xp: 615 }, senderLevel: 3 });
+  for (const value of ['`7`', '`1540`', '`615`', 'Dono', 'Bom dia', '`09:00`']) assert.ok(profile.includes(value), value);
+  assert.ok(!profile.includes('undefined') && !profile.includes('NaN'));
   for (const label of [
     'Prefixo:',
     'Versão:',
@@ -62,7 +69,7 @@ test('principal compacto só mostra usuário e categorias, sem dados técnicos',
   assert.ok(text.length < 2400);
 });
 test('categoria inválida apresenta só categorias válidas e aliases antigos continuam', async () => {
-  assert.match(await render(['errada']), /CATEGORIA NÃO ENCONTRADA/);
+  assert.ok(plain(await render(['errada'])).replace(/[│\n]+/g, ' ').replace(/\s+/g, ' ').includes('CATEGORIA NÃO ENCONTRADA'));
   for (const [alias, target] of Object.entries(require('../src/menus/catalog').CATEGORY_ALIASES))
     assert.equal(await render([alias]), await render([target]));
   assert.equal(await render(['JOGOS']), await render(['jogos']));
@@ -93,7 +100,7 @@ test('alcateia não despeja RP e categorias vazias não inventam funções', asy
   assert.ok((await render(['ferramentas'])).includes('!!logos'));
   assert.ok(!(await render(['ia'])).includes('Nenhum comando'));
   assert.ok(!(await render(['midia'])).includes('!!sticker'));
-  assert.ok((await render(['midia'])).includes('!!play '));
+  assert.ok((await render(['midia'])).includes('*!!play*'));
 });
 test('atalhos não concedem permissões e usuário não injeta linhas no menu', async () => {
   const handler = registry.registry.get('midia').handler,
@@ -145,8 +152,10 @@ test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async ()
 
 test('principal usa moldura oficial sem espaços nas bordas', async () => {
   const text = await render([], '!');
-  assert.ok(text.startsWith('╔═══❖♆❖═══🐺═══❖♆❖═══╗'));
-  assert.ok(text.includes('┃ 🎮 *!menu jogos*'));
+  assert.ok(text.startsWith('╭'));
+  assert.ok(text.split('\n').filter(line => /^[╭╰├]/u.test(line)).every(line => width(line) <= 26));
+  assert.ok(text.includes('     ▸ 🎮 *!menu* `jogos`'));
   assert.ok(!text.includes(IDENTITY.developer));
-  assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐺❖═══╝'));
+  assert.ok(text.includes(BOTTOM));
+    assert.ok(text.split('\n').at(-1).startsWith('> '));
 });

@@ -1,5 +1,6 @@
 'use strict';
 const config = require('../config');
+const { card, command } = require('../ui/text');
 const IDENTITY = Object.freeze({
   name: config.DEFAULTS?.BOT_NAME || '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
   motto: config.DEFAULTS.BOT_DESCRIPTION,
@@ -14,16 +15,14 @@ function uptime(seconds) {
   const n = Math.floor(seconds);
   return `${Math.floor(n / 3600)}h ${Math.floor((n % 3600) / 60)}m ${n % 60}s`;
 }
-const DIVIDER = '┈┈ ❀ 🌹 ❀ ┈┈ ⚜️ 🐺 ⚜️ ┈┈';
 function footer() {
-  return `🌹 *Dev:* ${IDENTITY.developer}\n${IDENTITY.motto}`;
+  return `🌹 *Dev:* ${IDENTITY.developer}\n_${IDENTITY.motto}_`;
 }
 function frameMenu(title, sections, { identity = false } = {}) {
-  return `╔═══❖♆❖═══🐺═══❖♆❖═══╗${identity ? `\n*${IDENTITY.name}*` : ''}\n\n╭──── 🌹 ⚜️ 🐺 ⚜️ 🌹 ────╮\n   *${title}*\n╰──────────────────────╯\n\n${sections.join('\n\n')}\n\n${DIVIDER}${identity ? `\n${footer()}` : ''}\n╚═══❖🌹❖═══♆═══❖🐺❖═══╝`;
+  return card(title, [...(identity ? [`*${IDENTITY.name}*`] : []), ...sections, ...(identity ? [footer()] : [])], { tip: sections.some(section => /(?:^|\n)> /u.test(section)) ? undefined : '🌹 _Volte ao menu com_ ' + command(config.get('PREFIX') + 'menu') + '.' });
 }
 function frameNotice(title, sections) {
-  const heading = String(title).replace(/^(\S+)\s+(.+)$/u, (_, icon, text) => `${icon} *${text}*`);
-  return `╔═══❖♆❖═══╗\n${DIVIDER}\n${heading}\n${sections.join('\n')}\n${DIVIDER}\n╚═══❖♆❖═══╝`;
+  return card(title, sections);
 }
 function connectionNotice() { return frameNotice('✅ CONEXÃO ESTABELECIDA', ['🐺 Matilha pronta para batalha!', '_Uuuuuuwooooo! 🐺🌕_']); }
 

@@ -1,5 +1,6 @@
 'use strict';
 const {definitions,queuedHandler}=require('./handler');
+const {card,command}=require('../../ui/text');
 function registerBronxys(register,registry) {
  const add=def=>{def.handler.auditFile ||= 'src/integrations/bronxys/handler.js';def.handler.auditExport ||= 'createHandler';register(def);};
  const grouped=new Set(['logo','montage']);
@@ -9,7 +10,7 @@ function registerBronxys(register,registry) {
   add({name,aliases,category:'ferramentas',description,usage:'!'+name+' efeito [texto]',cost:5,rateLimit:{max:3,window:60000},handler:(sock,ctx)=>{
    const direct=choices.find(def=>def.name===ctx.command);
    const args=[...(ctx.args||[])],def=direct||choices.find(def=>def.name===String(args.shift()||'').toLowerCase());
-   if(!def)return sock.sendMessage(ctx.jid,{text:'Efeitos: '+choices.map(item=>item.name).join(', ')},{quoted:ctx.msg});
+   if(!def)return sock.sendMessage(ctx.jid,{text:card('EFEITOS DA MATILHA',choices.map(item=>'▸ '+command(require('../../config').get('PREFIX')+item.name)),{tip:'_Escolha um efeito e envie o texto ou responda à imagem._'})},{quoted:ctx.msg});
    return queuedHandler(def)(sock,{...ctx,args});
   }});
  }

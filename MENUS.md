@@ -173,8 +173,16 @@ O destinatário precisa ser resolvido pelo WhatsApp e, em grupo, estar presente.
 A emissão verifica novamente os donos ao executar a transação, registra emissor/destinatário/quantidade/antes/depois/data/origem e deduplica entregas da mesma mensagem. Repetir mensagem não duplica moedas; reutilizar ID com alvo/quantidade diferente é recusado. SQL, perfil, carteira e auditoria são confirmados juntos ou revertidos. Uma falha de envio da resposta não refaz a emissão já salva. Sessões, mídias dos menus e banco existente são preservados; não há migration nesta edição.
 
 
-## Molduras e versão oficial
+## Molduras, confirmações e versão oficial
 
-A rosa antes da borda superior e o lobo depois da borda inferior foram retirados dos menus, submenus e avisos. Os separadores usam 🐺 no lugar da pata; os comandos são indicados por ➤. Os demais emojis dentro do conteúdo permanecem. Não há alteração das capas, das legendas personalizadas de entrada/saída ou do painel de escolha do número para emparelhamento.
+Menus, HUDs e avisos compartilham o tema simétrico 🌹 & 🐺. Cabeçalhos e divisores são medidos por grafemas e colunas de exibição, limitados a 26, com títulos centralizados e comandos indicados por ▸. Valores, argumentos, IDs e barras usam monoespaçado. Nomes, contatos, lema e dados dinâmicos continuam presentes nos locais correspondentes. Capas, arquivos GIF e configurações personalizadas não são substituídos.
 
-A versão oficial permanece `1.0.0` no pacote, no !ping e no manifesto. Cada atualização é identificada pelo commit do GitHub e pelos hashes dos arquivos; não depende de aumentar a versão. A geração e a verificação da release recusam outro número, e a atualização continua aceitando instalações anteriores sem apagar seus dados.
+No !ativacoes, cada função exibe somente `〔 🟢 〕` ou `〔 🔴 〕` no indicador, sem números ou palavras dentro dele. Pendências de permissão/configuração ficam fora do indicador. A barra representa a proporção de funções disponíveis, sem prometer segurança absoluta. Os setores continuam informativos em !setores e não podem ser desligados.
+
+Use !ativacoes antilink (ou outra função do registro) para abrir a confirmação. Responda `1` para SIM/confirmar ou `2` para NÃO/cancelar. Nada é salvo antes da confirmação; permissões e estado são revalidados. A escolha numérica antiga continua compatível. Inatividade continua pedindo de 1 a 90 dias, sem sufixo. Valores de dias, IDs e respostas dos jogos mantêm suas regras próprias: não são confundidos com confirmações. Comandos diretos continuam aceitando on/off, 1/0 e também 2 como desativar.
+
+A saudação e o relógio usam o horário de São Paulo. Nome, cargo, nível, saldo e XP do menu vêm do contexto existente, sem consultar novamente o banco. Ping só aparece quando há medição disponível; !ping continua mostrando suas métricas reais. Não há valores de latência ou saldos inventados.
+
+As reações são opcionais para a execução: alternam 🌹/🐺 e contexto, depois marcam o fim do processamento com ✅. Falha ou demora na reação não impede o comando. Frases de batalha variadas usam aleatoriedade separada dos jogos e não mudam recompensas, cálculos ou estado.
+
+A versão oficial permanece `1.0.0` no pacote, no !ping e no manifesto. Cada atualização é identificada pelo commit do GitHub e pelos hashes dos arquivos; não depende de aumentar a versão. A geração e a verificação da release recusam outro número. Não há migration de banco nesta atualização visual.

@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+
   applyBoosts, calculateDamage, getBattleResult, resolveBattle, generateBattleMessage,
 } from '../src/game/battle.js';
+
+function plain(value, prefix = '!') { return String(value).split(prefix).join('\u0000').replace(/[*_`]/g, '').split('\u0000').join(prefix); }
 
 const NOW = 1_800_000_000_000;
 const A = '5543920030769@s.whatsapp.net';
@@ -126,15 +129,19 @@ test('non-finite attributes and unsafe balances fail instead of producing NaN re
 test('battle message shows both participants, damage, final HP, result and coin changes', () => {
   const result = resolveBattle(player(), player({ jid: D, number: D.split('@')[0], name: 'Lobo Prata', hp: 40 }), { now: NOW });
   const message = generateBattleMessage(result);
-  assert.match(message, /═══\[BATALHA DA ALCATEIA\]═══/);
-  assert.match(message, /Lobo Rosa/);
-  assert.match(message, /Lobo Prata/);
-  assert.match(message, /5543920030769/);
-  assert.match(message, /Danos: 6\.6 × 6\.6/);
-  assert.match(message, /HP final: 93\.4\/100 × 33\.4\/100/);
-  assert.match(message, /Vitória de Lobo Rosa/);
-  assert.match(message, /\+50 WoK coin/);
-  assert.match(message, /-25 WoK coin/);
+  assert.match(plain(message), /BATALHA DA ALCATEIA/);
+  assert.ok(message.startsWith('╭━━ 🌹'));
+  assert.match(message, /▰/);
+  assert.match(message, /`\+50` WoK coin/);
+  assert.match(message, /`-25` WoK coin/);
+  assert.match(plain(message), /Lobo Rosa/);
+  assert.match(plain(message), /Lobo Prata/);
+  assert.match(plain(message), /5543920030769/);
+  assert.match(plain(message), /Danos: 6\.6 × 6\.6/);
+  assert.match(plain(message), /HP final: 93\.4\/100 × 33\.4\/100/);
+  assert.match(plain(message), /Vitória de Lobo Rosa/);
+  assert.match(plain(message), /\+50 WoK coin/);
+  assert.match(plain(message), /-25 WoK coin/);
   assert.doesNotMatch(message, /[+-]\d+ moedas/);
   assert.doesNotMatch(message, /🌹 Dev:/);
 });

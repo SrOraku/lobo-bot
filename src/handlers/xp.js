@@ -1,5 +1,6 @@
 'use strict';
 const db = require('../utils/database');
+const { card, mono } = require('../ui/text');
 
 const config = require('../config');
 
@@ -41,21 +42,13 @@ async function handleXP(sock, msg, { jid, sender, body, user }) {
     if (result.newLevel > result.oldLevel) {
       if (features.isEnabled(jid,'level')) {
         await sock.sendMessage(jid, {
-          text: `╔══════════════════════╗
-║   ⬆️ *LEVEL UP!* ⬆️      
-╚══════════════════════╝
-
-
-
-🎉 *@${sender.split('@')[0]}* subiu de nível!
-
-📊 *Nível anterior:* ${result.oldLevel}
-🆙 *Novo nível:* *${result.newLevel}*
-🏆 *Rank atual:* ${result.rank}
-
-${features.isEnabled(jid,'economia') ? '💰 *+50 WoK coin* de presente pelo level up!' : '💰 Economia pausada neste grupo.'}
-
-_Uuuuuuwooooo! 🐺_`,
+          text: card('⬆️ LEVEL UP!', [
+            `🎉 *@${sender.split('@')[0]}* _subiu de nível!_`,
+            `📊 *Nível anterior:* ${mono(result.oldLevel)}`,
+            `🆙 *Novo nível:* ${mono(result.newLevel)}`,
+            `🏆 *Rank atual:* ${result.rank}`,
+            `${features.isEnabled(jid,'economia') ? '💰 *Presente:* '+mono('+50')+' WoK coin pelo level up!' : '💰 Economia pausada neste grupo.'}`,
+          ], { tip: '_Uuuuuuwooooo! 🐺_' }),
           mentions: [sender]
         });
 

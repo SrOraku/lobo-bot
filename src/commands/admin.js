@@ -1,5 +1,6 @@
 'use strict';
 const db = require('../utils/database');
+const { card, mono, command } = require('../ui/text');
 const { BOT_NAME, OWNER, cleanJid, getNumber, sleep } = require('../utils/helpers');
 const { CronJob } = require('cron');
 
@@ -11,7 +12,7 @@ function requireOwner(fn) {
     const isBotAdm = db.isBotAdmin(ctx.sender);
     if (!isOwner && !isBotAdm) {
       return sock.sendMessage(ctx.jid, {
-        text: `🚫 _Apenas o dono do bot pode usar este comando!_ 🐺`
+        text: '❌ *Ação inválida!* _Apenas o dono do bot pode usar este comando._'
       }, { quoted: ctx.msg });
     }
     return fn(sock, ctx);
@@ -24,13 +25,13 @@ function requireOwner(fn) {
 const addAdmin = requireOwner(async (sock, ctx) => {
   const { jid, msg } = ctx;
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-  if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem adicionar como admin!` }, { quoted: msg });
+  if (!mentioned) return sock.sendMessage(jid, { text: '❌ *Ação inválida!* _Mencione quem adicionar como admin._' }, { quoted: msg });
 
   const target = cleanJid(mentioned);
   db.addBotAdmin(target);
 
   await sock.sendMessage(jid, {
-    text: `✅ 👑 *@${getNumber(target)}* foi adicionado como *Admin do Bot*!`,
+    text: `✅ *Concluído!* _@${getNumber(target)} foi adicionado como Admin do Bot._`,
     mentions: [target]
   }, { quoted: msg });
 });
@@ -41,13 +42,13 @@ const addAdmin = requireOwner(async (sock, ctx) => {
 const removeAdmin = requireOwner(async (sock, ctx) => {
   const { jid, msg } = ctx;
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-  if (!mentioned) return sock.sendMessage(jid, { text: `❌ Mencione quem remover!` }, { quoted: msg });
+  if (!mentioned) return sock.sendMessage(jid, { text: '❌ *Ação inválida!* _Mencione quem remover dos administradores._' }, { quoted: msg });
 
   const target = cleanJid(mentioned);
   db.removeBotAdmin(target);
 
   await sock.sendMessage(jid, {
-    text: `✅ 👤 *@${getNumber(target)}* foi removido dos admins!`,
+    text: `✅ *Concluído!* _@${getNumber(target)} foi removido dos administradores._`,
     mentions: [target]
   }, { quoted: msg });
 });
@@ -57,20 +58,20 @@ const removeAdmin = requireOwner(async (sock, ctx) => {
 // ============================
 const broadcast = requireOwner(async (sock, ctx) => {
   const { jid, msg, args } = ctx;
-  if (!args.length) return sock.sendMessage(jid, { text: `❌ Informe a mensagem!\n_Ex: !broadcast Olá a todos!_` }, { quoted: msg });
+  if (!args.length) return sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Informe a mensagem._\n> 💡 *Use assim:* ${command('!broadcast Olá a todos!')}` }, { quoted: msg });
 
   const message = args.join(' ');
   const groups = db.db.prepare(`SELECT jid FROM groups`).all();
 
   await sock.sendMessage(jid, {
-    text: `📡 📤 Enviando broadcast para *${groups.length}* grupos...\n_Aguarde..._`
+    text: `⏳ *Aguarde um instante!* _Enviando comunicado para ${mono(groups.length)} grupos._`
   }, { quoted: msg });
 
   let sent = 0;
   for (const g of groups) {
     try {
       await sock.sendMessage(g.jid, {
-        text: `📢 *COMUNICADO DA MATILHA:*\n\n${message}`
+        text: card('📢 COMUNICADO DA MATILHA', [message], { formatNumbers: false })
       });
       sent++;
       await sleep(500);
@@ -78,7 +79,7 @@ const broadcast = requireOwner(async (sock, ctx) => {
   }
 
   await sock.sendMessage(jid, {
-    text: `✅ 📡 Broadcast enviado para *${sent}/${groups.length}* grupos!`
+    text: `✅ *Concluído!* _Comunicado enviado para ${mono(sent)}/${mono(groups.length)} grupos._`
   }, { quoted: msg });
 });
 
@@ -94,7 +95,12 @@ const agendarMensagem = requireOwner(async (sock, ctx) => {
 
   if (!cronExpr || !message) {
     return sock.sendMessage(jid, {
-      text: `❌ Uso: *!agendarmensagem "cron" mensagem*\n\nExemplos de cron:\n• "0 8 * * *" = Todo dia às 8h\n• "0 */6 * * *" = A cada 6 horas\n• "0 20 * * 1" = Segunda às 20h`
+      text: card('⏰ AGENDAR MENSAGEM', [
+        `❌ *Ação inválida!* _Informe o cron e a mensagem._`,
+        `▸ ${mono('0 8 * * *')} — _Todo dia às ${mono('8h')}_`,
+        `▸ ${mono('0 */6 * * *')} — _A cada ${mono(6)} horas_`,
+        `▸ ${mono('0 20 * * 1')} — _Segunda às ${mono('20h')}_`,
+      ], { tip: `💡 *Use assim:* ${command('!agendarmensagem "cron" mensagem')}` })
     }, { quoted: msg });
   }
 
@@ -102,7 +108,7 @@ const agendarMensagem = requireOwner(async (sock, ctx) => {
     const jobId = `job_${jid}_${Date.now()}`;
     const job = new CronJob(cronExpr, async () => {
       await sock.sendMessage(jid, {
-        text: `⏰ *📅 MENSAGEM AGENDADA:*\n\n${message}`
+        text: card('⏰ MENSAGEM AGENDADA', [message], { formatNumbers: false })
       });
     }, null, true, 'America/Sao_Paulo');
 
@@ -110,10 +116,10 @@ const agendarMensagem = requireOwner(async (sock, ctx) => {
     db.db.prepare(`INSERT INTO scheduled_messages (group_id, message, cron_expr) VALUES (?, ?, ?)`).run(jid, message, cronExpr);
 
     await sock.sendMessage(jid, {
-      text: `✅ ⏰ Mensagem agendada!\n\n📅 Cron: *${cronExpr}*\n💬 Mensagem: *${message}*\n🆔 ID: ${jobId}`
+      text: card('✅ MENSAGEM AGENDADA', [`📅 *Cron:* ${mono(cronExpr)}`, `💬 *Mensagem:* ${message}`, `🆔 *ID:* ${mono(jobId)}`], { formatNumbers: false })
     }, { quoted: msg });
   } catch (err) {
-    await sock.sendMessage(jid, { text: `❌ Erro ao agendar!\n_Cron inválido: ${err.message}_` }, { quoted: msg });
+    await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Cron inválido: ${err.message}_` }, { quoted: msg });
   }
 });
 
@@ -129,14 +135,14 @@ async function addAutoReply(sock, ctx) {
 
   if (!trigger?.trim() || !response) {
     return sock.sendMessage(jid, {
-      text: `❌ Uso: *!autoreply gatilho | resposta*\n\nEx: !autoreply oi | Olá! Bem-vindo à matilha! 🐺`
+      text: `❌ *Ação inválida!* _Informe gatilho e resposta._\n> 💡 *Use assim:* ${command('!autoreply gatilho | resposta')}\n> ${command('!autoreply oi | Olá! Bem-vindo à matilha! 🐺')}`
     }, { quoted: msg });
   }
 
   db.addAutoReply(ctx.isGroup ? jid : null, trigger.trim(), response);
 
   await sock.sendMessage(jid, {
-    text: `✅ 🤖 Auto-reply adicionado!\n\n🎯 Gatilho: *${trigger.trim()}*\n💬 Resposta: *${response}*`
+    text: card('✅ AUTO-REPLY ADICIONADO', [`🎯 *Gatilho:* ${trigger.trim()}`, `💬 *Resposta:* ${response}`], { formatNumbers: false })
   }, { quoted: msg });
 }
 
@@ -146,11 +152,11 @@ async function addAutoReply(sock, ctx) {
 async function removeAutoReply(sock, ctx) {
   const { jid, msg, args } = ctx;
   const id = parseInt(args[0]);
-  if (!id) return sock.sendMessage(jid, { text: `❌ Informe o ID da auto-reply!` }, { quoted: msg });
+  if (!id) return sock.sendMessage(jid, { text: '❌ *Ação inválida!* _Informe o ID da auto-reply._' }, { quoted: msg });
 
   db.removeAutoReply(id, jid);
   await sock.sendMessage(jid, {
-    text: `✅ 🗑️ Auto-reply *#${id}* removida!`
+    text: `✅ *Concluído!* _Auto-reply ${mono('#'+id)} removida._`
   }, { quoted: msg });
 }
 
@@ -173,7 +179,7 @@ async function uptime(sock, ctx) {
   const memMB = Math.round(memUsage.heapUsed / 1024 / 1024);
 
   await sock.sendMessage(jid, {
-    text: `🐺 ⏱️ *UPTIME:* ${h}h ${m}m ${s}s\n💾 *Memória:* ${memMB}MB\n🟢 *Status:* Online\n\n_A matilha nunca dorme! 🌕_`
+    text: card('⏱️ TEMPO ONLINE', [`⏱️ *Uptime:* ${mono(h+'h')} ${mono(m+'m')} ${mono(s+'s')}`, `💾 *Memória:* ${mono(memMB+'MB')}`, '🟢 *Status:* Online'], { tip: '_A matilha nunca dorme! 🌕_' })
   }, { quoted: msg });
 }
 
@@ -191,40 +197,16 @@ async function plugins(sock, ctx) {
 
   if (!list.length) {
     return sock.sendMessage(jid, {
-      text: [
-        '🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹',
-        '',
-        '',
-        '',
-        '🔌 *Nenhum plugin carregado!*',
-        '',
-        '_Adicione plugins na pasta /plugins_',
-        '',
-        '🌹🐺✦❀🌹🐺✦❀🌹',
-      ].join('\n')
+      text: card('🔌 PLUGINS', ['_Nenhum plugin carregado._'], { tip: '_Adicione plugins na pasta /plugins._' })
     }, { quoted: msg });
   }
 
   const lines = list
-    .map((p, i) => `*[${i + 1}]* ${p.name} v${p.version}\n   _${p.description}_`)
+    .map((p, i) => `▸ ${mono(i + 1)} *${p.name}* ${mono('v'+p.version)}\n_${p.description}_`)
     .join('\n\n');
 
   await sock.sendMessage(jid, {
-    text: [
-      '🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹',
-      '',
-      '',
-      '',
-      '🔌 *PLUGINS ATIVOS:*',
-      '',
-      lines,
-      '',
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      '',
-      '',
-      '',
-      '🌹🐺✦❀🌹🐺✦❀🌹',
-    ].join('\n')
+    text: card('🔌 PLUGINS ATIVOS', [lines])
   }, { quoted: msg });
 }
 

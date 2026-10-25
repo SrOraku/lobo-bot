@@ -75,7 +75,7 @@ test('partidas persistem, isolam chats, deduplicam pontos e aplicam cooldown', t
   const play = (chat, input, event = String(++id)) => arcade.play(chat, 'user', 'Lobo', 'adivinhar', input, event, '!');
   play('A', ''); play('B', '');
   arcade = createArcade(db, { now: () => clock, pick: () => 0 });
-  assert.ok(play('A', 'status').includes('Tentativas: 0/7'));
+  assert.ok(play('A', 'status').includes('*Tentativas:* `0/7`'));
   assert.throws(() => play('A', '500'), /inteiro/);
   assert.ok(play('A', '1', 'win').includes('Acertou'));
   assert.equal(play('A', '1', 'win'), null);
@@ -86,5 +86,5 @@ test('partidas persistem, isolam chats, deduplicam pontos e aplicam cooldown', t
   assert.ok(play('A', 'parar').includes('preservados'));
   assert.equal(arcade.profile('A', 'user').points, 37);
   assert.equal(arcade.ranking('A').length, 1);
-  assert.ok(play('B', 'status').includes('Tentativas: 0/7'));
+  assert.ok(play('B', 'status').includes('*Tentativas:* `0/7`'));
 });

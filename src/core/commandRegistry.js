@@ -9,6 +9,7 @@ const { bus, EVENTS } = require('./eventBus');
 const { logCommand, logError } = require('../config/logger');
 const R = require('./response');
 const config = require('../config');
+const { reactions } = require('../ui/reactions');
 
 // Mapa central de comandos
 const registry = new Map();
@@ -74,7 +75,7 @@ async function executeCommand(commandName, sock, ctx) {
     const pluginCmds = getPluginCommands();
     if (pluginCmds[commandName]) {
       if (!await require('../activations/gate').checkActivation(sock,ctx,commandName)) return;
-      try { return await pluginCmds[commandName](sock, ctx); }
+      try { return await reactions.run(sock, ctx, { name: commandName, category: 'plugin' }, () => pluginCmds[commandName](sock, ctx)); }
       catch (error) {
         logError(`plugin:${commandName}`, error);
         return sock.sendMessage(ctx.jid, { text: R.error('ERRO NO COMANDO', 'Tente novamente em instantes.', `Consulte ${config.get('PREFIX')}menu para verificar o uso.`) }, { quoted: ctx.msg }).catch(() => {});
@@ -125,7 +126,7 @@ async function executeCommand(commandName, sock, ctx) {
       try{await require('../security/groups/service').security().permissions.guardCommand(sock,ctx,administrative[cmd.name]);}
       catch(error){return sock.sendMessage(ctx.jid,{text:require('../menus/render').frameNotice('🛡️ LOBO SECURITY',[error.code?'Ação administrativa bloqueada; confira as permissões atuais.':error.message])},{quoted:ctx.msg});}
     }
-    await cmd.handler(sock, ctx);
+    await reactions.run(sock, ctx, cmd, () => cmd.handler(sock, ctx));
     bus.emit(EVENTS.COMMAND_EXECUTED, { command: commandName, sender: ctx.sender });
   } catch (err) {
     logError(`command:${commandName}`, err, { sender: ctx.sender });

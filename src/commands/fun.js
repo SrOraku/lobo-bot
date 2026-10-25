@@ -1,5 +1,6 @@
 'use strict';
 const { BOT_NAME, shuffle } = require('../utils/helpers');
+const { card, mono, progress, command } = require('../ui/text');
 
 const PIADAS = [
   { pergunta: 'Por que o lobo não usa computador?', resposta: 'Porque tem medo de bytes! 😂' },
@@ -11,16 +12,16 @@ const PIADAS = [
 ];
 
 const FATOS = [
-  '🐺 Lobos se comunicam com uivos que podem ser ouvidos a 10km de distância!',
+  '🐺 Lobos se comunicam com uivos que podem ser ouvidos a `10km` de distância!',
   '🌕 Lobos não uivam para a lua - é um mito! Eles uivam para se comunicar.',
-  '🐾 Uma alcateia pode percorrer até 200km em um único dia de caça!',
+  '🐾 Uma alcateia pode percorrer até `200km` em um único dia de caça!',
   '👁️ Lobos têm visão noturna excelente graças ao tapetum lucidum nos olhos.',
   '❤️ Lobos formam casais monogâmicos e ficam juntos por toda a vida!',
-  '🦷 A mordida de um lobo tem força de até 150kg/cm²!',
+  '🦷 A mordida de um lobo tem força de até `150kg/cm²`!',
   '🐺 Os lobos são um dos poucos animais que brincam mesmo na idade adulta.',
   '🌿 Lobos são fundamentais para manter o equilíbrio dos ecossistemas.',
-  '👶 Filhotes de lobo nascem cegos e surdos, abrindo os olhos após 2 semanas.',
-  '🏃 Lobos podem correr a até 60km/h durante uma caça!',
+  '👶 Filhotes de lobo nascem cegos e surdos, abrindo os olhos após `2 semanas`.',
+  '🏃 Lobos podem correr a até `60km/h` durante uma caça!',
 ];
 
 const OITO_BALL = [
@@ -40,7 +41,7 @@ async function dado(sock, ctx) {
   const result = Math.floor(Math.random() * clampedFaces) + 1;
 
   await sock.sendMessage(jid, {
-    text: `🎲 🎲 Dado de *D${clampedFaces}* rolado!\n\n*Resultado: ${result}*\n\n_${result === clampedFaces ? '🎉 Resultado máximo! A lua sorriu!' : result === 1 ? '💀 Resultado mínimo! Os lobos riem de você!' : '🐺 A sorte falou!'}_`
+    text: card('DADO DA MATILHA', [`🎲 *Dado:* ${mono('D' + clampedFaces)}`, `*Resultado:* ${mono(result)}`, `_${result === clampedFaces ? '🎉 Resultado máximo! A lua sorriu!' : result === 1 ? '💀 Resultado mínimo! Os lobos riem de você!' : '🐺 A sorte falou!'}_`], { tip: '_O resultado foi lançado pela matilha._' })
   }, { quoted: msg });
 }
 
@@ -51,7 +52,7 @@ async function moeda(sock, ctx) {
   const { jid, msg } = ctx;
   const result = Math.random() < 0.5 ? '🟡 CARA' : '⚫ COROA';
   await sock.sendMessage(jid, {
-    text: `🪙 🪙 A moeda foi jogada...\n\n*Resultado: ${result}*`
+    text: card('MOEDA DA MATILHA', ['🪙 _A moeda girou sob a lua._', `*Resultado:* ${result}`], { tip: '_A face revelada encerra a rodada._' })
   }, { quoted: msg });
 }
 
@@ -61,13 +62,13 @@ async function moeda(sock, ctx) {
 async function bola8(sock, ctx) {
   const { jid, msg, args } = ctx;
   if (!args.length) {
-    return sock.sendMessage(jid, { text: `❓ Faça uma pergunta!\n_Ex: !8ball Vou ganhar hoje?_` }, { quoted: msg });
+    return sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Faça uma pergunta à matilha._\n> 💡 *Use assim:* ${command('!8ball Vou ganhar hoje?')}` }, { quoted: msg });
   }
   const pergunta = args.join(' ');
   const resposta = OITO_BALL[Math.floor(Math.random() * OITO_BALL.length)];
 
   await sock.sendMessage(jid, {
-    text: `🎱 ❓ *${pergunta}*\n\n🎱 *${resposta}*\n\n_A bola de cristal dos lobos falou! 🐺_`
+    text: card('ORÁCULO DA MATILHA', [`❓ *Pergunta:* ${pergunta}`, `🎱 *Resposta:* ${resposta}`], { tip: '_A bola de cristal dos lobos falou! 🐺_', formatNumbers: false })
   }, { quoted: msg });
 }
 
@@ -78,7 +79,7 @@ async function piada(sock, ctx) {
   const { jid, msg } = ctx;
   const p = PIADAS[Math.floor(Math.random() * PIADAS.length)];
   await sock.sendMessage(jid, {
-    text: `😂 🎭 *Piada do Lobo:*\n\n❓ ${p.pergunta}\n\n😂 ${p.resposta}`
+    text: card('PIADA DO LOBO', [`❓ _${p.pergunta}_`, `😂 _${p.resposta}_`], { tip: '_Um uivo de bom humor para a matilha._' })
   }, { quoted: msg });
 }
 
@@ -89,7 +90,7 @@ async function fato(sock, ctx) {
   const { jid, msg } = ctx;
   const f = FATOS[Math.floor(Math.random() * FATOS.length)];
   await sock.sendMessage(jid, {
-    text: `📚 🐺 *Fato Lobo do Dia:*\n\n${f}`
+    text: card('FATO LOBO DO DIA', [`_${f}_`], { tip: '_Conheça mais sobre a alcateia._' })
   }, { quoted: msg });
 }
 
@@ -102,11 +103,11 @@ async function sorteio(sock, ctx) {
   const min = parseInt(minStr) || 1;
   const max = parseInt(maxStr) || 100;
 
-  if (min >= max) return sock.sendMessage(jid, { text: `❌ O mínimo deve ser menor que o máximo!` }, { quoted: msg });
+  if (min >= max) return sock.sendMessage(jid, { text: `❌ *Ação inválida!* _O mínimo deve ser menor que o máximo._` }, { quoted: msg });
 
   const result = Math.floor(Math.random() * (max - min + 1)) + min;
   await sock.sendMessage(jid, {
-    text: `🎰 🎯 Sorteio entre *${min}* e *${max}*:\n\n🎉 *Número sorteado: ${result}*`
+    text: card('SORTEIO DA MATILHA', [`🎯 *Intervalo:* ${mono(min)} a ${mono(max)}`, `🎉 *Número sorteado:* ${mono(result)}`], { tip: '_A matilha já tem seu resultado._' })
   }, { quoted: msg });
 }
 
@@ -123,7 +124,7 @@ async function azar(sock, ctx) {
              '💀 Hoje não é seu dia, lobo!';
 
   await sock.sendMessage(jid, {
-    text: `🍀 🔮 *Seu nível de azar hoje:*\n\n${pct}% de sorte\n\n${msg2}`
+    text: card('SORTE DA MATILHA', [`🍀 *Sorte:* ${mono(pct + '%')}`, progress(pct, 100), `_${msg2}_`], { tip: '_Uma brincadeira sob a lua da matilha._' })
   }, { quoted: msg });
 }
 
@@ -135,12 +136,12 @@ async function escolher(sock, ctx) {
   const options = args.join(' ').split(/[,|\/]/);
   if (options.length < 2) {
     return sock.sendMessage(jid, {
-      text: `❌ Dê pelo menos 2 opções separadas por vírgula!\n_Ex: !escolher pizza, hamburguer, sushi_`
+      text: `❌ *Ação inválida!* _Envie pelo menos ${mono(2)} opções separadas por vírgula._\n> 💡 *Use assim:* ${command('!escolher pizza, hamburguer, sushi')}`
     }, { quoted: msg });
   }
   const chosen = options[Math.floor(Math.random() * options.length)].trim();
   await sock.sendMessage(jid, {
-    text: `🎯 🐺 Os lobos escolheram:\n\n*"${chosen}"*\n\n_A matilha decidiu! Sem discussão! 🐺_`
+    text: card('ESCOLHA DA MATILHA', [`🎯 *Escolha:* ${chosen}`], { tip: '_A matilha decidiu! Sem discussão! 🐺_', formatNumbers: false })
   }, { quoted: msg });
 }
 
@@ -152,7 +153,7 @@ async function ship(sock, ctx) {
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
   if (!mentions || mentions.length < 2) {
     return sock.sendMessage(jid, {
-      text: `❌ Mencione 2 pessoas!\n_Ex: !ship @pessoa1 @pessoa2_`
+      text: `❌ *Ação inválida!* _Mencione ${mono(2)} pessoas._\n> 💡 *Use assim:* ${command('!ship @pessoa1 @pessoa2')}`
     }, { quoted: msg });
   }
 
@@ -166,7 +167,7 @@ async function ship(sock, ctx) {
                   '💔 Os lobos preveem tempestade!';
 
   await sock.sendMessage(jid, {
-    text: `💘 💞 *COMPATIBILIDADE LOBO*\n\n👤 @${p1.split('@')[0]}\n❤️ + ❤️\n👤 @${p2.split('@')[0]}\n\n${bar}\n\n*${compat}%* de compatibilidade!\n\n${comment}`,
+    text: card('COMPATIBILIDADE', [`👤 @${p1.split('@')[0]}`, '❤️ + ❤️', `👤 @${p2.split('@')[0]}`, bar, `*Compatibilidade:* ${mono(compat + '%')}`, progress(compat, 100), `_${comment}_`], { tip: '_Apenas uma brincadeira da alcateia._' }),
     mentions: [p1, p2]
   }, { quoted: msg });
 }

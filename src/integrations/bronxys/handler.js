@@ -8,6 +8,7 @@ const {createClient,MAX_BYTES,publicURL}=require('./client');
 const {definitions}=require('./catalog');
 const {filename}=require('../../commands/youtube-media');
 const {KeyedQueue}=require('../../core/keyed-queue');
+const {command,numericText}=require('../../ui/text');
 const queue=new KeyedQueue({maxKeys:100,maxPending:5});
 const errors={BRONXYS_KEY:'A API Bronxys ainda não foi configurada. O dono pode usar apibronxys no privado.',BRONXYS_AUTH:'A API recusou a chave. Confira a configuração e a validade no painel Bronxys.',BRONXYS_QUOTA:'A API limitou as requisições ou a cota terminou. Confira seu painel.',BRONXYS_URL:'Informe um link público válido da plataforma.',BRONXYS_TIMEOUT:'O serviço demorou demais. Tente novamente.',BRONXYS_MEDIA:'A API não entregou um arquivo de mídia válido ou ele excedeu 32 MB.',BRONXYS_SERVICE:'Não foi possível acessar o serviço Bronxys. Tente mais tarde.'};
 function formatJSON(value,key='',depth=0) {
@@ -37,9 +38,9 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
  return async function handle(sock,ctx) {
   const reply=text=>sock.sendMessage(ctx.jid,{text},{quoted:ctx.msg});
   const query=(ctx.args||[]).join(' ').trim();
-  if(def.parameter&&!query)return reply(`Use ${require('../../config').get('PREFIX')}${def.name} ${def.parameter==='url'?'link':'texto ou pesquisa'}.`);
-  if(query.length>2000)return reply('Pesquisa ou texto muito longo.');
-  if(!client.configured())return reply(errors.BRONXYS_KEY);
+  if(def.parameter&&!query)return reply(`❌ *Ação inválida!* _Informe ${def.parameter==='url'?'um link':'texto ou pesquisa'}._\n> 💡 *Use assim:* ${command(`${require('../../config').get('PREFIX')}${def.name} ${def.parameter==='url'?'link':'texto ou pesquisa'}`)}`);
+  if(query.length>2000)return reply('❌ *Ação inválida!* _Pesquisa ou texto muito longo._');
+  if(!client.configured())return reply('⏳ *Aguarde um instante!* _'+errors.BRONXYS_KEY+'_');
   let directory;
   const controller=new AbortController(),signal=controller.signal,timer=setTimeout(()=>controller.abort(),180000);
   const params=def.parameter?{[def.parameter]:query}:{};
@@ -101,9 +102,9 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
   } catch(error) {
    // Never log Axios errors/URLs: they can contain the API key.
    const known=errors[error.message] || (/^BRONXYS_|SIZE_LIMIT|abort|ENOENT|Command failed/i.test(error.message)?'A API não entregou o resultado esperado. Tente novamente mais tarde.':/^(Informe|Responda|Limite)/.test(error.message)?error.message:'Não foi possível processar a mídia ou a resposta da API.');
-   await reply('⚠️ '+known);
+   await reply('⏳ *Aguarde um instante!* _'+numericText(known)+'_');
   } finally {clearTimeout(timer);controller.abort();if(directory)await fs.rm(directory,{recursive:true,force:true});}
  };
 }
-function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,async()=>{if(options?.shouldRun&&!await options.shouldRun(ctx))return;return handler(sock,ctx);}).catch(()=>sock.sendMessage(ctx.jid,{text:'Aguarde os downloads pendentes deste chat.'},{quoted:ctx.msg}));}
+function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,async()=>{if(options?.shouldRun&&!await options.shouldRun(ctx))return;return handler(sock,ctx);}).catch(()=>sock.sendMessage(ctx.jid,{text:'⏳ *Aguarde um instante!* _Há downloads pendentes neste chat._'},{quoted:ctx.msg}));}
 module.exports={incoming,createHandler,queuedHandler,definitions,formatJSON,safeText};

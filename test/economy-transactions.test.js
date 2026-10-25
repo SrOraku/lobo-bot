@@ -58,6 +58,7 @@ function xpHandler(f) {
  f.api.addXP=(jid,value)=>{const user=f.api.getUser(jid),xp=user.xp+value,level=Math.floor(0.1*Math.sqrt(xp))+1;f.db.prepare('UPDATE users SET xp=?,level=? WHERE jid=?').run(xp,level,jid);return {oldLevel:user.level,newLevel:level,rank:'Teste'};};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../src/handlers/xp.js'),'utf8'),{module,Date,require:name=>{
   if(name==='../utils/database')return f.api;
+  if(name==='../ui/text')return require('../src/ui/text');
   if(name==='../config')return {getNumber:key=>({XP_PER_MESSAGE:5,XP_PREMIUM_MULTIPLIER:2,XP_COOLDOWN_SEC:30})[key]};
   if(name==='../activations/manager')return {manager:{isEnabled:()=>true}};
   if(name==='../isolation/context')return {current:()=> '123@g.us'};

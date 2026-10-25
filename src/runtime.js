@@ -215,37 +215,22 @@ async function startBot() {
       if (!session.isActive()) return currentSocket;
       const fmt  = code?.match(/.{1,4}/g)?.join('-') || code;
 
-      terminal.interactive(`
-🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
-
-         🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑
-
-╔═══════════════════════════════════╗
-║   🔑 CÓDIGO DE PAREAMENTO LOBO-BOT ║
-╚═══════════════════════════════════╝
-
-           ✨  ${fmt}  ✨
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📱 WhatsApp escolhido para conectar: +${numero}
-👑 Dono do bot: +5543920030769
-
-📱 Como usar no WhatsApp:
-   1. Abra o WhatsApp
-   2. Configurações → Aparelhos Conectados
-   3. Conectar Aparelho
-   4. "Conectar com número de telefone"
-   5. Digite o código acima
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⏳ O código expira em 60 segundos!
-   Reinicie o bot se expirar.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
-📞 Contato do desenvolvedor: +5543920030769
-
-🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹
-`);
+      terminal.interactive(require('./ui/text').plain(require('./ui/text').card('🔑 CÓDIGO DE PAREAMENTO LOBO-BOT', [
+        '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
+        `✨ ${fmt} ✨`,
+        `📱 WhatsApp escolhido para conectar: +${numero}`,
+        '👑 Dono do bot: +5543920030769',
+        '📱 Como usar no WhatsApp:',
+        '1. Abra o WhatsApp',
+        '2. Configurações → Aparelhos Conectados',
+        '3. Conectar Aparelho',
+        '4. "Conectar com número de telefone"',
+        '5. Digite o código acima',
+        '⏳ O código expira em 60 segundos!',
+        'Reinicie o bot se expirar.',
+        '👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺',
+        '📞 Contato do desenvolvedor: +5543920030769',
+      ], { formatNumbers: false })));
     } catch (err) {
       if (!session.isActive()) return currentSocket;
       logger.error({ component: 'connection', code: err.code || 'PAIRING_CODE_FAILED' }, 'Não foi possível gerar o código. Confira o número escolhido e a conexão.');

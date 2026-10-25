@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const { managedPath, githubSnapshot } = require('../src/updater/source');
 const { createUpdateHandler } = require('../src/commands/update');
+const readable = text => String(text).replace(/[│*_`]/g, ' ').replace(/\s+/g, ' ');
 
 const OWNER = '5543920030769';
 const config = { BOT_OWNER: OWNER, BOT_NAME: '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
@@ -24,8 +25,8 @@ function commandFixture({ sender = `${OWNER}@s.whatsapp.net`, mapping = null } =
 
 test('update help includes current bot identity and all literal-prefix commands', async () => {
   const f = commandFixture(); await f.handler(f.sock, f.ctx); const text = f.replies[0];
-  for (const value of ['!!atualizar bot', '!!atualizar baileys', '!!atualizar status']) assert.ok(text.includes(value), value);
-  assert.ok(text.startsWith('╔═══❖♆❖═══╗') && text.endsWith('╚═══❖♆❖═══╝')); assert.equal(f.calls.length, 0);
+  for (const value of ['!!atualizar bot', '!!atualizar baileys', '!!atualizar status']) assert.ok(text.replace(/[`*_]/g, '').includes(value), value);
+  assert.ok(text.startsWith('╭') && text.includes(require('../src/ui/text').BOTTOM)); assert.equal(f.calls.length, 0);
 });
 
 test('only trusted owner PN or mapped LID can request an update; forged role fields grant nothing', async () => {
@@ -187,16 +188,16 @@ test('atualização concluída avisa antes de solicitar reinício automático', 
 test('failed completion notice cannot prevent automatic restart or claim the application failed', async () => {
   const f = commandFixture(); f.ctx.args = ['bot']; let restarted = 0;
   const send = f.sock.sendMessage;
-  f.sock.sendMessage = async (jid, content) => { if (content.text.includes('ATUALIZAÇÃO CONCLUÍDA')) throw Error('private transport details'); return send(jid, content); };
+  f.sock.sendMessage = async (jid, content) => { if (readable(content.text).includes('ATUALIZAÇÃO CONCLUÍDA')) throw Error('private transport details'); return send(jid, content); };
   await createUpdateHandler({ service: f.service, config, logger: { warn() {} }, restart: { canRestart: () => true, requestRestart: () => { restarted++; return true; } } })(f.sock, f.ctx);
   assert.equal(restarted, 1); assert.deepEqual(f.calls, ['bot']);
-  assert.ok(!f.replies.some(text => text.includes('ATUALIZAÇÃO NÃO CONCLUÍDA')));
+  assert.ok(!f.replies.some(text => readable(text).includes('ATUALIZAÇÃO NÃO CONCLUÍDA')));
 });
 
 test('failed initial notice still processes an authorized update request', async () => {
   const f = commandFixture(); f.ctx.args = ['bot']; let restarted = 0;
   const send = f.sock.sendMessage;
-  f.sock.sendMessage = async (jid, content) => { if (content.text.includes('ATUALIZAÇÃO INICIADA')) throw Error('network'); return send(jid, content); };
+  f.sock.sendMessage = async (jid, content) => { if (readable(content.text).includes('ATUALIZAÇÃO INICIADA')) throw Error('network'); return send(jid, content); };
   await createUpdateHandler({ service: f.service, config, logger: { warn() {} }, restart: { canRestart: () => true, requestRestart: () => { restarted++; return true; } } })(f.sock, f.ctx);
   assert.equal(restarted, 1); assert.deepEqual(f.calls, ['bot']);
 });
@@ -204,7 +205,7 @@ test('failed initial notice still processes an authorized update request', async
 test('a completion notice that never resolves has a bounded deadline and still restarts', async () => {
   const f = commandFixture(); f.ctx.args = ['bot']; let restarted = 0;
   const send = f.sock.sendMessage;
-  f.sock.sendMessage = (jid, content) => content.text.includes('ATUALIZAÇÃO CONCLUÍDA') ? new Promise(() => {}) : send(jid, content);
+  f.sock.sendMessage = (jid, content) => readable(content.text).includes('ATUALIZAÇÃO CONCLUÍDA') ? new Promise(() => {}) : send(jid, content);
   await createUpdateHandler({ service: f.service, config, notifyTimeoutMs: 5, logger: { warn() {} }, restart: { canRestart: () => true, requestRestart: () => { restarted++; return true; } } })(f.sock, f.ctx);
   assert.equal(restarted, 1);
 });
@@ -220,21 +221,21 @@ test('RESTART_REQUIRED from a compatible service is recovered through the superv
   const f = commandFixture(); f.ctx.args = ['bot']; let restarted = 0;
   const service = { update: async () => { throw Object.assign(Error('pending'), { code: 'RESTART_REQUIRED' }); } };
   await createUpdateHandler({ service, config, restart: { canRestart: () => true, requestRestart: () => { restarted++; return true; } } })(f.sock, f.ctx);
-  assert.equal(restarted, 1); assert.ok(!f.replies.some(text => text.includes('ATUALIZAÇÃO NÃO CONCLUÍDA')));
+  assert.equal(restarted, 1); assert.ok(!f.replies.some(text => readable(text).includes('ATUALIZAÇÃO NÃO CONCLUÍDA')));
 });
 
 test('failure before application never requests restart', async () => {
   const f = commandFixture(); f.ctx.args = ['bot'];
   const service = { update: async () => { throw Error('network failed'); } };
   await createUpdateHandler({ service, config, logger: { error() {} }, restart: { canRestart: () => true, requestRestart: () => assert.fail('must not restart') } })(f.sock, f.ctx);
-  assert.match(f.replies.at(-1), /ATUALIZAÇÃO NÃO CONCLUÍDA/);
+  assert.match(readable(f.replies.at(-1)), /ATUALIZAÇÃO NÃO CONCLUÍDA/);
 });
 
 test('failed restart request preserves application success and a repeated command retries only restart', async () => {
   const f = commandFixture(); f.ctx.args = ['bot']; let installs = 0, restarts = 0;
   const service = { needsRestart: false, update: async () => { installs++; service.needsRestart = true; return { version: 'new', backup: 'backup-safe' }; } };
   const handler = createUpdateHandler({ service, config, restart: { canRestart: () => true, requestRestart: () => ++restarts > 1 } });
-  await handler(f.sock, f.ctx); assert.match(f.replies.at(-1), /ARQUIVOS ATUALIZADOS/);
+  await handler(f.sock, f.ctx); assert.match(readable(f.replies.at(-1)), /ARQUIVOS ATUALIZADOS/);
   await handler(f.sock, f.ctx); assert.equal(installs, 1); assert.equal(restarts, 2);
 });
 
@@ -247,5 +248,5 @@ test('pending restart remains owner-only and never trusts forged role fields', a
 test('help and status explain automatic supervision instead of requiring repeated panel restarts', async () => {
   const f = commandFixture(); const handler = createUpdateHandler({ service: f.service, config, restart: { canRestart: () => true } });
   await handler(f.sock, f.ctx); assert.match(f.replies[0], /Reinício automático ativo/); assert.ok(!f.replies[0].includes('reinicie o bot pelo painel'));
-  f.ctx.args = ['status']; await handler(f.sock, f.ctx); assert.match(f.replies.at(-1), /Supervisor automático: ativo/);
+  f.ctx.args = ['status']; await handler(f.sock, f.ctx); assert.match(f.replies.at(-1).replace(/[`*_]/g, ''), /Supervisor automático: ativo/);
 });

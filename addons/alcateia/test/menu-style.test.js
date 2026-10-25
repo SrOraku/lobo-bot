@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import { formatMenu, decorateMenuText } from '../src/menu-style.js';
 import { gameMenu, createGameCommandHandler } from '../src/game/commands.js';
 import { rpMenu, handleRPResponse } from '../src/rp/commands.js';
+import { displayWidth } from '../src/presentation.js';
 import { DEV_SIGNATURE } from '../src/game/constants.js';
 import { BOT_NAME, BOT_DESCRIPTION, loadConfig } from '../src/config.js';
+
+function plain(value, prefix = '!') { return String(value).split(prefix).join('\u0000').replace(/[*_`]/g, '').split('\u0000').join(prefix); }
 
 const OWNER = '5543920030769@s.whatsapp.net';
 const NOW = Date.UTC(2026, 9, 21, 12, 0, 0);
@@ -22,17 +25,18 @@ function assertIdentity(text) {
 
 function assertFrame(text) {
   assert.equal(typeof text, 'string');
-  assert.ok(text.startsWith('╔'), 'a moldura deve começar pelo separador');
-  assert.ok(text.endsWith('╝'), 'a moldura deve terminar pelo separador');
+  assert.ok(text.startsWith('╭━━ 🌹'), 'a moldura deve começar pelo separador');
+  assert.ok(text.includes('╰━━ 🌹 ━━〔 🐺 〕━━ 🌹 ━━╯'), 'o card deve fechar antes da dica');
+  assert.ok(text.split('\n').at(-1).startsWith('> '), 'a dica final deve usar citação');
   const lines = text.split('\n');
   assert.ok(lines.length >= 3);
-  const borders = lines.filter(line => /[╔╗╚╝╠╣━═─]/u.test(line) && !/[\p{L}\p{N}]/u.test(line));
+  const borders = lines.filter(line => /^[╭╰├]/u.test(line));
   assert.ok(borders.length >= 1, 'o menu deve apresentar uma borda visível');
-  for (const line of borders) assert.ok([...line].length <= 40, `borda larga demais: ${line}`);
+  for (const line of borders) assert.ok(displayWidth(line) <= 26, `borda larga demais: ${line}`);
 }
 
 function assertCommands(text, prefix, names) {
-  for (const name of names) assert.ok(text.includes(`${prefix}${name}`), `comando perdido: ${prefix}${name}`);
+  for (const name of names) assert.ok(plain(text, prefix).includes(`${prefix}${name}`), `comando perdido: ${prefix}${name}`);
   if (prefix !== '!') assert.doesNotMatch(text, /(?:^|\s)![a-z][a-z]+/i, 'não deve aparecer um prefixo padrão no menu customizado');
 }
 
@@ -59,11 +63,11 @@ test('formatMenu is pure, uses compact borders and keeps signature and command t
   assert.deepEqual(input, before);
   assertFrame(text);
   assertIdentity(text);
-  assert.ok(text.includes('MENU DA LUA'));
-  assert.ok(text.includes('COMANDOS'));
-  assert.ok(text.includes('🌹🐺 Estratégia e cidade RP'));
-  for (const ornament of ['✦', '❖', '♆']) assert.ok(text.includes(ornament), `ornamento ausente: ${ornament}`);
-  assert.ok(text.includes('!!profissoes'));
+  assert.ok(plain(text).includes('MENU DA LUA'));
+  assert.ok(plain(text).includes('COMANDOS'));
+  assert.ok(plain(text).includes('🌹🐺 Estratégia e cidade RP'));
+  for (const ornament of ['🌹', '🐺']) assert.ok(plain(text).includes(ornament), `ornamento ausente: ${ornament}`);
+  assert.ok(plain(text).includes('!!profissoes'));
   assert.ok(text.includes('*?textobemvindo'));
   assert.ok(!text.includes(DEV_SIGNATURE), 'assinatura não deve ser cortada ou reescrita');
   assert.ok(text.split('\n').some(line => line.includes('disponíveis')));
@@ -73,7 +77,7 @@ test('formatMenu accepts a string subtitle without splitting it into characters'
   const text = formatMenu({ title: 'LOJA', botName: BOT_NAME, subtitle: 'WoK coin da alcateia', sections: [], signature: DEV_SIGNATURE });
   assertFrame(text);
   assertIdentity(text);
-  assert.match(text, /WoK coin da alcateia/);
+  assert.match(plain(text), /WoK coin da alcateia/);
   assert.ok(!text.includes(DEV_SIGNATURE));
 });
 
@@ -90,8 +94,8 @@ test('legacy box decorations are replaced while section titles, prices and comma
   const text = decorateMenuText(legacy);
   assertFrame(text);
   assertIdentity(text);
-  for (const fragment of ['LOJA DA ALCATEIA', 'ITENS LUNARES', 'Catálogo especial da alcateia', 'Fúria Lunar', '!!comprar']) assert.ok(text.includes(fragment), fragment);
-  assert.match(text, /100\s+WoK\s+coin/);
+  for (const fragment of ['LOJA DA ALCATEIA', 'ITENS LUNARES', 'Catálogo especial da alcateia', 'Fúria Lunar', '!!comprar']) assert.ok(plain(text).includes(fragment), fragment);
+  assert.match(plain(text), /100\s+WoK\s+coin/);
   assert.doesNotMatch(text, /╔═━━〔|║\s*[╔╠╚]/u, 'não deve manter a moldura antiga aninhada');
 });
 
@@ -104,6 +108,8 @@ test('decorating an already decorated menu does not duplicate commands or develo
   assertIdentity(first);
   assertIdentity(second);
   assert.equal(second.split('!!perfil').length - 1, 1);
+  assert.doesNotMatch(first, /═══\[|═══🌹/);
+  assert.doesNotMatch(second, /═══\[|═══🌹/);
   assert.equal(second.split(DEV_SIGNATURE).length - 1, 0);
   assert.equal(second.split(BOT_NAME).length - 1, 0);
   assert.equal(second.split(BOT_DESCRIPTION).length - 1, 0);
@@ -128,9 +134,9 @@ test('RP menu retains social, profession, inventory and bank command alternative
     assertIdentity(text);
     assertCommands(text, prefix, RP_COMMANDS);
     for (const action of ['criar', 'perfil', 'convidar', 'casar', 'aceitar', 'recusar', 'sair', 'divorciar', 'depositar', 'retirar']) {
-      assert.ok(text.includes(`${prefix}familia ${action}`), action);
+      assert.ok(plain(text, prefix).includes(`${prefix}familia ${action}`), action);
     }
-    assert.match(text, /WoK coin/);
+    assert.match(plain(text), /WoK coin/);
     assert.ok(!text.includes(DEV_SIGNATURE));
   }
 });
@@ -149,12 +155,12 @@ test('wolf shop rendering receives the new frame while preserving item effects a
     const text = f.replies.join('\n');
     assertFrame(text);
     assertIdentity(text);
-    assert.match(text, /Fúria Lunar/);
-    assert.match(text, /Treino Alfa/);
-    assert.match(text, /100\s+WoK\s+coin/);
-    assert.match(text, /200\s+WoK\s+coin/);
-    assert.match(text, /20%/);
-    assert.match(text, /1 hora/);
+    assert.match(plain(text), /Fúria Lunar/);
+    assert.match(plain(text), /Treino Alfa/);
+    assert.match(plain(text), /100\s+WoK\s+coin/);
+    assert.match(plain(text), /200\s+WoK\s+coin/);
+    assert.match(plain(text), /20%/);
+    assert.match(plain(text), /1 hora/);
     assertCommands(text, prefix, ['comprar']);
     assert.deepEqual(result, before);
   }
@@ -178,7 +184,7 @@ test('RP shop and professions frames preserve pagination, price, cooldown and ac
       const text = f.replies.join('\n');
       assertFrame(text);
       assertIdentity(text);
-      for (const fragment of example.fragments) assert.ok(text.includes(fragment), fragment);
+      for (const fragment of example.fragments) assert.ok(plain(text).includes(fragment), fragment);
       assertCommands(text, prefix, [example.command, example.pageCommand]);
       assert.deepEqual(example.result, before);
     }

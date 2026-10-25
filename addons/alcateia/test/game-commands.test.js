@@ -5,6 +5,8 @@ import { DEV_SIGNATURE, header } from '../src/game/constants.js';
 import { generateBattleMessage, resolveBattle } from '../src/game/battle.js';
 import { GameError } from '../src/game/validation.js';
 
+function plain(value, prefix = '!') { return String(value).split(prefix).join('\u0000').replace(/[*_`]/g, '').split('\u0000').join(prefix); }
+
 const NOW = Date.UTC(2026, 9, 20, 12, 0, 0);
 const ACTOR = '5543920030769@s.whatsapp.net';
 const TARGET = '5511999999999@s.whatsapp.net';
@@ -87,7 +89,7 @@ test('direct attack requires exactly one actual mention instead of a quote or im
     assert.equal(f.calls.service.length, 1);
     assert.equal(f.calls.service[0].target, null);
     assert.equal(f.calls.service[0].mentionCount, kind === 'multiple' ? 2 : 0);
-    assert.match(f.text(), /mencione exatamente um jogador/i);
+    assert.match(plain(f.text()), /mencione exatamente um jogador/i);
   }
 });
 
@@ -122,7 +124,10 @@ test('unresolved sender LID is not transformed into a phone or owner identity', 
 test('successful registration uses the requested welcome and developer signature', async () => {
   const f = fixture('start', { type: 'registered', player: player() });
   await f.handler(f.ctx);
-  assert.equal(f.text(), `${header('BEM-VINDO À ALCATEIA')}\n🐺 Registro concluído, lobo.\n💎 HP: 100\n🐺 Lobisomens: 20/100\n💰 WoK coin: 100\n⚔️ Prepare sua estratégia.\n${DEV_SIGNATURE}`);
+  assert.ok(f.text().startsWith(header('BEM-VINDO À ALCATEIA')));
+  for (const value of ['Registro concluído, lobo.', 'HP: 100', 'Lobisomens: 20/100', 'WoK coin: 100', 'Prepare sua estratégia.', DEV_SIGNATURE]) assert.ok(plain(f.text()).includes(value), value);
+  assert.match(f.text(), /`20\/100`/);
+  assert.ok(f.text().split('\n').at(-1).startsWith('> '));
 });
 
 test('profile includes all player fields and only currently active boosts', async () => {
@@ -133,11 +138,11 @@ test('profile includes all player fields and only currently active boosts', asyn
   ] });
   const f = fixture('perfil', { type: 'profile', player: p, rank: 4 });
   await f.handler(f.ctx);
-  const text = f.text();
-  for (const fragment of ['Lobo Alfa', '5543920030769', '100', '20/100', '10', '8', '2', '100', '2', '1', '3', 'Lua Rosa', '4']) assert.ok(text.includes(fragment), fragment);
-  assert.match(text, /treino/i);
-  assert.match(text, /batalha/i);
-  assert.match(text, /20%/);
+  const text = plain(f.text());
+  for (const fragment of ['Lobo Alfa', '5543920030769', '100', '20/100', '10', '8', '2', '100', '2', '1', '3', 'Lua Rosa', '4']) assert.ok(plain(text).includes(fragment), fragment);
+  assert.match(plain(text), /treino/i);
+  assert.match(plain(text), /batalha/i);
+  assert.match(plain(text), /20%/);
   assert.doesNotMatch(text, /30%/);
   assert.doesNotMatch(text, new RegExp(DEV_SIGNATURE));
 });
@@ -145,11 +150,11 @@ test('profile includes all player fields and only currently active boosts', asyn
 test('formation response displays its three caps and used total', async () => {
   const f = fixture('formacao A 40', { type: 'formation', player: player({ attack: 40, defense: 20, counter: 10, wolves: 80 }) });
   await f.handler(f.ctx);
-  assert.match(f.text(), /40\/40/);
-  assert.match(f.text(), /20\/40/);
-  assert.match(f.text(), /10\/20/);
-  assert.match(f.text(), /70\/80/);
-  assert.match(f.text(), /FORMAÇÃO ALTERADA/);
+  assert.match(plain(f.text()), /40\/40/);
+  assert.match(plain(f.text()), /20\/40/);
+  assert.match(plain(f.text()), /10\/20/);
+  assert.match(plain(f.text()), /70\/80/);
+  assert.match(plain(f.text()), /FORMAÇÃO ALTERADA/);
 });
 
 test('ranking output is bounded to top ten without reordering service results', async () => {
@@ -159,9 +164,9 @@ test('ranking output is bounded to top ten without reordering service results', 
   });
   const f = fixture('rank', { type: 'ranking', players });
   await f.handler(f.ctx);
-  assert.match(f.text(), /Lobo #01/);
-  assert.match(f.text(), /Lobo #10/);
-  assert.doesNotMatch(f.text(), /Lobo #11|Lobo #12/);
+  assert.match(plain(f.text()), /Lobo #01/);
+  assert.match(plain(f.text()), /Lobo #10/);
+  assert.doesNotMatch(plain(f.text()), /Lobo #11|Lobo #12/);
   assert.ok(f.text().indexOf('Lobo #01') < f.text().indexOf('Lobo #10'));
 });
 
@@ -171,11 +176,11 @@ test('shop response lists item prices and text purchase alternative', async () =
     { id: '4', name: 'Treino Alfa 🐺', price: 200, type: 'training', value: 1, duration: 0 },
   ] });
   await f.handler(f.ctx);
-  assert.match(f.text(), /Fúria Lunar/);
-  assert.match(f.text(), /Treino Alfa/);
-  assert.match(f.text(), /100/);
-  assert.match(f.text(), /200/);
-  assert.match(f.text(), /!comprar/);
+  assert.match(plain(f.text()), /Fúria Lunar/);
+  assert.match(plain(f.text()), /Treino Alfa/);
+  assert.match(plain(f.text()), /100/);
+  assert.match(plain(f.text()), /200/);
+  assert.match(plain(f.text()), /!comprar/);
 });
 
 test('battle response delegates to the single official battle formatter', async () => {
@@ -183,17 +188,19 @@ test('battle response delegates to the single official battle formatter', async 
   const f = fixture('ataque @jogador', { type: 'battle', battle });
   mention(f.ctx);
   await f.handler(f.ctx);
-  assert.equal(f.text(), generateBattleMessage(battle));
+  const withoutFlavor = value => value.split('\n').filter(line => !/^  [🌹🐺] _.*_ [🌹🐺]$/u.test(line)).join('\n');
+  assert.equal(withoutFlavor(f.text()), withoutFlavor(generateBattleMessage(battle)));
 });
 
 test('service validation errors and rate limits produce themed feedback without success claims', async () => {
   const f = fixture('comprar 1', { type: 'error', message: 'Moedas insuficientes.', code: 'BALANCE' });
   await f.handler(f.ctx);
-  assert.match(f.text(), /Moedas insuficientes/);
-  assert.doesNotMatch(f.text(), /Compra concluída|comprou/i);
+  assert.match(plain(f.text()), /Moedas insuficientes/);
+  assert.doesNotMatch(plain(f.text()), /Compra concluída|comprou/i);
   const limited = fixture('treino', { type: 'rate-limit', retryAfter: 3_600_000, reason: 'hour' });
   await limited.handler(limited.ctx);
-  assert.match(limited.text(), /ANTI-SPAM/);
+  assert.match(limited.text(), /⏳ 🌹 \*Aguarde, lobo\(a\)!/);
+  assert.match(plain(limited.text()), /50 comandos por hora/);
   assert.match(limited.text(), /Calma, lobo/);
   assert.ok(!limited.text().includes(DEV_SIGNATURE));
 });
@@ -202,7 +209,7 @@ test('known game errors stay readable and unexpected failures do not expose raw 
   const known = fixture('treino');
   known.state.failure = new GameError('Aguarde 10min para treinar.', 'COOLDOWN');
   await known.handler(known.ctx);
-  assert.match(known.text(), /Aguarde 10min/);
+  assert.match(plain(known.text()), /Aguarde 10min/);
   const unknown = fixture('admin status');
   unknown.state.failure = new Error('AUTH_TOKEN=secret-test-token');
   await unknown.handler(unknown.ctx);
@@ -225,14 +232,14 @@ test('backup failure does not stop the handler from processing later commands', 
   const f = fixture('admin backup', { type: 'backup' });
   f.state.backupFailure = new Error('disk full');
   await f.handler(f.ctx);
-  assert.match(f.text(), /backup/i);
-  assert.match(f.text(), /falh|não/i);
+  assert.match(plain(f.text()), /backup/i);
+  assert.match(plain(f.text()), /falh|não/i);
   f.ctx.command = 'start';
   f.ctx.args = [];
   f.ctx.argText = '';
   f.state.response = { type: 'registered', player: player() };
   await f.handler(f.ctx);
-  assert.match(f.text(), /Registro concluído/);
+  assert.match(plain(f.text()), /Registro concluído/);
 });
 
 test('broadcast sends only authorized recipients, paces sends, and continues after recipient failure', async () => {
@@ -246,8 +253,8 @@ test('broadcast sends only authorized recipients, paces sends, and continues aft
   assert.deepEqual(f.calls.sent.map(item => item.jid), recipients);
   for (const item of f.calls.sent) assert.match(item.content.text, /Lua nova/);
   assert.deepEqual(f.calls.sleeps, [1_000, 1_000]);
-  assert.match(f.text(), /2/);
-  assert.match(f.text(), /1/);
+  assert.match(plain(f.text()), /2/);
+  assert.match(plain(f.text()), /1/);
   const denied = fixture('admin broadcast Lua nova', { type: 'error', message: 'Exclusivo dos donos.' });
   await denied.handler(denied.ctx);
   assert.equal(denied.calls.sent.length, 0);
@@ -287,13 +294,13 @@ test('background broadcast returns after acknowledgement and reports completion 
   await sleeping;
   assert.equal(f.calls.sent.length, 1);
   assert.equal(f.calls.replies.length, 1);
-  assert.match(f.calls.replies[0].text, /Mensagem recebida.*fila: 1/);
+  assert.match(plain(f.calls.replies[0].text), /Mensagem recebida.*fila: 1/);
   assert.equal(events[0], 'ack');
   release();
   await Promise.all(backgrounds);
   assert.deepEqual(f.calls.sent.map(item => item.jid), recipients);
   assert.deepEqual(f.calls.sleeps, [1000, 1000]);
-  assert.match(f.calls.replies.at(-1).text, /Enviados: 2 • Falhas: 1/);
+  assert.match(plain(f.calls.replies.at(-1).text), /Enviados: 2 • Falhas: 1/);
   assert.equal(events.at(-1), 'summary');
 });
 
@@ -321,7 +328,7 @@ test('two background broadcasts share a serial queue without overlapping recipie
   f.ctx.argText = 'broadcast Segundo';
   await handler(f.ctx);
   assert.equal(f.calls.sent.length, 1);
-  assert.match(f.calls.replies[1].text, /fila: 2/);
+  assert.match(plain(f.calls.replies[1].text), /fila: 2/);
   release();
   await Promise.all(backgrounds);
   const messages = f.calls.sent.map(item => item.content.text);
@@ -335,9 +342,9 @@ test('two background broadcasts share a serial queue without overlapping recipie
 
 test('game menu follows the configured prefix and retains text commands for all primary actions', () => {
   const text = gameMenu({ prefix: '!!' });
-  for (const name of ['start', 'perfil', 'treino', 'ataque', 'formacao', 'rank', 'loja', 'clan', 'evento', 'comprar']) assert.ok(text.includes(`!!${name}`), name);
+  for (const name of ['start', 'perfil', 'treino', 'ataque', 'formacao', 'rank', 'loja', 'clan', 'evento', 'comprar']) assert.ok(plain(text).includes(`!!${name}`), name);
   for (const name of ['duelo', 'aceitar', 'recusar']) assert.ok(!text.includes(`!!${name}`), name);
-  assert.match(text, /MENU DA ALCATEIA/);
+  assert.match(plain(text), /MENU DA ALCATEIA/);
   assert.ok(!text.includes(DEV_SIGNATURE));
 });
 
@@ -348,19 +355,19 @@ test('game handler dispatches RP responses through the shared interface and wall
   assert.equal(await f.handler(f.ctx), true);
   assert.equal(f.calls.service[0].command, 'carteira');
   assert.equal(f.calls.service[0].actor.jid, ACTOR);
-  assert.match(f.text(), /735 WoK coin/);
-  assert.match(f.text(), /Carteira única do RP e dos lobisomens/);
+  assert.match(plain(f.text()), /735 WoK coin/);
+  assert.match(plain(f.text()), /Carteira única do RP e dos lobisomens/);
   assert.equal(p.coins, 735);
 });
 
 test('integrated menu adds RP careers, families and WOK wallet alongside wolf commands', () => {
   const text = gameMenu({ prefix: '!!' });
   for (const command of ['rp', 'profissoes', 'profissao', 'trabalhar', 'acao', 'carteira', 'transferir', 'rploja', 'rpcomprar', 'usar', 'inventario', 'familia']) {
-    assert.ok(text.includes(`!!${command}`), command);
+    assert.ok(plain(text).includes(`!!${command}`), command);
     assert.equal(isGameCommand(command, []), true, command);
   }
-  assert.match(text, /MENU RP DA ALCATEIA/);
-  assert.match(text, /WoK coin/);
-  assert.match(text, /!!ataque @user/);
+  assert.match(plain(text), /MENU RP DA ALCATEIA/);
+  assert.match(plain(text), /WoK coin/);
+  assert.match(plain(text), /!!ataque @user/);
   assert.doesNotMatch(text, /!!duelo|!!aceitar|!!recusar/);
 });

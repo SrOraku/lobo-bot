@@ -1,5 +1,6 @@
 'use strict';
 const db = require('../utils/database');
+const { card, mono, command, progress } = require('../ui/text');
 const { BOT_NAME, formatNumber, progressBar, cleanJid, getNumber, formatDate } = require('../utils/helpers');
 
 // ============================
@@ -12,29 +13,21 @@ async function verLevel(sock, ctx) {
   if (mentioned) target = cleanJid(mentioned);
 
   const user = db.getUser(target);
-  if (!user) return sock.sendMessage(jid, { text: `❌ Usuário não encontrado!` }, { quoted: msg });
+  if (!user) return sock.sendMessage(jid, { text: '❌ *Ação inválida!* _Usuário não encontrado._' }, { quoted: msg });
 
   const nextLevelXP = Math.pow((user.level) / 0.1, 2);
   const bar = progressBar(user.xp, nextLevelXP, 15);
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════╗
-║   ⭐ *SISTEMA DE LEVEL*  ║
-╚══════════════════════╝
-
-
-
-👤 *${user.name || getNumber(target)}*
-${require('../services/economy').isPremium(user) ? '👑 *PREMIUM*' : ''}
-
-🏆 *Rank:* ${user.rank}
-${require('../services/economy').economy().titles(target).filter(t=>t.equipped).map(t=>'🌕 *Título:* '+t.title_name).join('\n')}
-🆙 *Level:* *${user.level}*
-⭐ *XP:* ${formatNumber(user.xp)} / ${formatNumber(Math.floor(nextLevelXP))}
-
-${bar}
-
-_Continue ativo para ganhar XP!_ 🐺`,
+    text: card('⭐ SISTEMA DE LEVEL', [
+      `👤 *Jogador:* ${user.name || getNumber(target)}`,
+      `${require('../services/economy').isPremium(user) ? '👑 *PREMIUM*' : ''}`,
+      `🏆 *Rank:* ${user.rank}`,
+      `${require('../services/economy').economy().titles(target).filter(t=>t.equipped).map(t=>'🌕 *Título:* '+t.title_name).join('\n')}`,
+      `🆙 *Level:* ${mono(user.level)}`,
+      `⭐ *XP:* ${mono(formatNumber(user.xp))} / ${mono(formatNumber(Math.floor(nextLevelXP)))}`,
+      `${bar}`,
+    ], { tip: '_Continue ativo para ganhar XP!_ 🐺' }),
     mentions: [target]
   }, { quoted: msg });
 }
@@ -50,41 +43,32 @@ async function perfil(sock, ctx) {
 
   const user = db.getUser(target);
   const strat = db.getStrategy(target);
-  if (!user) return sock.sendMessage(jid, { text: `❌ Usuário não encontrado!` }, { quoted: msg });
+  if (!user) return sock.sendMessage(jid, { text: '❌ *Ação inválida!* _Usuário não encontrado._' }, { quoted: msg });
 
   const winRate = strat?.total_attacks > 0
     ? ((strat.total_victories / strat.total_attacks) * 100).toFixed(1) : '0.0';
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════════╗
-║   🐺 *FICHA DO GUERREIRO*  ║
-╚══════════════════════════╝
-
-
-
-👤 *Nome:* ${user.name || getNumber(target)}
-🏆 *Rank:* ${user.rank}
-${require('../services/economy').economy().titles(target).filter(t=>t.equipped).map(t=>'🌕 *Título:* '+t.title_name).join('\n')}
-🆙 *Level:* *${user.level}*
-⭐ *XP Total:* ${formatNumber(user.xp)}
-${require('../services/economy').isPremium(user) ? '👑 *Status: PREMIUM*\n' : ''}
-━━━━━━━━━━━━━━━━━━━━
-💰 *WoK coin:* ${formatNumber(user.gold)}
-🚀 *Boosts:* ${require('../progression/service').progression().effects(jid,target).map(e=>e.type+' '+e.multiplier+'×').join(', ')||'nenhum'}
-
-🐺 *BATALHAS:*
-⚔️ Total: ${user.battles}
-🏆 Vitórias: ${user.wins}
-💀 Derrotas: ${user.losses}
-📈 Win Rate: *${winRate}%*
-
-🐺 *LOBISOMENS:*
-❤️ Lobos vivos: ${strat?.wolves_alive ?? 100}/100
-🗡️ Ataque: ${strat?.attack ?? 34}
-🛡️ Defesa: ${strat?.defense ?? 33}
-🔄 Contra: ${strat?.counter ?? 33}
-
-📅 *Desde:* ${formatDate(user.created_at)}`,
+    text: card('🐺 FICHA DO GUERREIRO', [
+      `👤 *Nome:* ${user.name || getNumber(target)}`,
+      `🏆 *Rank:* ${user.rank}`,
+      `${require('../services/economy').economy().titles(target).filter(t=>t.equipped).map(t=>'🌕 *Título:* '+t.title_name).join('\n')}`,
+      `🆙 *Level:* ${mono(user.level)}`,
+      `⭐ *XP total:* ${mono(formatNumber(user.xp))}`,
+      `${require('../services/economy').isPremium(user) ? '👑 *Status: PREMIUM*\n' : ''}`,
+      `💰 *WoK coin:* ${mono(formatNumber(user.gold))}`,
+      `🚀 *Boosts:* ${require('../progression/service').progression().effects(jid,target).map(e=>e.type+' '+mono(e.multiplier+'×')).join(', ')||'nenhum'}`,
+      '├─ ✦ *BATALHAS*',
+      `⚔️ *Total:* ${mono(user.battles)}`,
+      `🏆 *Vitórias:* ${mono(user.wins)} • *Derrotas:* ${mono(user.losses)}`,
+      `📈 *Win rate:* ${mono(winRate+'%')} ${progress(winRate,100)}`,
+      '├─ ✦ *LOBISOMENS*',
+      `❤️ *Lobos vivos:* ${mono(strat?.wolves_alive ?? 100)}/${mono(100)} ${progress(strat?.wolves_alive ?? 100,100)}`,
+      `🗡️ *Ataque:* ${mono(strat?.attack ?? 34)}`,
+      `🛡️ *Defesa:* ${mono(strat?.defense ?? 33)}`,
+      `🔄 *Contra:* ${mono(strat?.counter ?? 33)}`,
+      `📅 *Desde:* ${mono(formatDate(user.created_at))}`,
+    ], { tip: '_Cada treino fortalece sua presença na matilha._' }),
     mentions: [target]
   }, { quoted: msg });
 }
@@ -99,19 +83,13 @@ async function rankGeral(sock, ctx) {
   const lines = top.map((u, i) => {
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`;
     const name = u.name || getNumber(u.jid);
-    return `${medal} *${name}*\n    🆙 Lv.${u.level} | ⭐ ${formatNumber(u.xp)} XP | ${u.rank}`;
+    return `${medal} *${name}*\n🆙 *Lv.* ${mono(u.level)} • ⭐ ${mono(formatNumber(u.xp))} XP • ${u.rank}`;
   }).join('\n\n');
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════╗
-║   🏆 *RANKING GERAL*   ║
-╚══════════════════════╝
-
-
-
-${lines || '📭 Nenhum usuário no ranking!'}
-
-_Quem é o Alpha? 🐺🌕_`
+    text: card('🏆 RANKING GERAL', [
+      `${lines || '📭 _Nenhum usuário no ranking._'}`,
+    ], { tip: '_Quem é o Alpha? 🐺🌕_' })
   }, { quoted: msg });
 }
 
@@ -120,7 +98,7 @@ _Quem é o Alpha? 🐺🌕_`
 // ============================
 async function estatisticasGrupo(sock, ctx) {
   const { jid, msg } = ctx;
-  if (!ctx.isGroup) return sock.sendMessage(jid, { text: `❌ Apenas em grupos!` }, { quoted: msg });
+  if (!ctx.isGroup) return sock.sendMessage(jid, { text: '❌ *Ação inválida!* _Use este comando dentro de um grupo._' }, { quoted: msg });
 
   const meta = await sock.groupMetadata(jid).catch(() => null);
   if (!meta) return;
@@ -134,29 +112,20 @@ async function estatisticasGrupo(sock, ctx) {
     group?.antifake ? '✅ Anti-Fake' : '❌ Anti-Fake',
     group?.anticontact ? '✅ Anti-Contato' : '❌ Anti-Contato',
     group?.antitag ? '✅ Anti-Marcação' : '❌ Anti-Marcação',
-    group?.antiinactivity ? `✅ Anti-Inatividade (${group.inactivity_days}d)` : '❌ Anti-Inatividade',
+    group?.antiinactivity ? `✅ Anti-Inatividade (${mono(group.inactivity_days+'d')})` : '❌ Anti-Inatividade',
   ].join('\n');
 
   await sock.sendMessage(jid, {
-    text: `╔══════════════════════════╗
-║  📊 *ESTATÍSTICAS DO GRUPO*  ║
-╚══════════════════════════╝
-
-
-
-👥 *Membros:* ${members}
-👑 *Admins:* ${admins}
-🔒 *Status:* ${group?.open ? '🔓 Aberto' : '🔒 Fechado'}
-
-🛡️ *PROTEÇÕES:*
-${protections}
-
-📝 *Configurações:*
-• Bem-vindo: ${group?.welcome ? '✅' : '❌'}
-• Level Up: ${group?.level_up_msg ? '✅' : '❌'}
-• Auto-Reply: ${group?.auto_reply ? '✅' : '❌'}
-
-_Use !antilink, !antifake etc. para gerenciar!_`
+    text: card('📊 ESTATÍSTICAS DO GRUPO', [
+      `👥 *Membros:* ${mono(members)} • 👑 *Admins:* ${mono(admins)}`,
+      `🔒 *Status:* ${group?.open ? '🔓 Aberto' : '🔒 Fechado'}`,
+      '├─ ✦ *PROTEÇÕES*',
+      `${protections}`,
+      '├─ ✦ *CONFIGURAÇÕES*',
+      `▸ *Bem-vindo:* ${group?.welcome ? '✅' : '❌'}`,
+      `▸ *Level up:* ${group?.level_up_msg ? '✅' : '❌'}`,
+      `▸ *Auto-reply:* ${group?.auto_reply ? '✅' : '❌'}`,
+    ], { tip: `Use ${command('!antilink')}, ${command('!antifake')} etc. para gerenciar!` })
   }, { quoted: msg });
 }
 

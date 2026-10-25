@@ -144,19 +144,11 @@ function calcLevel(xp) {
 
 // ── Banner temático ───────────────────────────────────────────
 function printBanner() {
-  console.log(chalk.red(`
-🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹✦❀🐺✦❀🌹
-
-         🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑
-
-╔══════════════════════════════════════════════════╗
-║   100 LOBISOMENS + LOBO-BOT V3                   ║
-║   Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺                     ║
-║   +5543920030769          ║
-╚══════════════════════════════════════════════════╝
-
-🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹🐺✦❀🌹
-  `));
+  const { card, plain } = require('../ui/text');
+  console.log(chalk.red(plain(card('LOBO BOT', [
+    BOT_NAME, '100 LOBISOMENS + LOBO-BOT v' + require('../../package.json').version,
+    '🌹 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺', '📞 +5543920030769',
+  ], { formatNumbers: false }))));
 }
 
 module.exports = {

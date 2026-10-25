@@ -1,5 +1,16 @@
 'use strict';
-const WELCOME = `╔════ 🌹🐺🌙🐺🌹 ════╗
+const { card, DIVIDER } = require('../ui/text');
+function caption(title, content) {
+  const lines = String(content).split('\n').map(line => {
+    if (/[─━═╔╚╭╰]/u.test(line) && !/[\p{L}\p{N}]/u.test(line)) return DIVIDER;
+    return line;
+  }).filter(line => line.trim());
+  const compact = lines.filter((line, index) => line !== DIVIDER || index > 0 && lines[index - 1] !== DIVIDER);
+  if (compact.at(-1) === DIVIDER) compact.pop();
+  return card(title, compact, { formatNumbers: false, tip: '🌹 _A alcateia continua sob a mesma lua._ 🐺' });
+}
+
+const WELCOME = caption('BEM-VINDO À ALCATEIA', `╔════ 🌹🐺🌙🐺🌹 ════╗
 
    𝐁𝐄𝐌-𝐕𝐈𝐍𝐃𝐎(𝐀)#numerodele#
   𓆩 𝐀̀ #nomedogp# 𓆪
@@ -48,8 +59,8 @@ Cada lobo tem sua história, sua crença e seu próprio caminho.
 
 🌹◥◣━━━━━━ 🐺 ━━━━━━◢◤🌹
 𝐁𝐄𝐌-𝐕𝐈𝐍𝐃𝐎 𝐀̀ #nomedogp#
-🌹◢◤━━━━━━ 🌙 ━━━━━━◥◣🌹`;
-const GOODBYE = `╔══════🌹◥◣🐺◢◤🌹══════╗
+🌹◢◤━━━━━━ 🌙 ━━━━━━◥◣🌹`);
+const GOODBYE = caption('SAÍDA DA ALCATEIA', `╔══════🌹◥◣🐺◢◤🌹══════╗
 
     𝐔𝐌 𝐋𝐎𝐁𝐎 𝐒𝐀𝐈𝐔 𝐃𝐀
          𝐀𝐋𝐂𝐀𝐓𝐄𝐈𝐀 🐺
@@ -138,7 +149,7 @@ ou talvez tenha percebido cedo demais que entrou numa alcateia cheia dos lobos d
 
 🌹◥◣━━━━━━━━━━🐺━━━━━━━━━━◢◤🌹
 𝐀 𝐀𝐋𝐂𝐀𝐓𝐄𝐈𝐀 𝐂𝐎𝐍𝐓𝐈𝐍𝐔𝐀
-🌹◢◤━━━━━━━━━━🌙━━━━━━━━━━◥◣🌹`;
+🌹◢◤━━━━━━━━━━🌙━━━━━━━━━━◥◣🌹`);
 function welcomeCaption(number, groupName) {
   const values = {'#numerodele#':'@'+String(number), '#nomedogp#':String(groupName)};
   return WELCOME.replace(/#numerodele#|#nomedogp#/g, token => values[token]);

@@ -6,6 +6,7 @@ const { Transform } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 const { spawn } = require('node:child_process');
 const config = require('../config');
+const { mono, command: commandLine, numericText } = require('../ui/text');
 const MAX_BYTES = 32 * 1024 * 1024;
 function filename(title, ext) {
   return (
@@ -148,11 +149,11 @@ function createMediaHandler(
       command = kind === 'audio' ? 'play_audio' : 'play_video';
     const reply = (text) => sock.sendMessage(ctx.jid, { text }, { quoted: ctx.msg });
     const query = (ctx.args || []).join(' ').trim();
-    if (!query) return reply(`Informe nome ou link: ${p}${command} nome ou link`);
+    if (!query) return reply(`❌ *Ação inválida!* _Informe o nome ou link da mídia._\n> 💡 *Use assim:* ${commandLine(`${p}${command} nome ou link`)}`);
     let apiConfigured=false;
     if(!ytdl) {
       try {apiConfigured=api.configured();}
-      catch {return reply(`Não consegui ler a configuração da API. O dono pode verificar ${p}apibronxys status no privado.`);}
+      catch {return reply(`⏳ *Aguarde um instante!* _Não consegui ler a configuração da API._\n> 💡 *Dono:* ${commandLine(`${p}apibronxys status`)} _no privado._`);}
       if(apiConfigured)return api.download(kind,sock,ctx);
     }
     let directory;
@@ -179,7 +180,7 @@ function createMediaHandler(
       if (!Number.isFinite(duration) || duration <= 0 || duration > max)
         throw new Error('DURATION_LIMIT');
       if (controller.signal.aborted) throw new Error('TIMEOUT');
-      await reply(`${kind === 'audio' ? '🎵 Preparando áudio' : '🎬 Preparando vídeo'}…`);
+      await reply(`⏳ *Aguarde um instante!* _${kind === 'audio' ? '🎵 Preparando áudio' : '🎬 Preparando vídeo'}…_`);
       directory = await fs.mkdtemp(path.join(tempRoot, 'lobo-media-'));
       const ext = kind === 'audio' ? 'mp3' : 'mp4',
         file = path.join(directory, 'media.' + ext);
@@ -238,14 +239,14 @@ function createMediaHandler(
         URL_INVALID: 'Use um link válido do YouTube ou o nome da mídia.',
         QUERY_LIMIT: 'Pesquisa muito longa.',
         NOT_FOUND: 'Nenhum resultado encontrado.',
-        DURATION_LIMIT: `Máximo: ${kind === 'audio' ? '30' : '10'} minutos.`,
-        SIZE_LIMIT: 'A mídia excede o limite de 32 MB.',
+        DURATION_LIMIT: `Máximo: ${mono(kind === 'audio' ? '30' : '10')} minutos.`,
+        SIZE_LIMIT: 'A mídia excede o limite de `32 MB`.',
         FORMAT_UNAVAILABLE:
           'Não há MP4 com áudio disponível neste vídeo. Tente outro vídeo ou o áudio.',
         TIMEOUT: 'O serviço demorou demais. Tente novamente.',
       };
       await reply(
-        `⚠️ ${messages[error.message] || (!ytdl && !apiConfigured ? `O baixador sem API falhou e a API Bronxys não está configurada nesta instalação. O dono deve usar ${p}apibronxys status e cadastrar a chave no privado com ${p}apibronxys chave SUA_CHAVE.` : 'Não foi possível obter a mídia. O serviço pode estar indisponível; tente outro vídeo ou tente novamente mais tarde.')}`,
+        `⏳ *Aguarde um instante!* _${numericText(messages[error.message] || (!ytdl && !apiConfigured ? `O baixador sem API falhou e a API Bronxys não está configurada nesta instalação. O dono deve usar ${commandLine(`${p}apibronxys status`)} e cadastrar a chave no privado com ${commandLine(`${p}apibronxys chave SUA_CHAVE`)}.` : 'Não foi possível obter a mídia. O serviço pode estar indisponível; tente outro vídeo ou tente novamente mais tarde.'))}_`,
       );
     } finally {
       clearTimeout(timer);

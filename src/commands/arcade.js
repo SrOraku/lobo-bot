@@ -1,6 +1,7 @@
 'use strict';
 const { clean, frameMenu, frameNotice } = require('../menus/render');
 const { createArcade } = require('../games/service');
+const { mono, command } = require('../ui/text');
 const TITLES = { akinator: '🔮 AKINATOR DA MATILHA', quiz: '🧠 QUIZ DA MATILHA', forca: '🧩 FORCA LUNAR', adivinhar: '🎯 NÚMERO SECRETO', aventura: '🏕️ TRILHAS DA LUA' };
 function createArcadeCommand(game, { repository } = {}) {
   return async (sock, ctx) => {
@@ -12,9 +13,9 @@ function createArcadeCommand(game, { repository } = {}) {
         const ranking = arcade.ranking(ctx.jid), profile = arcade.profile(ctx.jid, ctx.sender);
         const badge = !profile ? '🐾 Iniciante' : profile.points >= 500 ? '🌕 Lenda Lunar' : profile.points >= 200 ? '⚔️ Explorador' : profile.points >= 50 ? '🐺 Aprendiz' : '🐾 Iniciante';
         return reply(frameMenu('🏆 PLACAR DOS JOGOS', [
-          ranking.length ? ranking.map((p, i) => `${i + 1}. ${clean(p.name)} — ⭐ ${p.points} • 🏆 ${p.wins} • 🎮 ${p.played}`).join('\n') : '_Ainda não há partidas concluídas neste chat._',
-          `Sua conquista: ${badge}\n_Pontos exclusivos dos minijogos; não movimentam a economia._`,
-          `📖 _${prefix}menu jogos_`,
+          ranking.length ? ranking.map((p, i) => `${mono(i + 1)} *${clean(p.name)}*\n⭐ ${mono(p.points)} • 🏆 ${mono(p.wins)} • 🎮 ${mono(p.played)}`).join('\n') : '_Ainda não há partidas concluídas neste chat._',
+          `*Sua conquista:* ${badge}\n_Pontos exclusivos dos minijogos; não movimentam a economia._`,
+          `> 📖 ${command(`${prefix}menu jogos`)}`,
         ]));
       }
       if(game==='akinator'){const text=require('../services/akinator').createAkinator({arcade}).play(ctx,prefix);if(text)return reply(frameMenu(TITLES[game],[text]));return;}

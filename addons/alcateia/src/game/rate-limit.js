@@ -1,10 +1,10 @@
-import { DEV_SIGNATURE, header } from './constants.js';
+import { panel } from '../presentation.js';
 
 const SECOND = 1_000;
 const HOUR = 3_600_000;
 const HOURLY_LIMIT = 50;
 
-export const ANTI_SPAM_MESSAGE = `${header('ANTI-SPAM')}\n🐺 Calma, lobo.\n⏳ Aguarde antes de usar outro comando.`;
+export const ANTI_SPAM_MESSAGE = panel('ANTI-SPAM', ['⏳ *Aguarde um instante!*', '_Calma, lobo. Aguarde antes de usar outro comando._']);
 
 // Call this inside the same game transaction used by the command. Quotas are
 // global to the trusted player JID and survive restarts with the game state.

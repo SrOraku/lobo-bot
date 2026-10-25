@@ -1,4 +1,5 @@
 'use strict';
+const { card, mono } = require('../ui/text');
 
 function duration(seconds) {
   const n = Number(seconds);
@@ -7,20 +8,17 @@ function duration(seconds) {
 }
 function renderMediaInfo(info = {}) {
   const rows = [
-    '╔═══❖♆❖═══╗',
-    '*🐺 MÍDIA DA MATILHA*',
-    '',
-    `🎵 Título: ${info.title || 'Não informado pela fonte'}`,
-    `⏱️ Duração: ${info.timestamp || duration(info.lengthSeconds) || 'Não informada pela fonte'}`,
-    `📅 Publicação: ${info.ago || info.publishDate || 'Não informada pela fonte'}`,
-    `📺 Canal: ${info.author?.name || info.ownerChannelName || 'Não informado pela fonte'}`,
-    '',
-    '📝 *Descrição original:*',
-    info.description || 'Não disponibilizada pela fonte.',
-    '',
-    '╚═══❖♆❖═══╝',
+    `🎵 *Título:* ${info.title || 'Não informado pela fonte'}`,
+    `⏱️ *Duração:* ${mono(info.timestamp || duration(info.lengthSeconds) || 'Não informada pela fonte')}`,
+    `📅 *Publicação:* ${mono(info.ago || info.publishDate || 'Não informada pela fonte')}`,
+    `📺 *Canal:* ${info.author?.name || info.ownerChannelName || 'Não informado pela fonte'}`,
   ];
-  return rows.join('\n');
+  // Keep the provider's original description byte-for-byte, without adding row
+  // prefixes, changing formatting or shortening its content.
+  return card('MÍDIA DA MATILHA', rows, { formatNumbers: false }) +
+    '\n📝 *Descrição original:*\n' +
+    (info.description || 'Não disponibilizada pela fonte.') +
+    '\n> 🌹 _Informações fornecidas pela fonte da mídia._';
 }
 async function sendMediaInfo(reply, info) {
   // Preserve the source text, including line breaks, across WhatsApp-sized messages.

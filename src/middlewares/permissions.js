@@ -62,7 +62,7 @@ function requireLevel(minLevel) {
       if (level < minLevel) {
         const needed = LEVEL_NAMES[minLevel];
         return sock.sendMessage(ctx.jid, {
-          text: `🚫 *[ ${config.get('BOT_NAME')} ]*\n\n_Você precisa ser_ *${needed}* _para usar este comando!_\n\n🐾 Seu nível: *${LEVEL_NAMES[level]}*`
+          text: require('../core/response').error('Sem permissão', `*${config.get('BOT_NAME')}*\n_Você precisa ser ${needed} para usar este comando!_\n*Seu nível:* ${LEVEL_NAMES[level]}`)
         }, { quoted: ctx.msg });
       }
       return fn(sock, ctx);

@@ -1,5 +1,6 @@
 'use strict';
 const { frameNotice } = require('../menus/render');
+const { mono, command } = require('../ui/text');
 const { inspect } = require('../activations/message-rules');
 function createWarningCommand(action, { store, resolveActor } = {}) {
   return async (sock, ctx) => {
@@ -8,7 +9,7 @@ function createWarningCommand(action, { store, resolveActor } = {}) {
     const actor = await (resolveActor || require('../activations/access').resolveActor)(sock, ctx);
     if (!actor.owner && !actor.admin && (actor.securityLevel||0)<2) return reply(frameNotice('🔒 SEM PERMISSÃO', ['Somente administradores do grupo e donos.']));
     const target = inspect(ctx.msg.message).mentions[0];
-    if (!target) return reply(frameNotice('⚠️ USO CORRETO', [`Mencione um participante: ${require('../config').get('PREFIX')}${ctx.command} @usuário`]));
+    if (!target) return reply(frameNotice('⚠️ USO CORRETO', [`Mencione um participante.\n> Use ${command(require('../config').get('PREFIX') + ctx.command + ' @usuário')}`]));
     if(!resolveActor&&action!=='status'&&action!=='reset')await require('../security/groups/service').security().permissions.guardCommand(sock,ctx,'warn');
     const metadata = await sock.groupMetadata(ctx.jid);
     const { IdentityResolver } = await import('../../addons/alcateia/src/identity.js');
@@ -19,7 +20,7 @@ function createWarningCommand(action, { store, resolveActor } = {}) {
       return reply(frameNotice('⚠️ PARTICIPANTE INVÁLIDO', ['Mencione um membro deste grupo.']));
     const repository = store || require('../moderation/warnings').getWarningStore();
     const user = member.phoneNumber;
-    if (action === 'status') return reply(frameNotice('📋 ADVERTÊNCIAS', [`Advertências neste grupo: ${repository.get(ctx.jid, user)}/5.`]));
+    if (action === 'status') return reply(frameNotice('📋 ADVERTÊNCIAS', [`*Advertências neste grupo:* ${mono(repository.get(ctx.jid, user))}/${mono(5)}.`]));
     if (action === 'reset') {
       repository.reset(ctx.jid, user, actor.phone || actor.jid);
       return reply(frameNotice('✅ ADVERTÊNCIAS ZERADAS', ['Contador deste participante zerado somente neste grupo.']));
@@ -37,7 +38,7 @@ function createWarningCommand(action, { store, resolveActor } = {}) {
         throw Error('WhatsApp recusou a remoção; as advertências foram preservadas.');
       removed = true;
     }
-    return reply(frameNotice('⚠️ ADVERTÊNCIA', [`Total: ${result.count}/5.`, removed ? 'Participante removido ao atingir o limite.' : 'Na quinta advertência, o participante será removido.']));
+    return reply(frameNotice('⚠️ ADVERTÊNCIA', [`*Total:* ${mono(result.count)}/${mono(5)}.`, removed ? 'Participante removido ao atingir o limite.' : 'Na quinta advertência, o participante será removido.']));
   };
 }
 module.exports = { createWarningCommand };

@@ -1,4 +1,5 @@
 'use strict';
+const {command:formatCommand,mono}=require('../ui/text');
 const SHORT = Object.freeze({
   m:'menu', alc:'alcateia', fam:'familia', inv:'inventario', cart:'carteira', transf:'transferir',
   trab:'trabalhar', prof:'profissao', profs:'profissoes', ac:'acao', ljrp:'rploja', cmprp:'rpcomprar',
@@ -82,18 +83,18 @@ async function shortcuts(sock,ctx) {
   const exists=name=>registry.has(name)||!!plugins[name],p=require('../config').get('PREFIX');
   const names=[...new Set([...registry.values()].map(cmd=>cmd.name).concat(Object.keys(plugins)))];
   const routes=availableShortcuts(exists,names);
-  const lines=[...routes].map(([alias,target])=>`*${p}${alias}* → ${p}${target}`);
+  const lines=[...routes].map(([alias,target])=>`${formatCommand(p + alias)} → ${formatCommand(p + target)}`);
   const requested=fold(ctx.args?.[0]);
-  const filtered=requested ? [...routes].filter(([alias,target])=>target===requested || alias===requested).map(([alias,target])=>`*${p}${alias}* → ${p}${target}`) : lines;
+  const filtered=requested ? [...routes].filter(([alias,target])=>target===requested || alias===requested).map(([alias,target])=>`${formatCommand(p + alias)} → ${formatCommand(p + target)}`) : lines;
   const sections=[
     '_Comandos completos continuam funcionando. Mesmas permissões e limites._',
     ...filtered,
-    `👨‍👩‍👧 ${p}fam cr Nome → criar família`,
-    `📜 ${p}fam pf → perfil • ${p}fam dep 100 → depositar`,
-    `🏙️ ${p}rp ini → iniciar RP • ${p}cla cr Nome → criar clã`,
-    `🛡️ ${p}ativ al → ativar AntiLink • ${p}ati diag → diagnóstico`,
-    `👑 ${p}ds add número → cadastrar dono • ${p}up b → atualizar bot`,
-    `_Use ${p}atalhos nome para consultar um comando._`,
+    `👨‍👩‍👧 ${formatCommand(p + 'fam cr Nome')} → _Criar família_`,
+    `📜 ${formatCommand(p + 'fam pf')} → _Perfil_ • ${formatCommand(p + 'fam dep 100')} → _Depositar_`,
+    `🏙️ ${formatCommand(p + 'rp ini')} → _Iniciar RP_ • ${formatCommand(p + 'cla cr Nome')} → _Criar clã_`,
+    `🛡️ ${formatCommand(p + 'ativ al')} → _Ativar AntiLink_ • ${formatCommand(p + 'ati diag')} → _Diagnóstico_`,
+    `👑 ${formatCommand(p + 'ds add número')} → _Cadastrar dono_ • ${formatCommand(p + 'up b')} → _Atualizar bot_`,
+    `> Use ${formatCommand(p + 'atalhos nome')} para consultar um comando.`,
   ];
   if (requested && !filtered.length) sections.splice(1,0,'Nenhum atalho alternativo para esse nome; use o comando completo.');
   // Keep the catalogue readable on mobile even with new plugin commands.
@@ -105,7 +106,7 @@ async function shortcuts(sock,ctx) {
   }
   if(page.length) pages.push(page);
   for(let index=0;index<pages.length;index++)
-    await sock.sendMessage(ctx.jid,{text:require('../menus/render').frameMenu(`⚡ ATALHOS ${index+1}/${pages.length}`, [pages[index].join('\n')])},{quoted:ctx.msg});
+    await sock.sendMessage(ctx.jid,{text:require('../menus/render').frameMenu('⚡ ATALHOS', [`*Página:* ${mono(index+1)}/${mono(pages.length)}`, pages[index].join('\n')])},{quoted:ctx.msg});
 
 }
 module.exports={SHORT,ACTIONS,availableShortcuts,resolveInput,shortcuts};

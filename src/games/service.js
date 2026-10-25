@@ -1,5 +1,6 @@
 'use strict';
 const engine = require('./engine');
+const { mono, command, flavor } = require('../ui/text');
 function createArcade(db, { now = Date.now, pick } = {}) {
   const play = db.transaction((chat, user, name, game, input, event, prefix) => {
     if (!chat || !user || !event) throw Error('Não foi possível identificar esta jogada.');
@@ -12,14 +13,14 @@ function createArcade(db, { now = Date.now, pick } = {}) {
     if (['parar', 'sair', 'cancelar', 'stop'].includes(action)) {
       if (!state) throw Error('Você não tem uma partida ativa neste jogo.');
       state = null;
-      result = { text: '🌙 Partida encerrada. Seus pontos anteriores foram preservados.' };
+      result = { text: '🌙 *Partida encerrada.*\n_Seus pontos anteriores foram preservados._' };
     } else if (!state) {
-      if (action && !['iniciar', 'novo', 'start'].includes(action)) throw Error(`Inicie com ${prefix}${game}.`);
-      if (row && now() < row.available_at) throw Error(`Aguarde ${Math.ceil((row.available_at - now()) / 1000)}s para iniciar outra rodada.`);
+      if (action && !['iniciar', 'novo', 'start'].includes(action)) throw Error(`Inicie com ${command(`${prefix}${game}`)}.`);
+      if (row && now() < row.available_at) throw Error(`Aguarde ${mono(`${Math.ceil((row.available_at - now()) / 1000)}s`)} para iniciar outra rodada.`);
       state = engine.start(game, pick);
-      result = { text: '🌕 Nova partida iniciada!' };
+      result = { text: '🌕 *Nova partida iniciada!*\n_A matilha acompanha sua trilha._' };
     } else if (!action || action === 'status') {
-      result = { text: '🐺 Sua partida atual:' };
+      result = { text: '🐺 *Sua partida atual*' };
     } else {
       result = engine.advance(game, state, input);
       state = result.finished ? null : result.state;
@@ -28,7 +29,8 @@ function createArcade(db, { now = Date.now, pick } = {}) {
       db.prepare(`INSERT INTO arcade_scores(chat_jid,user_jid,name,points,wins,played) VALUES (?,?,?,?,?,1)
         ON CONFLICT(chat_jid,user_jid) DO UPDATE SET name=excluded.name,points=points+excluded.points,wins=wins+excluded.wins,played=played+1`)
         .run(chat, user, name, result.points, Number(result.won));
-      result.text += `\n⭐ +${result.points} pontos de jogos (não são WoK coin).\n🏆 ${prefix}placarjogos`;
+      result.text += '\n' + flavor(result.won ? 'win' : 'loss');
+      result.text += `\n⭐ *Recompensa:* ${mono(`+${result.points}`)} pontos de jogos\n_Pontos de jogos não são WoK coin._\n> 🏆 ${command(`${prefix}placarjogos`)}`;
     }
     const available = state ? 0 : now() + 60000;
     db.prepare(`INSERT INTO arcade_sessions(chat_jid,user_jid,game,state,updated_at,available_at) VALUES (?,?,?,?,?,?)
@@ -37,7 +39,7 @@ function createArcade(db, { now = Date.now, pick } = {}) {
     db.prepare('INSERT INTO arcade_events(chat_jid,event_id,created_at) VALUES (?,?,?)').run(chat, event, now());
     // Deduplicação recente tem limite temporal; não altera pontuação nem partidas.
     db.prepare('DELETE FROM arcade_events WHERE created_at<?').run(now() - 7 * 86400000);
-    return result.text + (state ? '\n\n' + engine.view(game, state, prefix) + `\n_${prefix}${game} parar para encerrar._` : '');
+    return result.text + (state ? '\n' + engine.view(game, state, prefix) + `\n> _Encerrar:_ ${command(`${prefix}${game} parar`)}` : '');
   });
   return {
     play,

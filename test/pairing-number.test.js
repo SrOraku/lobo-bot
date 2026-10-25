@@ -28,10 +28,12 @@ test('painel apresenta etapas, exemplo e permissões e repete a pergunta diretam
   const result = await choosePairingNumber(async question => { prompts.push(question); return answers.shift(); });
   assert.equal(result,'5511987654321');
   assert.equal(prompts.length,2);
-  for (const value of ['[ CONECTAR WHATSAPP ]','5543999999999','55 → DDI','43 → DDD','999999999 → Número','Use somente números'])
+  for (const value of ['CONECTAR WHATSAPP','5543999999999','55 → DDI','43 → DDD','999999999 → Número','Use somente números'])
     assert.ok(prompts[0].includes(value));
   assert.ok(prompts[1].includes('Número inválido'));
-  assert.ok(prompts[1].endsWith('🌹═══[ AGUARDANDO NÚMERO ]═══🐺\n'));
+  assert.ok(prompts[1].endsWith('> 🌹 AGUARDANDO NÚMERO\n'));
+  const { width } = require('../src/ui/text');
+  for (const line of prompts[0].split('\n').filter(line => /^[╭╰]/u.test(line))) assert.ok(width(line) <= 26);
 });
 
 

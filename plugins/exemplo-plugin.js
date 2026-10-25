@@ -4,6 +4,8 @@
 // Copie este arquivo, renomeie e personalize!
 // ============================================================
 
+const { card } = require('../src/ui/text');
+
 module.exports = {
   name:        'exemplo',
   version:     '1.0.0',
@@ -13,7 +15,7 @@ module.exports = {
     'olamundo': async (sock, ctx) => {
       const { jid, msg, pushName } = ctx;
       await sock.sendMessage(jid, {
-        text: `🌹✦❀🐺✦❀🌹\n\n🐺 Olá, *${pushName}*!\nEste comando veio de um plugin!\n\n_Adicione seus plugins na pasta /plugins_\n\n🌹🐺✦❀🌹`
+        text: card('OLÁ, MATILHA', [`🐺 Olá, *${pushName}*!`, '_Este comando veio de um plugin!_'], { tip: '🌹 _Adicione seus plugins na pasta_ `/plugins`.', formatNumbers: false })
       }, { quoted: msg });
     },
   },

@@ -213,13 +213,13 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
         });
         await adapted.reply(state.modules.gameMenu(adapted.config));
       } catch (error) {
-        if (error?.name === 'GameError') await adapted.reply(`🐺 ${error.message}`);
+        if (error?.name === 'GameError') await adapted.reply(require('../src/core/response').error('Alcateia', `🐺 ${error.message}`));
         else throw error;
       }
     } else if (state.modules.isGameCommand(command, args)) {
       await scopedHandler(adapted);
     } else {
-      await adapted.reply(`🐺 Comando da alcateia desconhecido. Use ${adapted.config.prefix}alcateia menu.`);
+      await adapted.reply(require('../src/core/response').error('Comando desconhecido', `🐺 Comando da alcateia desconhecido. Use ${adapted.config.prefix}alcateia menu.`));
     }
   }
 

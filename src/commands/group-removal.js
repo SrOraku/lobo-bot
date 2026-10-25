@@ -1,6 +1,7 @@
 'use strict';
 const { inspect } = require('../activations/message-rules');
 const { frameNotice } = require('../menus/render');
+const { mono, command } = require('../ui/text');
 function selection(ctx) {
   const data = inspect(ctx.msg?.message || {});
   const context = data.message[data.type]?.contextInfo || {};
@@ -11,7 +12,7 @@ function report(log, code) {
 }
 function feedback(error) {
   if (error.code === 'BOT_ADMIN_REQUIRED') return 'O bot precisa ser administrador do grupo para remover participantes.';
-  if (error.code === 'WHATSAPP_REFUSED') return `O WhatsApp recusou a remoção${error.status ? ` (código ${error.status})` : ''}. Confira as permissões do bot e do participante.`;
+  if (error.code === 'WHATSAPP_REFUSED') return `O WhatsApp recusou a remoção${error.status ? ` (código ${mono(error.status)})` : ''}. Confira as permissões do bot e do participante.`;
   if (error.code === 'WHATSAPP_UNCONFIRMED') return 'O WhatsApp não confirmou a remoção. Nenhum banimento interno foi salvo.';
   if (error.code === 'REMOVAL_UNCONFIRMED') return error.message;
   if (['TARGET_NOT_IN_GROUP', 'ACTION_DENIED', 'ACTOR_NOT_IN_GROUP', 'SECURITY_PAUSED'].includes(error.code)) return error.message;
@@ -36,7 +37,7 @@ function createRemovalCommand(action, { service, database, prefix, log } = {}) {
     try {
       await security.permissions.guardCommand(sock, ctx, 'remove');
       const selected = selection(ctx);
-      if (!selected.jid) return reply('⚠️ USO CORRETO', [`Mencione um participante ou responda à mensagem dele com ${(prefix || require('../config').get('PREFIX'))}${action}.`]);
+      if (!selected.jid) return reply('⚠️ USO CORRETO', [`Mencione um participante ou responda à mensagem dele.\n> Use ${command((prefix || require('../config').get('PREFIX')) + action)}.`]);
       const c = await security.permissions.context(sock, ctx.jid, ctx.sender, ctx.msg?.key?.participantAlt, { force: true });
       member = await c.identify(selected.jid, selected.alternative);
       const decision = security.permissions.canAct(c, 'remove', member);
@@ -65,7 +66,7 @@ function createUnbanCommand({ service, database, prefix, log } = {}) {
     try {
       await security.permissions.guardCommand(sock, ctx, 'settings');
       const selected = selection(ctx);
-      if (!selected.jid) return reply('⚠️ USO CORRETO', [`Mencione o usuário ou responda à mensagem dele com ${(prefix || require('../config').get('PREFIX'))}unban.`]);
+      if (!selected.jid) return reply('⚠️ USO CORRETO', [`Mencione o usuário ou responda à mensagem dele.\n> Use ${command((prefix || require('../config').get('PREFIX')) + 'unban')}.`]);
       const c = await security.permissions.context(sock, ctx.jid, ctx.sender, ctx.msg?.key?.participantAlt, { force: true });
       const member = await c.identify(selected.jid, selected.alternative);
       if (!member.known) return reply('⚠️ IDENTIDADE NÃO CONFIRMADA', ['Não foi possível confirmar esse usuário.']);

@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createPing } = require('../src/commands/ping');
 const { IDENTITY } = require('../src/menus/render');
+const { plain, width, BOTTOM } = require('../src/ui/text');
 
 test('ping mostra métricas dinâmicas e identidade em uma mensagem', async () => {
   const sent = [];
@@ -20,6 +21,8 @@ test('ping mostra métricas dinâmicas e identidade em uma mensagem', async () =
   for (const value of Object.values(IDENTITY)) assert.ok(text.includes(value));
   for (const value of ['🌹 Prefixo: ?', `⭐ Versão: ${require('../package.json').version}`,
     '⏱️ Uptime: 0h 5m 19s', '🏓 Ping interno: 0.4 ms', '💚 Status: online',
-    '📜 Comandos: 2 (sem aliases)']) assert.ok(text.includes(value), value);
-  assert.ok(text.startsWith('╔') && text.endsWith('╝'));
+    '📜 Comandos: 2 (sem aliases)']) assert.ok(plain(text).includes(value), value);
+  assert.ok(text.startsWith('╭') && text.includes(BOTTOM));
+  assert.ok(text.split('\n').filter(line => /^[╭╰├]/u.test(line)).every(line => width(line) <= 26));
+  for (const value of ['`0.4 ms`', '`0h 5m 19s`', '`2`']) assert.ok(text.includes(value), value);
 });

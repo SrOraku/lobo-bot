@@ -5,6 +5,7 @@ const { randomUUID } = require('node:crypto');
 const { promisify } = require('node:util');
 const execFile = promisify(require('node:child_process').execFile);
 const { frameNotice } = require('../menus/render');
+const { command, mono } = require('../ui/text');
 let processing = false;
 async function menuPhoto(sock,ctx) {
   const actor = await require('../activations/access').resolveActor(sock,ctx);
@@ -21,7 +22,7 @@ async function menuPhoto(sock,ctx) {
   const sourceKind = message.imageMessage ? 'image' : message.videoMessage ? 'video' : document && ['image/gif','image/jpeg','image/png','image/webp','video/mp4'].includes(documentType) ? 'document' : null;
   const mime = sourceKind ? message[sourceKind+'Message'].mimetype : '';
   const kind = mime === 'image/gif' || mime === 'video/mp4' || sourceKind === 'video' ? 'video' : sourceKind ? 'image' : null;
-  if (!kind) return reply(`Envie uma foto ou GIF/vídeo com a legenda ${p}fotomenu, ou responda à mídia com esse comando.\n${p}fotomenu ver • ${p}fotomenu remover\n_Limite: 8 MB. Animações são convertidas em clipes de até 12 segundos._`);
+  if (!kind) return reply(`Envie uma foto ou GIF/vídeo com a legenda ${command(p + 'fotomenu')}, ou responda à mídia com esse comando.\n${command(p + 'fotomenu ver')} • ${command(p + 'fotomenu remover')}\n> Limite: ${mono('8 MB')}. Animações são convertidas em clipes de até ${mono('12 segundos')}.`);
   if(processing) return reply('Aguarde a conversão da capa que já está em andamento.');
   const directory = path.join(__dirname,'../../data/menu');await fs.mkdir(directory,{recursive:true});
   const id = randomUUID(), input = path.join(directory,id+'.input'), output = path.join(directory,id+(kind === 'image'?'.jpg':'.mp4'));

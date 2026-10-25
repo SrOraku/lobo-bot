@@ -16,5 +16,7 @@ test('goodbye preserves the supplied satire, motto and closing',()=>{
  assert.ok(GOODBYE.includes('“MEU FILHO, ELE SÓ SAIU DO GRUPO.” 😂🌹'));
  assert.ok(GOODBYE.includes('𝐁𝐎𝐋𝐒𝐎𝐍𝐀𝐑𝐈𝐒𝐓𝐀 𝐎̂𝐌𝐄𝐆𝐀:'));
  assert.ok(GOODBYE.includes('𝐏𝐄𝐓𝐈𝐒𝐓𝐀 𝐎̂𝐌𝐄𝐆𝐀:'));
- assert.ok(GOODBYE.endsWith('🌹◢◤━━━━━━━━━━🌙━━━━━━━━━━◥◣🌹'));
+ assert.ok(GOODBYE.includes('𝐀 𝐀𝐋𝐂𝐀𝐓𝐄𝐈𝐀 𝐂𝐎𝐍𝐓𝐈𝐍𝐔𝐀'));
+ assert.ok(GOODBYE.includes(require('../src/ui/text').BOTTOM));
+ assert.ok(GOODBYE.split('\n').at(-1).startsWith('> 🌹'));
 });

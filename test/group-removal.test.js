@@ -71,8 +71,8 @@ for (const [name, response] of [
 ]) test(`ban does not persist or claim success for ${name} response`, async t => {
   const f = fixture(t, { response }); await f.ban(f.sock, f.ctx());
   assert.equal(f.user(MEMBER)?.banned || 0, 0);
-  assert.doesNotMatch(f.sent.at(-1).text, /BANIMENTO CONCLUÍDO/);
-  assert.match(f.sent.at(-1).text, /NÃO CONFIRMADA/);
+  assert.doesNotMatch(f.sent.at(-1).text.replace(/[`*_]/g, '').replace(/\s+/g, ' '), /BANIMENTO CONCLUÍDO/);
+  assert.match(f.sent.at(-1).text.replace(/[`*_]/g, '').replace(/\s+/g, ' '), /NÃO CONFIRMADA/);
   assert.ok(f.service.store.audits(G).every(row => row.result !== 'COMMAND_APPLIED' && row.action !== 'BOT_BAN'));
 });
 test('server acknowledgement without actual membership removal never produces a false success', async t => {
@@ -84,7 +84,7 @@ test('invalid metadata after acknowledgement cannot prove a removal', async t =>
   const f = fixture(t); const original = f.sock.groupMetadata;
   f.sock.groupMetadata = async group => f.calls.length ? { id: group, participants: [] } : original(group);
   await f.ban(f.sock, f.ctx()); assert.equal(f.user(MEMBER), undefined);
-  assert.doesNotMatch(f.sent.at(-1).text, /BANIMENTO CONCLUÍDO/);
+  assert.doesNotMatch(f.sent.at(-1).text.replace(/[`*_]/g, '').replace(/\s+/g, ' '), /BANIMENTO CONCLUÍDO/);
 });
 for (const [name, sender, target, options] of [
   ['non-admin sender', MEMBER, ADMIN, {}], ['global owner', ADMIN, OWNER, {}],
@@ -92,7 +92,7 @@ for (const [name, sender, target, options] of [
   ['absent target', ADMIN, '5511888888888@s.whatsapp.net', {}],
 ]) test(`ban refuses ${name} before contacting participant API`, async t => {
   const f = fixture(t, options); await f.ban(f.sock, f.ctx(sender, target));
-  assert.equal(f.calls.length, 0); assert.doesNotMatch(f.sent.at(-1).text, /BANIMENTO CONCLUÍDO/);
+  assert.equal(f.calls.length, 0); assert.doesNotMatch(f.sent.at(-1).text.replace(/[`*_]/g, '').replace(/\s+/g, ' '), /BANIMENTO CONCLUÍDO/);
 });
 test('ban accepts reply targeting through a wrapped message', async t => {
   const f = fixture(t), ctx = f.ctx();
@@ -121,7 +121,7 @@ test('DB failure after removal reports partial result and rolls back internal ba
   await f.ban(f.sock, f.ctx());
   assert.equal(f.meta.participants.some(p => p.id === LID), false);
   assert.equal(f.user(MEMBER).banned, 0); assert.equal(f.user(LID), undefined);
-  assert.match(f.sent.at(-1).text, /REMOÇÃO CONCLUÍDA COM RESSALVA/); assert.match(f.sent.at(-1).text, /não pôde ser salvo/);
+  assert.match(f.sent.at(-1).text.replace(/[│*_`]/g, ' ').replace(/\s+/g, ' '), /REMOÇÃO CONCLUÍDA COM RESSALVA/); assert.match(f.sent.at(-1).text, /não pôde ser salvo/);
 });
 test('failed confirmation message cannot undo an acknowledged removal or persisted ban', async t => {
   const f = fixture(t); f.sock.sendMessage = async () => { throw Error('transport failed'); };

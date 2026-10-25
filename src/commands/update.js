@@ -1,6 +1,7 @@
 'use strict';
 const { UpdateService, UpdateError } = require('../updater/service');
 const { frameNotice } = require('../menus/render');
+const { mono, command } = require('../ui/text');
 
 async function verifiedOwner(sock, ctx, ownerNumber) {
   const owner = String(ownerNumber || '').replace(/\D/g, '');
@@ -38,15 +39,15 @@ function createUpdateHandler({ service, config = require('../config'), logger = 
     async function finish(result, pending = false) {
       const automatic = restart.canRestart();
       await notify(pending ? 'REINÍCIO DA ATUALIZAÇÃO' : 'ATUALIZAÇÃO CONCLUÍDA', [
-        pending ? '✅ Os arquivos novos já estão aplicados. Não será feita outra instalação.' : `✅ ${action === 'bot' ? 'Bot' : 'Baileys'}: ${result.version}`,
-        ...(result.backup ? [`💾 Backup do código e dados: updates/${result.backup}`] : []),
+        pending ? '✅ Os arquivos novos já estão aplicados. Não será feita outra instalação.' : `✅ *${action === 'bot' ? 'Bot' : 'Baileys'}:* ${mono(result.version)}`,
+        ...(result.backup ? [`💾 *Backup do código e dados:* ${mono('updates/' + result.backup)}`] : []),
         automatic ? '♻️ Reiniciando automaticamente para carregar os arquivos novos. A sessão será reutilizada.' : '⚙️ Configuração única: deixe o comando de inicialização da hospedagem como npm start e inicie uma vez. As próximas atualizações reiniciam pelo WhatsApp; preserve os dados existentes.',
       ]);
       if (!automatic) return;
       let accepted = false;
       try { accepted = await restart.requestRestart() !== false; }
       catch (error) { logger.error?.({ component: 'updater', code: error.code || 'RESTART_REQUEST_FAILED' }, 'Arquivos aplicados; pedido de reinício não confirmado.'); }
-      if (!accepted) await notify('ARQUIVOS ATUALIZADOS', [`⚠️ Não foi possível confirmar o reinício. Envie ${p}atualizar bot novamente para tentar concluir.`, '🛡️ Não apague sessão, banco ou configurações.']);
+      if (!accepted) await notify('ARQUIVOS ATUALIZADOS', [`⚠️ Não foi possível confirmar o reinício.\n> Envie ${command(p + 'atualizar bot')} novamente para tentar concluir.`, '🛡️ Não apague sessão, banco ou configurações.']);
     }
     let owner = false;
     try {
@@ -57,34 +58,34 @@ function createUpdateHandler({ service, config = require('../config'), logger = 
     if (!owner) return reply('ACESSO DO DONO', ['🐺 Este comando é exclusivo do dono do bot.']);
     const args = ctx.args || [];
     if (!args.length) return reply('ATUALIZAÇÃO DA ALCATEIA', [
-      `💎 ${p}atualizar status — versões instaladas`,
-      `⚙️ ${p}atualizar bot — código do repositório`,
-      `🐺 ${p}atualizar baileys — última versão oficial compatível`,
+      `${command(p + 'atualizar status')} — _Versões instaladas_`,
+      `${command(p + 'atualizar bot')} — _Código do repositório_`,
+      `${command(p + 'atualizar baileys')} — _Última versão oficial compatível_`,
       '🛡️ Código e dependências são verificados antes da troca.',
       restart.canRestart() ? '♻️ Reinício automático ativo: aguarde o bot voltar, sem novo pareamento.' : '⚙️ Configuração única na hospedagem: npm start, tudo em minúsculas, para habilitar o reinício automático.',
       '💻 A versão do Node é configurada no painel do servidor.',
     ]);
     const action = String(args[0]).toLowerCase();
     if (args.length !== 1 || !['status', 'bot', 'baileys'].includes(action)) {
-      return reply('COMANDO INVÁLIDO', [`🐺 Use ${p}atualizar status, bot ou baileys.`]);
+      return reply('COMANDO INVÁLIDO', [`> Use ${command(p + 'atualizar status, bot ou baileys')}.`]);
     }
     try {
       if (action === 'status') {
         const state = await service.status();
         return reply('STATUS DE ATUALIZAÇÃO', [
-          `🤖 Bot: ${state.version}`, `💻 Node: ${state.node}`, `🐺 Baileys: ${state.baileys}`,
-          `⚙️ Atualizando: ${state.active ? 'sim' : 'não'}`,
-          `⏳ Reinício pendente: ${state.needsRestart ? 'sim' : 'não'}`,
-          `♻️ Supervisor automático: ${restart.canRestart() ? 'ativo' : 'inativo — inicialize com npm start'}`,
-          `⭐ Última atualização: ${state.last?.at || 'nenhuma por comando'}`,
-          `❤️ Saúde: ${state.health?'versão em teste • '+state.health.crashCount+' falhas':'sem versão em teste'}`,
-          `🔐 Integridade: ${state.last?.integrity||'commit fixado'}`,
+          `🤖 *Bot:* ${mono(state.version)}`, `💻 *Node:* ${mono(state.node)}`, `🐺 *Baileys:* ${mono(state.baileys)}`,
+          `⚙️ *Atualizando:* ${state.active ? 'sim' : 'não'}`,
+          `⏳ *Reinício pendente:* ${state.needsRestart ? 'sim' : 'não'}`,
+          `♻️ *Supervisor automático:* ${restart.canRestart() ? 'ativo' : 'inativo — inicialize com npm start'}`,
+          `⭐ *Última atualização:* ${mono(state.last?.at || 'nenhuma por comando')}`,
+          `❤️ *Saúde:* ${state.health?'versão em teste • '+mono(state.health.crashCount)+' falhas':'sem versão em teste'}`,
+          `🔐 *Integridade:* ${state.last?.integrity||'commit fixado'}`,
         ]);
       }
       if (service.needsRestart) return finish({}, true);
       await notify('ATUALIZAÇÃO INICIADA', ['⚙️ Aguarde a verificação e instalação.', '🛡️ Sessão, configurações e dados dos jogos serão preservados.']);
       const result = await service.update(action);
-      if (result.already) return reply('JÁ ATUALIZADO', [`✅ ${action === 'bot' ? 'Bot' : 'Baileys'} já está atualizado (${result.version}).`]);
+      if (result.already) return reply('JÁ ATUALIZADO', [`✅ ${action === 'bot' ? 'Bot' : 'Baileys'} já está atualizado (${mono(result.version)}).`]);
       return finish(result);
     } catch (error) {
       if (error.code === 'RESTART_REQUIRED') return finish({}, true);

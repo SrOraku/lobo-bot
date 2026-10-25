@@ -58,6 +58,7 @@ test('API configuration rejects members and group key disclosure; owner confirma
  const vm=require('node:vm'),read=require('node:fs'),module={exports:{}};let writes=0;
  vm.runInNewContext(read.readFileSync(path.join(__dirname,'../src/commands/bronxys-config.js'),'utf8'),{module,process:{env:{}},require:name=>{
   if(name==='../menus/render')return {frameNotice:(title,lines)=>title+'\n'+lines.join('\n')};
+  if(name==='../ui/text')return require('../src/ui/text');
   if(name==='../config')return {get:()=> '!'};
   if(name==='../../package.json')return {version:'test-version'};
   if(name==='../integrations/bronxys/client')return {createClient:()=>({json:async()=>({cep:'01001000'})})};

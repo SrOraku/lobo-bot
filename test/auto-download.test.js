@@ -48,7 +48,7 @@ test('activation number uses shared manager, confirms 1, cancels 2 and persists 
  const rows=require('../src/activations/registry').list().filter(f=>f.source!=='sector'),number=rows.findIndex(f=>f.id==='autodownload')+1;
  assert.equal(rows[number-1].default,false);assert.equal(rows[number-1].bulkSafe,false);
  const sent=[],sock={sendMessage:async(jid,data)=>sent.push(data.text)},ctx={jid:'123@g.us',sender:'1@s.whatsapp.net',msg:{key:{id:'open'}}};
- ui.open(ctx);ctx.msg.key.id='select';await ui.handle(sock,ctx,String(number));assert.ok(sent.at(-1).includes('*1* — Sim'));
+ ui.open(ctx);ctx.msg.key.id='select';await ui.handle(sock,ctx,String(number));assert.ok(sent.at(-1).includes('`1` — *SIM*'));
  ctx.msg.key.id='cancel';await ui.handle(sock,ctx,'2');assert.equal(store.get(ctx.jid).features.autodownload,false);
  ui.open(ctx);ctx.msg.key.id='select2';await ui.handle(sock,ctx,String(number));ctx.msg.key.id='yes';await ui.handle(sock,ctx,'1');
  assert.equal(store.get(ctx.jid).features.autodownload,true);assert.equal(store.get('456@g.us').features.autodownload,false);

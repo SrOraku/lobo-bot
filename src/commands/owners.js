@@ -1,5 +1,6 @@
 'use strict';
 const { frameNotice } = require('../menus/render');
+const { command } = require('../ui/text');
 async function owners(sock, ctx) {
   const actor = await require('../activations/access').resolveActor(sock,ctx);
   const reply = lines => sock.sendMessage(ctx.jid,{text:frameNotice('👑 DONOS DO BOT',lines)},{quoted:ctx.msg});
@@ -9,11 +10,11 @@ async function owners(sock, ctx) {
   const settings = require('../security/settings');
   if (action === 'lista') return reply([
     ...require('../utils/owners').ownerNumbers().map(n => `${n === root ? '👑 Principal' : '🛡️ Dono autorizado'}: +${n}`),
-    `${p}donos adicionar número\n${p}donos remover número\n_Somente o principal gerencia donos; a conta conectada não recebe esse cargo automaticamente._`,
+    `${command(p + 'donos adicionar número')}\n${command(p + 'donos remover número')}\n> Somente o principal gerencia donos; a conta conectada não recebe esse cargo automaticamente.`,
   ]);
   if (actor.phone !== root + '@s.whatsapp.net') return reply(['Somente o dono principal pode cadastrar ou remover outros donos.']);
   if (!['adicionar','remover'].includes(action) || ctx.args.length !== 2 || !/^\d{10,15}$/.test(ctx.args[1]))
-    return reply([`Use ${p}donos adicionar/remover número, com DDI e somente dígitos.`]);
+    return reply([`> Use ${command(p + 'donos adicionar/remover número')}, com DDI e somente dígitos.`]);
   const number = ctx.args[1];
   if (number === root) return reply(['O dono principal não pode ser removido ou substituído por comando.']);
   const configured = [root,...String(config.get('BOT_OWNERS') || '').split(/[,;\s]+/).map(s => s.replace(/\D/g,''))];

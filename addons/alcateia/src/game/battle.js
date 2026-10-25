@@ -1,4 +1,4 @@
-import { DEV_SIGNATURE, header } from './constants.js';
+import { panel, mono, progress, flavor } from '../presentation.js';
 
 const STATS = ['attack', 'defense', 'counter'];
 const BAND_ORDER = { loss: 0, draw: 1, win: 2 };
@@ -110,12 +110,19 @@ function signed(value) { return `${value >= 0 ? '+' : ''}${value}`; }
 export function generateBattleMessage(result) {
   const { attacker, defender } = result;
   const final = result.outcome === 'draw' ? 'Empate' : `Vitória de ${displayName(result[result.outcome])}`;
-  return `${header('BATALHA DA ALCATEIA')}
-🗡️ Atacante: ${displayName(attacker)}
-🛡️ Defensor: ${displayName(defender)}
-⚔️ Danos: ${attacker.damage} × ${defender.damage}
-💎 HP final: ${attacker.hpAfter}/100 × ${defender.hpAfter}/100
-🏆 Resultado: ${final}
-🐺 Atacante: ${OUTCOME_LABEL[attacker.outcome]} • ${signed(attacker.coinChange)} WoK coin
-🐺 Defensor: ${OUTCOME_LABEL[defender.outcome]} • ${signed(defender.coinChange)} WoK coin`;
+  return panel('BATALHA DA ALCATEIA', [
+    '⚔️ _As formações se encontram sob a lua._',
+    flavor(attacker.outcome === 'win' ? 'win' : 'loss'),
+    `🗡️ Atacante: ${displayName(attacker)}`,
+    `🛡️ Defensor: ${displayName(defender)}`,
+    `⚔️ Danos: ${attacker.damage} × ${defender.damage}`,
+    `💎 HP final: ${attacker.hpAfter}/100 × ${defender.hpAfter}/100`,
+    `🗡️ ${progress(attacker.hpAfter)} ${mono(attacker.hpAfter + '/100')}`,
+    `🛡️ ${progress(defender.hpAfter)} ${mono(defender.hpAfter + '/100')}`,
+    `🏆 Resultado: ${final}`,
+    `🐺 Atacante: ${OUTCOME_LABEL[attacker.outcome]} • ${signed(attacker.coinChange)} WoK coin`,
+    `🐺 Defensor: ${OUTCOME_LABEL[defender.outcome]} • ${signed(defender.coinChange)} WoK coin`,
+    `💰 Saldo atacante: ${attacker.coinsAfter} WoK coin`,
+    `💰 Saldo defensor: ${defender.coinsAfter} WoK coin`,
+  ]);
 }

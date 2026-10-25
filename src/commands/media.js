@@ -5,6 +5,7 @@
 
 const { BOT_NAME, PREFIX } = require('../utils/helpers');
 const axios = require('axios');
+const {card,mono,command}=require('../ui/text');
 
 // !play baixa MP3 por padrão. !play video baixa MP4.
 function createPlay({ audio, video }) {
@@ -35,7 +36,7 @@ async function tiktok(sock, ctx) {
     return sock.sendMessage(
       jid,
       {
-        text: `❌ Informe um link do TikTok!\n_Ex: ${PREFIX}tiktok https://vm.tiktok.com/..._`,
+        text: `❌ *Ação inválida!* _Informe um link do TikTok._\n> 💡 *Use assim:* ${command(`${PREFIX}tiktok https://vm.tiktok.com/...`)}`,
       },
       { quoted: msg },
     );
@@ -43,7 +44,7 @@ async function tiktok(sock, ctx) {
   await sock.sendMessage(
     jid,
     {
-      text: `📱 ⏬ Baixando TikTok sem marca d'água...\n_Aguarde..._`,
+      text: `⏳ *Aguarde um instante!* _Baixando TikTok sem marca d'água…_`,
     },
     { quoted: msg },
   );
@@ -57,7 +58,7 @@ async function tiktok(sock, ctx) {
       return sock.sendMessage(
         jid,
         {
-          text: `❌ Não foi possível baixar!\n_Link inválido ou privado._`,
+          text: `❌ *Ação inválida!* _Não foi possível baixar: link inválido ou privado._`,
         },
         { quoted: msg },
       );
@@ -68,7 +69,7 @@ async function tiktok(sock, ctx) {
       jid,
       {
         video: Buffer.from(buf.data),
-        caption: `🎵 *${data.title || 'TikTok'}*\n👤 @${data.author?.unique_id || 'autor'}\n❤️ ${data.digg_count?.toLocaleString() || 0} curtidas\n\n`,
+        caption: card('TIKTOK',[`🎵 *Título:* ${data.title || 'TikTok'}`,`👤 *Autor:* @${data.author?.unique_id || 'autor'}`,`❤️ *Curtidas:* ${mono(data.digg_count?.toLocaleString() || 0)}`],{formatNumbers:false}),
         mimetype: 'video/mp4',
       },
       { quoted: msg },
@@ -76,7 +77,7 @@ async function tiktok(sock, ctx) {
   } catch (err) {
     await sock.sendMessage(
       jid,
-      { text: `❌ Erro ao baixar TikTok!\n_${err.message}_` },
+      { text: `❌ *Ação inválida!* _Erro ao baixar TikTok: ${err.message}_` },
       { quoted: msg },
     );
   }
@@ -94,7 +95,7 @@ async function instagram(sock, ctx) {
     return sock.sendMessage(
       jid,
       {
-        text: `❌ Informe um link do Instagram!\n_Ex: ${PREFIX}ig https://instagram.com/p/..._`,
+        text: `❌ *Ação inválida!* _Informe um link do Instagram._\n> 💡 *Use assim:* ${command(`${PREFIX}ig https://instagram.com/p/...`)}`,
       },
       { quoted: msg },
     );
@@ -102,7 +103,7 @@ async function instagram(sock, ctx) {
   await sock.sendMessage(
     jid,
     {
-      text: `📸 ⏬ Baixando do Instagram...\n_Aguarde..._`,
+      text: `⏳ *Aguarde um instante!* _Baixando do Instagram…_`,
     },
     { quoted: msg },
   );
@@ -119,7 +120,7 @@ async function instagram(sock, ctx) {
       return sock.sendMessage(
         jid,
         {
-          text: `❌ Não foi possível baixar!\n_Post pode ser privado._`,
+          text: `❌ *Ação inválida!* _Não foi possível baixar: o post pode ser privado._`,
         },
         { quoted: msg },
       );
@@ -132,7 +133,7 @@ async function instagram(sock, ctx) {
         jid,
         {
           video: Buffer.from(buf.data),
-          caption: `📹 *Instagram*\n\n`,
+          caption: `✅ *Concluído!* _Vídeo do Instagram entregue._`,
           mimetype: 'video/mp4',
         },
         { quoted: msg },
@@ -142,13 +143,13 @@ async function instagram(sock, ctx) {
         jid,
         {
           image: Buffer.from(buf.data),
-          caption: `📸 *Instagram*\n\n`,
+          caption: `✅ *Concluído!* _Imagem do Instagram entregue._`,
         },
         { quoted: msg },
       );
     }
   } catch (err) {
-    await sock.sendMessage(jid, { text: `❌ Erro ao baixar do Instagram!` }, { quoted: msg });
+    await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Erro ao baixar do Instagram._` }, { quoted: msg });
   }
 }
 
@@ -163,7 +164,7 @@ async function spotify(sock, ctx) {
     return sock.sendMessage(
       jid,
       {
-        text: `❌ Informe o nome!\n_Ex: ${PREFIX}spotify Blinding Lights_`,
+        text: `❌ *Ação inválida!* _Informe o nome da música._\n> 💡 *Use assim:* ${command(`${PREFIX}spotify Blinding Lights`)}`,
       },
       { quoted: msg },
     );
@@ -172,7 +173,7 @@ async function spotify(sock, ctx) {
   await sock.sendMessage(
     jid,
     {
-      text: `🎧 🎵 *Busca Spotify:* ${query}\n\n🔗 https://open.spotify.com/search/${encodeURIComponent(query)}\n\n_Para download de áudio, use ${PREFIX}ytmp3 ${query}_`,
+      text: card('BUSCA SPOTIFY',[`🎵 *Pesquisa:* ${query}`,`🔗 https://open.spotify.com/search/${encodeURIComponent(query)}`],{tip:`_Para baixar o áudio, use_ ${command(`${PREFIX}ytmp3 ${query}`)}`,formatNumbers:false}),
     },
     { quoted: msg },
   );

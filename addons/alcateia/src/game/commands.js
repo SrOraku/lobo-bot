@@ -1,9 +1,10 @@
 import path from 'node:path';
 import { contextOf } from '../messages.js';
-import { DEV_SIGNATURE, header } from './constants.js';
+import { DEV_SIGNATURE } from './constants.js';
 import { generateBattleMessage } from './battle.js';
 import { isRPCommand, rpMenu, handleRPResponse } from '../rp/commands.js';
 import { formatMenu } from '../menu-style.js';
+import { panel, mono, progress, notice } from '../presentation.js';
 
 const COMMANDS = new Set([
   'start', 'perfil', 'treino', 'formacao', 'ataque', 'rank', 'loja', 'comprar',
@@ -20,7 +21,7 @@ function line(value, fallback = 'nenhum') {
   return String(value ?? fallback).replace(/[\r\n]+/g, ' ').slice(0, 100);
 }
 
-function frame(title, lines) { return `${header(title)}\n${lines.join('\n')}${title === 'BEM-VINDO À ALCATEIA' ? '\n' + DEV_SIGNATURE : ''}`; }
+function frame(title, lines) { return panel(title, title === 'BEM-VINDO À ALCATEIA' ? [...lines, DEV_SIGNATURE] : lines); }
 
 function duration(milliseconds) {
   const seconds = Math.max(1, Math.ceil(milliseconds / 1000));
@@ -44,7 +45,8 @@ function profileText(player, rank, at) {
   return frame('PERFIL DA ALCATEIA', [
     `🐺 Nome: ${line(player.name, 'Lobo')}`,
     `📱 Número: +${line(player.number)}`,
-    `💎 HP: ${player.hp}/100 • 🐺 Lobisomens: ${player.wolves}/100`,
+    `💎 HP: ${player.hp}/100 ${progress(player.hp)}`,
+    `🐺 Lobisomens: ${player.wolves}/100 ${progress(player.wolves)}`,
     `🗡️ Ataque: ${player.attack}/40 • 🛡️ Defesa: ${player.defense}/40`,
     `⚡ Contra-ataque: ${player.counter}/20`,
     `💰 WoK coin: ${player.coins} • 🏆 Ranking: ${rank || 'fora do ranking'}`,
@@ -60,7 +62,7 @@ function profileText(player, rank, at) {
 export function gameMenu(config) {
   const p = config.prefix;
   const game = formatMenu({ title: 'MENU DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
-    ownerNumber: config.ownerNumber, subtitle: [
+    ownerNumber: config.ownerNumber, prefix: p, subtitle: [
     '🌹100 LOBISOMENS ESTRATÉGIA🌹', '⚔️ Treine • lute • conquiste 🐺',
   ], signature: '', sections: [
     { title: '🐺 JORNADA DO LOBO', lines: [
@@ -76,17 +78,17 @@ export function gameMenu(config) {
       '🐾 Estratégia, honra e força da alcateia.',
     ] },
   ] });
-  return `${game}\n\n${rpMenu(config)}`;
+  return `${game}\n${rpMenu(config)}`;
 }
 
 function shopText(items, config) {
   return formatMenu({ title: 'LOJA DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
-    ownerNumber: config.ownerNumber,
+    ownerNumber: config.ownerNumber, prefix: config.prefix,
     subtitle: '💰 Tesouros e vantagens de batalha', signature: '',
     sections: [{ title: '🛍️ ARSENAL LUNAR', lines: items.map(item => {
     const effect = item.type === 'training' ? 'um treino extra imediato' :
       `${BOOST_NAMES[item.type] || line(item.type)} +${Math.round(item.value * 100)}% por 1 hora`;
-    return `💎 ${item.id}. ${line(item.name)}\n💰 ${item.price} WoK coin\n⭐ ${effect}`;
+    return `💎 ${mono(item.id)}. *${line(item.name)}*\n💰 ${item.price} WoK coin\n⭐ ${effect}`;
   }) }, { title: '💳 ORDEM DE COMPRA', lines: [`💰 Compre com ${config.prefix}comprar 1/2/3/4.`] }] });
 }
 
@@ -97,8 +99,8 @@ function rankingText(players) {
 }
 
 function eventText(reward) {
-  const text = reward.type === 'coins' ? `💰 Recompensa: ${reward.amount} WoK coin` :
-    reward.type === 'wolves' ? `🐺 Recompensa: ${reward.added ?? reward.amount} lobisomens` :
+  const text = reward.type === 'coins' ? `💰 Recompensa: +${reward.amount} WoK coin` :
+    reward.type === 'wolves' ? `🐺 Recompensa: +${reward.added ?? reward.amount} lobisomens` :
       reward.type === 'hp' ? `💎 Recompensa: +${reward.amount} HP` :
         reward.type === 'boost' ? `⭐ Recompensa: ${BOOST_NAMES[reward.boost?.type] || 'boost'} +${Math.round((reward.boost?.value || 0) * 100)}% por 1 hora` :
           '🌕 Hoje a lua não deixou uma recompensa.';
@@ -109,7 +111,7 @@ function eventText(reward) {
     boost: '⭐ O guardião da lua concedeu uma bênção temporária.',
     none: '🌫️ A névoa cobriu a trilha. Você voltou ao refúgio em segurança.',
   };
-  return frame('EVENTO LUNAR', [scenes[reward.type] || scenes.none, text, '🐺 A alcateia segue em frente.', '⏳ Volte amanhã.']);
+  return frame('EVENTO LUNAR', ['_' + (scenes[reward.type] || scenes.none) + '_', text, '🐺 A alcateia segue em frente.', '> ⏳ _Volte amanhã._']);
 }
 
 export function isGameCommand(command, args = []) {
@@ -171,7 +173,10 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
           break;
         case 'training':
           await ctx.reply(frame('TREINO DA ALCATEIA', [
+            `🐺 _A matilha retorna mais forte._`,
             `🐺 +${result.added} lobisomens • Total: ${result.player.wolves}/100`,
+            `${progress(result.player.wolves)} ${mono(result.player.wolves + '/100')}`,
+            `💰 Saldo: ${result.player.coins} WoK coin`,
             `🗡️ ${result.player.attack}/40 • 🛡️ ${result.player.defense}/40 • ⚡ ${result.player.counter}/20`,
             result.usedExtra ? '⭐ Treino extra utilizado.' : '⏳ Próximo treino normal em 1 hora.',
           ]));
@@ -196,7 +201,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
         case 'purchase':
           await ctx.reply(frame('COMPRA CONCLUÍDA', [
             `⭐ ${line(result.item.name)} adquirido.`, `💰 Saldo: ${result.player.coins} WoK coin`,
-            result.item.type === 'training' ? `🐺 Use ${prefix}treino para consumir um treino extra durante o cooldown.` :
+            result.item.type === 'training' ? `🐺 Use *${prefix}treino* para consumir um treino extra durante o cooldown.` :
               `⏳ Boost ativo por 1 hora: ${BOOST_NAMES[result.boost?.type || result.item.type]} +${Math.round((result.boost?.value ?? result.item.value) * 100)}%.`,
           ]));
           break;
@@ -230,7 +235,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
         case 'backup':
           try {
             const file = await backupManager.create();
-            await ctx.reply(frame('BACKUP DA ALCATEIA', [`💎 Backup salvo: ${path.basename(file)}`]));
+            await ctx.reply(frame('BACKUP DA ALCATEIA', [`💎 Backup salvo: ${mono(path.basename(file))}`]));
           } catch (error) {
             logger.warn({ error: error.message }, 'Falha ao criar backup manual do jogo.');
             await ctx.reply(frame('BACKUP DA ALCATEIA', ['🐺 Não consegui criar o backup. O bot continua online; tente novamente.']));
@@ -267,13 +272,10 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
           break;
         }
         case 'rate-limit':
-          await ctx.reply(frame('ANTI-SPAM', [
-            '🐺 Calma, lobo.', '⏳ Aguarde antes de usar outro comando.',
-            `⏳ Tempo restante: ${duration(result.retryAfter || 1000)}${result.reason === 'hour' ? ' • Limite de 50 comandos por hora.' : ''}`,
-          ]));
+          await ctx.reply(notice('wait', `🛡️ ANTI-SPAM • Calma, lobo. Aguarde antes de usar outro comando. Tempo restante: ${duration(result.retryAfter || 1000)}${result.reason === 'hour' ? ' • Limite de 50 comandos por hora.' : ''}`));
           break;
         case 'error':
-          await ctx.reply(frame('ALCATEIA', [`🐺 ${result.message}`]));
+          await ctx.reply(notice('error', `${result.message}`, '_Confira os argumentos e tente novamente._'));
           break;
         default:
           if (await handleRPResponse(ctx, result, at)) break;
@@ -281,10 +283,10 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
       }
     } catch (error) {
       if (error?.name === 'GameError') {
-        await ctx.reply(frame('ALCATEIA', [`🐺 ${error.message}`]));
+        await ctx.reply(notice('error', `${error.message}`, '_Confira os argumentos e tente novamente._'));
       } else {
         logger.warn({ error: error?.message, command }, 'Falha ao executar comando do jogo.');
-        await ctx.reply(frame('ALCATEIA', ['🐺 Não consegui concluir essa ação. Tente novamente em instantes.']));
+        await ctx.reply(notice('error', 'Não consegui concluir essa ação. Tente novamente em instantes.'));
       }
     }
     return true;

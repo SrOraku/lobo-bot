@@ -26,6 +26,6 @@ test('inicializador encaminha a escolha de número e reinicia só depois de ence
 test('setores lista todas as categorias como informação sem controles on/off', async () => {
   const texts = [];
   await require('../src/commands/sectors').sectors({ sendMessage: async (_, c) => texts.push(c.text) }, { jid: 'test', msg: {} });
-  for (const id of Object.keys(require('../src/menus/catalog').CATEGORIES)) assert.ok(texts[0].includes('menu ' + id));
+  for (const id of Object.keys(require('../src/menus/catalog').CATEGORIES)) assert.ok(texts[0].replace(/[*_`]/g, '').includes('menu ' + id));
   assert.ok(texts[0].includes('não possuem botão de desligar'));
 });

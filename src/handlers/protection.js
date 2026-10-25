@@ -1,6 +1,7 @@
 'use strict';
 const { logger, isBrazilianFake } = require('../utils/helpers');
 const { manager } = require('../activations/manager');
+const { mono } = require('../ui/text');
 const { inspect, matchingFeatures, createMessageTracker } = require('../activations/message-rules');
 const track = createMessageTracker();
 async function handleProtection(sock, msg, { jid, sender, body, isGroup }) {
@@ -61,7 +62,7 @@ async function handleProtection(sock, msg, { jid, sender, body, isGroup }) {
           removed = true;
         }
         await sock.sendMessage(jid, { text: require('../menus/render').frameNotice('⚠️ ADVERTÊNCIA POR LINK', [
-          `Advertências: ${result.count}/5.`,
+          `*Advertências:* ${mono(result.count)}/${mono(5)}.`,
           removed ? 'Participante removido ao atingir o limite.' : 'Na quinta advertência, o participante será removido.',
         ]) });
       }

@@ -1,5 +1,7 @@
 > **LOBO-BOT v1.0.0:** a versão oficial permanece fixa em `1.0.0`; as atualizações são identificadas pelo commit e pela integridade dos arquivos, sem depender de aumentar esse número.
 
+> **Visual simétrico 🌹 & 🐺:** menus, HUDs e mensagens usam molduras de até 26 colunas, valores monoespaçados, saudação por horário e reações temáticas. No painel, escolha `!ativacoes função` e responda `1` para SIM/confirmar ou `2` para NÃO/cancelar. As compatibilidades anteriores permanecem. Veja [o padrão visual, os limites e como continuar em outra conta do ChatGPT](src/ui/README.md).
+
 > **Entrada automática e emissão:** comandos pessoais de lobos/RP criam o perfil no primeiro uso, sem exigir `!start`/`!rp iniciar`. Donos cadastrados podem usar `!addwok quantidade @participante` para emitir WoK coin sem debitar o próprio saldo.
 
 > **Atualização pelo WhatsApp — v1.8.6:** `!atualizar bot` aplica os arquivos e pede reinício mesmo se o aviso no WhatsApp falhar. Um reinício pendente pode ser concluído repetindo o comando, sem reinstalação ou exclusão de dados.
