@@ -32,7 +32,7 @@ function createMenu({
       ];
     } else if (!CATEGORIES[category]) {
       title = 'CATEGORIA NÃO ENCONTRADA';
-      sections = ['🐾 Escolha uma das categorias válidas:', categoryLines.join('\n')];
+      sections = ['➤ Escolha uma das categorias válidas:', categoryLines.join('\n')];
     } else {
       title = CATEGORIES[category].replace(' ', ' MENU ');
       const entries = all.filter((c) => c.category === category);
@@ -44,10 +44,10 @@ function createMenu({
         ]
           .filter(Boolean)
           .join(' • ');
-        return `┃ 🐾 *${usage}* — _${c.description}_${flags ? ` [${flags}]` : ''}${c.aliases?.length ? `\n┃ ↳ ${c.aliases.map((a) => '*' + p + a + '*').join(' • ')}` : ''}${c.details?.length ? '\n' + c.details.map((row) => '┃ ↳ *' + p + c.name + ' ' + row + '*').join('\n') : ''}`;
+        return `┃ ➤ *${usage}* — _${c.description}_${flags ? ` [${flags}]` : ''}${c.aliases?.length ? `\n┃ ↳ ${c.aliases.map((a) => '*' + p + a + '*').join(' • ')}` : ''}${c.details?.length ? '\n' + c.details.map((row) => '┃ ↳ *' + p + c.name + ' ' + row + '*').join('\n') : ''}`;
       });
       sections = [
-        lines.length ? lines.join('\n') : '🐾 Nenhum comando desta categoria está instalado.',
+        lines.length ? lines.join('\n') : '➤ Nenhum comando desta categoria está instalado.',
       ];
       if (category === 'jogos')
         sections.push(

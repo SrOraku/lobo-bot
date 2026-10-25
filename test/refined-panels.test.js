@@ -4,11 +4,11 @@ const assert = require('node:assert/strict');
 const { frameMenu, frameNotice, IDENTITY } = require('../src/menus/render');
 test('menus mantêm título recuado e bordas na margem esquerda', () => {
   const text = frameMenu('MENU PRINCIPAL DA MATILHA', ['👤 *Usuário:* Lobo', '🌹 Conteúdo da matilha 🐺']);
-  assert.ok(text.startsWith('╔═══❖♆❖═══🐾═══❖♆❖═══╗'));
+  assert.ok(text.startsWith('╔═══❖♆❖═══🐺═══❖♆❖═══╗'));
   assert.ok(text.includes('\n   *MENU PRINCIPAL DA MATILHA*\n'));
-  assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐾❖═══╝'));
+  assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐺❖═══╝'));
   assert.ok(text.includes('🌹 Conteúdo da matilha 🐺'));
-  assert.ok(text.includes('╭──── 🌹 ⚜️ 🐾 ⚜️ 🌹 ────╮'));
+  assert.ok(text.includes('╭──── 🌹 ⚜️ 🐺 ⚜️ 🌹 ────╮'));
   for (const line of text.split('\n'))
     if (line.trim().startsWith('╚') || line.trim().startsWith('╭') || line.trim().startsWith('╰'))
       assert.equal(line, line.trimStart());

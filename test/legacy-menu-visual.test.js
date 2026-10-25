@@ -34,14 +34,14 @@ async function render(args = [], prefix = '!!', extra = {}) {
 for (const category of ['', ...Object.keys(CATEGORIES)]) {
   test(`menu ${category || 'principal'} preserva moldura, identidade e prefixo`, async () => {
     const text = await render(category ? [category] : []);
-    assert.ok(text.startsWith('╔═══❖♆❖═══🐾═══❖♆❖═══╗\n'));
-    assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐾❖═══╝'));
+    assert.ok(text.startsWith('╔═══❖♆❖═══🐺═══❖♆❖═══╗\n'));
+    assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐺❖═══╝'));
     for (const value of Object.values(IDENTITY)) assert.ok(!text.includes(value));
     assert.ok(text.includes('!!menu'));
     assert.ok(!text.includes('!menu ') || text.includes('!!menu '));
     assert.ok(text.length < 6000);
     for (const command of entries.filter((c) => c.category === category))
-      assert.ok(text.includes('!!' + command.name), command.name);
+      assert.ok(text.includes('┃ ➤ *!!' + command.name), command.name);
   });
 }
 test('principal compacto só mostra usuário e categorias, sem dados técnicos', async () => {
@@ -145,8 +145,8 @@ test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async ()
 
 test('principal usa moldura oficial sem espaços nas bordas', async () => {
   const text = await render([], '!');
-  assert.ok(text.startsWith('╔═══❖♆❖═══🐾═══❖♆❖═══╗'));
+  assert.ok(text.startsWith('╔═══❖♆❖═══🐺═══❖♆❖═══╗'));
   assert.ok(text.includes('┃ 🎮 *!menu jogos*'));
   assert.ok(!text.includes(IDENTITY.developer));
-  assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐾❖═══╝'));
+  assert.ok(text.endsWith('╚═══❖🌹❖═══♆═══❖🐺❖═══╝'));
 });

@@ -19,7 +19,7 @@ function footer() {
   return `🌹 *Dev:* ${IDENTITY.developer}\n${IDENTITY.motto}`;
 }
 function frameMenu(title, sections, { identity = false } = {}) {
-  return `╔═══❖♆❖═══🐾═══❖♆❖═══╗${identity ? `\n*${IDENTITY.name}*` : ''}\n\n╭──── 🌹 ⚜️ 🐾 ⚜️ 🌹 ────╮\n   *${title}*\n╰──────────────────────╯\n\n${sections.join('\n\n')}\n\n${DIVIDER}${identity ? `\n${footer()}` : ''}\n╚═══❖🌹❖═══♆═══❖🐾❖═══╝`;
+  return `╔═══❖♆❖═══🐺═══❖♆❖═══╗${identity ? `\n*${IDENTITY.name}*` : ''}\n\n╭──── 🌹 ⚜️ 🐺 ⚜️ 🌹 ────╮\n   *${title}*\n╰──────────────────────╯\n\n${sections.join('\n\n')}\n\n${DIVIDER}${identity ? `\n${footer()}` : ''}\n╚═══❖🌹❖═══♆═══❖🐺❖═══╝`;
 }
 function frameNotice(title, sections) {
   const heading = String(title).replace(/^(\S+)\s+(.+)$/u, (_, icon, text) => `${icon} *${text}*`);

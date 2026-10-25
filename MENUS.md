@@ -175,6 +175,6 @@ A emissão verifica novamente os donos ao executar a transação, registra emiss
 
 ## Molduras e versão oficial
 
-A rosa antes da borda superior e o lobo depois da borda inferior foram retirados dos menus, submenus e avisos. Os separadores e os emojis dentro do conteúdo permanecem. Não há alteração das capas, das legendas personalizadas de entrada/saída ou do painel de escolha do número para emparelhamento.
+A rosa antes da borda superior e o lobo depois da borda inferior foram retirados dos menus, submenus e avisos. Os separadores usam 🐺 no lugar da pata; os comandos são indicados por ➤. Os demais emojis dentro do conteúdo permanecem. Não há alteração das capas, das legendas personalizadas de entrada/saída ou do painel de escolha do número para emparelhamento.
 
 A versão oficial permanece `1.0.0` no pacote, no !ping e no manifesto. Cada atualização é identificada pelo commit do GitHub e pelos hashes dos arquivos; não depende de aumentar a versão. A geração e a verificação da release recusam outro número, e a atualização continua aceitando instalações anteriores sem apagar seus dados.
