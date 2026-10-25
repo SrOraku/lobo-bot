@@ -15,6 +15,7 @@ function currentVersion() {
 
 function createControlCenterService({ client = createControlCenterClient(), now = () => Date.now() } = {}) {
   const authorizations = new Map();
+  const knownGroups = new Set();
   const notices = new Map();
   let sock = null;
   let heartbeatTimer = null;
@@ -31,6 +32,8 @@ function createControlCenterService({ client = createControlCenterClient(), now 
   }
 
   function remember(serverId, authorization, source) {
+    const key = String(serverId);
+    knownGroups.add(key);
     const normalized = {
       allowed: Boolean(authorization?.allowed),
       status: authorization?.status || (authorization?.allowed ? 'authorized' : 'denied'),
@@ -40,7 +43,7 @@ function createControlCenterService({ client = createControlCenterClient(), now 
       checkedAt: now(),
       source,
     };
-    authorizations.set(String(serverId), normalized);
+    authorizations.set(key, normalized);
     return normalized;
   }
 
@@ -65,6 +68,7 @@ function createControlCenterService({ client = createControlCenterClient(), now 
   async function validate(activeSock, jid, { force = false } = {}) {
     if (!enabled()) return { allowed: true, status: 'disabled', source: 'disabled', checkedAt: now() };
     const key = String(jid);
+    knownGroups.add(key);
     const cached = authorizations.get(key);
     if (!force && cached && now() - cached.checkedAt < validateTtl) return cached;
     try {
@@ -85,6 +89,7 @@ function createControlCenterService({ client = createControlCenterClient(), now 
 
   async function authorizeGroup(activeSock, jid) {
     if (!jid?.endsWith('@g.us')) return { allowed: true, status: 'not-group' };
+    knownGroups.add(String(jid));
     return validate(activeSock || sock, jid);
   }
 
@@ -101,14 +106,7 @@ function createControlCenterService({ client = createControlCenterClient(), now 
 
   async function heartbeatAll() {
     if (!enabled()) return;
-    const ids = Object.keys((await Promise.resolve(client)) && {});
-    void ids;
-    const known = new Set([...authorizations.keys()]);
-    try {
-      const groups = await sock?.groupFetchAllParticipating?.();
-      for (const jid of Object.keys(groups || {})) known.add(jid);
-    } catch { /* retain already known groups */ }
-    for (const jid of known) await heartbeatOne(jid);
+    for (const jid of [...knownGroups]) await heartbeatOne(jid);
   }
 
   async function discoverGroups(activeSock) {
@@ -116,7 +114,9 @@ function createControlCenterService({ client = createControlCenterClient(), now 
     try {
       const groups = await activeSock.groupFetchAllParticipating?.();
       for (const [jid, meta] of Object.entries(groups || {})) {
+        knownGroups.add(jid);
         try {
+          const hadCredential = Boolean(client.entry(jid)?.installationToken);
           const server = {
             externalId: jid,
             name: meta?.subject || null,
@@ -124,12 +124,12 @@ function createControlCenterService({ client = createControlCenterClient(), now 
             memberCount: Array.isArray(meta?.participants) ? meta.participants.length : null,
             botVersion,
           };
-          const result = client.entry(jid)?.installationToken
+          const result = hadCredential
             ? await client.validateServer(jid, { botVersion })
             : await client.registerServer(server);
-          remember(jid, result.authorization, client.entry(jid)?.installationToken ? 'startup-validate' : 'startup-register');
+          remember(jid, result.authorization, hadCredential ? 'startup-validate' : 'startup-register');
           await client.heartbeat(jid, { botVersion }).then(value => remember(jid, value.authorization, 'startup-heartbeat')).catch(() => {});
-        } catch { /* one invalid group must not abort the remaining registrations */ }
+        } catch { /* one invalid group must not abort remaining registrations */ }
       }
     } catch { /* startup remains resilient if WhatsApp cannot list groups */ }
   }
@@ -169,6 +169,7 @@ function createControlCenterService({ client = createControlCenterClient(), now 
 
   function recordCommand(jid, command, result = 'success') {
     if (!enabled() || !jid?.endsWith('@g.us')) return;
+    knownGroups.add(String(jid));
     client.sendEvent(jid, { type: 'command', name: String(command || '').slice(0, 80), result }).catch(() => {});
   }
 
