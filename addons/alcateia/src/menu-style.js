@@ -26,7 +26,7 @@ function bodyRows(value) { return linesOf(value).flatMap(line => wrap(line).map(
 /** Shared text-only presentation; this helper never interprets a command. */
 export function formatMenu({ title = 'MENU DA ALCATEIA', botName = BOT_NAME, botDescription = BOT_DESCRIPTION, ownerNumber = OWNER_NUMBER,
   subtitle = [], sections = [], signature = '' } = {}) {
-  const output = [`🌹╔${RULE}╗`, ...bodyRows(`🐺 ${title}`), ...bodyRows(subtitle)];
+  const output = [`╔${RULE}╗`, ...bodyRows(`🐺 ${title}`), ...bodyRows(subtitle)];
   for (const section of sections) {
     if (section.title) {
       const [heading, ...continuation] = wrap(section.title, 26);
@@ -35,7 +35,7 @@ export function formatMenu({ title = 'MENU DA ALCATEIA', botName = BOT_NAME, bot
     output.push(...bodyRows(section.lines || []));
   }
 
-  output.push(`╚${RULE}╝🐺`);
+  output.push(`╚${RULE}╝`);
   return output.join('\n');
 }
 

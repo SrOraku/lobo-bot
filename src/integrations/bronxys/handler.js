@@ -37,9 +37,9 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
  return async function handle(sock,ctx) {
   const reply=text=>sock.sendMessage(ctx.jid,{text},{quoted:ctx.msg});
   const query=(ctx.args||[]).join(' ').trim();
-  if(def.parameter&&!query)return reply(`🌹 Use ${require('../../config').get('PREFIX')}${def.name} ${def.parameter==='url'?'link':'texto ou pesquisa'}. 🐺`);
-  if(query.length>2000)return reply('🌹 Pesquisa ou texto muito longo. 🐺');
-  if(!client.configured())return reply('🌹 '+errors.BRONXYS_KEY+' 🐺');
+  if(def.parameter&&!query)return reply(`Use ${require('../../config').get('PREFIX')}${def.name} ${def.parameter==='url'?'link':'texto ou pesquisa'}.`);
+  if(query.length>2000)return reply('Pesquisa ou texto muito longo.');
+  if(!client.configured())return reply(errors.BRONXYS_KEY);
   let directory;
   const controller=new AbortController(),signal=controller.signal,timer=setTimeout(()=>controller.abort(),180000);
   const params=def.parameter?{[def.parameter]:query}:{};
@@ -101,9 +101,9 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
   } catch(error) {
    // Never log Axios errors/URLs: they can contain the API key.
    const known=errors[error.message] || (/^BRONXYS_|SIZE_LIMIT|abort|ENOENT|Command failed/i.test(error.message)?'A API não entregou o resultado esperado. Tente novamente mais tarde.':/^(Informe|Responda|Limite)/.test(error.message)?error.message:'Não foi possível processar a mídia ou a resposta da API.');
-   await reply('🌹 ⚠️ '+known+' 🐺');
+   await reply('⚠️ '+known);
   } finally {clearTimeout(timer);controller.abort();if(directory)await fs.rm(directory,{recursive:true,force:true});}
  };
 }
-function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,async()=>{if(options?.shouldRun&&!await options.shouldRun(ctx))return;return handler(sock,ctx);}).catch(()=>sock.sendMessage(ctx.jid,{text:'🌹 Aguarde os downloads pendentes deste chat. 🐺'},{quoted:ctx.msg}));}
+function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,async()=>{if(options?.shouldRun&&!await options.shouldRun(ctx))return;return handler(sock,ctx);}).catch(()=>sock.sendMessage(ctx.jid,{text:'Aguarde os downloads pendentes deste chat.'},{quoted:ctx.msg}));}
 module.exports={incoming,createHandler,queuedHandler,definitions,formatJSON,safeText};

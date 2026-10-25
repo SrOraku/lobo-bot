@@ -22,8 +22,8 @@ function assertIdentity(text) {
 
 function assertFrame(text) {
   assert.equal(typeof text, 'string');
-  assert.ok(text.startsWith('🌹'), 'a moldura deve começar com rosa');
-  assert.ok(text.endsWith('🐺'), 'a moldura deve terminar com lobo');
+  assert.ok(text.startsWith('╔'), 'a moldura deve começar pelo separador');
+  assert.ok(text.endsWith('╝'), 'a moldura deve terminar pelo separador');
   const lines = text.split('\n');
   assert.ok(lines.length >= 3);
   const borders = lines.filter(line => /[╔╗╚╝╠╣━═─]/u.test(line) && !/[\p{L}\p{N}]/u.test(line));
@@ -48,7 +48,7 @@ function ctx(prefix) {
 
 test('formatMenu is pure, uses compact borders and keeps signature and command tokens intact', () => {
   const input = {
-    title: 'MENU DA LUA', botName: BOT_NAME, subtitle: ['🐺 Estratégia e cidade RP'],
+    title: 'MENU DA LUA', botName: BOT_NAME, subtitle: ['🌹🐺 Estratégia e cidade RP'],
     sections: [{ title: 'COMANDOS', lines: [
       '!!profissoes categoria pagina e outras opções disponíveis para consulta',
       '*?textobemvindo Olá, alcateia! Este texto deve quebrar somente entre palavras.',
@@ -61,6 +61,7 @@ test('formatMenu is pure, uses compact borders and keeps signature and command t
   assertIdentity(text);
   assert.ok(text.includes('MENU DA LUA'));
   assert.ok(text.includes('COMANDOS'));
+  assert.ok(text.includes('🌹🐺 Estratégia e cidade RP'));
   for (const ornament of ['✦', '❖', '♆']) assert.ok(text.includes(ornament), `ornamento ausente: ${ornament}`);
   assert.ok(text.includes('!!profissoes'));
   assert.ok(text.includes('*?textobemvindo'));

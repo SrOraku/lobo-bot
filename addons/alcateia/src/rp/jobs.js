@@ -159,7 +159,7 @@ export function work(player, { now = Date.now(), rng = Math.random, modifiers } 
 function targetRP(player, target, now) {
   const recipient = target || player;
   assertPlayable(recipient);
-  if (!recipient.rp) throw new GameError('O alvo precisa iniciar seu próprio personagem RP primeiro.');
+  if (!recipient.rp) throw new GameError('O alvo precisa usar um comando do RP, como !rp perfil, antes dessa interação.');
   const rp = ensureRP(recipient, now);
   for (const field of ['health', 'experience']) integer(rp[field], { max: field === 'health' ? 100 : Number.MAX_SAFE_INTEGER, label: field });
   return { recipient, rp };

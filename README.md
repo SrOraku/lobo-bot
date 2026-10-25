@@ -1,3 +1,7 @@
+> **LOBO-BOT v1.0.0:** a versão oficial permanece fixa em `1.0.0`; as atualizações são identificadas pelo commit e pela integridade dos arquivos, sem depender de aumentar esse número.
+
+> **Entrada automática e emissão:** comandos pessoais de lobos/RP criam o perfil no primeiro uso, sem exigir `!start`/`!rp iniciar`. Donos cadastrados podem usar `!addwok quantidade @participante` para emitir WoK coin sem debitar o próprio saldo.
+
 > **Atualização pelo WhatsApp — v1.8.6:** `!atualizar bot` aplica os arquivos e pede reinício mesmo se o aviso no WhatsApp falhar. Um reinício pendente pode ser concluído repetindo o comando, sem reinstalação ou exclusão de dados.
 
 > **Console e conexão — v1.8.5:** comandos dos grupos voltam a aparecer no console, com status ONLINE e reconexão após pareamento. Suas alterações de menus e mídias foram preservadas.

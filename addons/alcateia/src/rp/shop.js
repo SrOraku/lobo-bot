@@ -81,7 +81,7 @@ export function useRPItem(player, id, { now = Date.now(), target = null } = {}) 
   if (item.type === 'gift') {
     if (!target || target.jid === player.jid) throw new GameError('Mencione outro personagem RP para receber o presente.');
     assertPlayable(target);
-    if (!target.rp) throw new GameError('O alvo precisa iniciar seu próprio personagem RP primeiro.');
+    if (!target.rp) throw new GameError('O alvo precisa usar um comando do RP, como !rp perfil, antes de receber o presente.');
     recipient = target;
   } else if (target && target.jid !== player.jid) {
     throw new GameError('Alimentos, bebidas e remédios são usados no próprio personagem.');

@@ -148,11 +148,11 @@ function createMediaHandler(
       command = kind === 'audio' ? 'play_audio' : 'play_video';
     const reply = (text) => sock.sendMessage(ctx.jid, { text }, { quoted: ctx.msg });
     const query = (ctx.args || []).join(' ').trim();
-    if (!query) return reply(`🌹 Informe nome ou link: ${p}${command} nome ou link 🐺`);
+    if (!query) return reply(`Informe nome ou link: ${p}${command} nome ou link`);
     let apiConfigured=false;
     if(!ytdl) {
       try {apiConfigured=api.configured();}
-      catch {return reply(`🌹 Não consegui ler a configuração da API. O dono pode verificar ${p}apibronxys status no privado. 🐺`);}
+      catch {return reply(`Não consegui ler a configuração da API. O dono pode verificar ${p}apibronxys status no privado.`);}
       if(apiConfigured)return api.download(kind,sock,ctx);
     }
     let directory;
@@ -179,7 +179,7 @@ function createMediaHandler(
       if (!Number.isFinite(duration) || duration <= 0 || duration > max)
         throw new Error('DURATION_LIMIT');
       if (controller.signal.aborted) throw new Error('TIMEOUT');
-      await reply(`🌹 ${kind === 'audio' ? '🎵 Preparando áudio' : '🎬 Preparando vídeo'}… 🐺`);
+      await reply(`${kind === 'audio' ? '🎵 Preparando áudio' : '🎬 Preparando vídeo'}…`);
       directory = await fs.mkdtemp(path.join(tempRoot, 'lobo-media-'));
       const ext = kind === 'audio' ? 'mp3' : 'mp4',
         file = path.join(directory, 'media.' + ext);
@@ -245,7 +245,7 @@ function createMediaHandler(
         TIMEOUT: 'O serviço demorou demais. Tente novamente.',
       };
       await reply(
-        `🌹 ⚠️ ${messages[error.message] || (!ytdl && !apiConfigured ? `O baixador sem API falhou e a API Bronxys não está configurada nesta instalação. O dono deve usar ${p}apibronxys status e cadastrar a chave no privado com ${p}apibronxys chave SUA_CHAVE.` : 'Não foi possível obter a mídia. O serviço pode estar indisponível; tente outro vídeo ou tente novamente mais tarde.')} 🐺`,
+        `⚠️ ${messages[error.message] || (!ytdl && !apiConfigured ? `O baixador sem API falhou e a API Bronxys não está configurada nesta instalação. O dono deve usar ${p}apibronxys status e cadastrar a chave no privado com ${p}apibronxys chave SUA_CHAVE.` : 'Não foi possível obter a mídia. O serviço pode estar indisponível; tente outro vídeo ou tente novamente mais tarde.')}`,
       );
     } finally {
       clearTimeout(timer);

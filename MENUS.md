@@ -158,3 +158,23 @@ A referência Esdeath disponibiliza distribuição compilada, sem fonte verific�
 O alvo usa o JID real da metadata, incluindo grupos com LID. O retorno do servidor precisa identificar cada participante e conter status de sucesso; respostas vazias, incompletas, recusadas ou destinadas a outra pessoa não geram sucesso. A metadata é consultada novamente, com tentativas curtas para propagação. Quando a saída não puder ser confirmada, o bot informa isso sem salvar banimento interno. Não é necessário reenviar o comando repetidamente: confira primeiro a lista do grupo.
 
 Os aliases PN/LID confirmados são bloqueados/liberados juntos, em transação SQLite isolada pelo chat. Perfis inexistentes são criados sem modificar nomes, saldos ou progresso dos registros existentes. Se a remoção ocorrer e o banco falhar, a resposta informa o resultado parcial, sem alegar que o bloqueio foi salvo. Falha ao enviar a mensagem de confirmação não desfaz o banimento já persistido. Não há migration nem exclusão de dados nesta edição.
+
+
+## Entrada automática e emissão de WoK coin
+
+Comandos pessoais válidos, como !treino, !perfilalcateia, !rp perfil ou !profissao ID, criam os perfis necessários no primeiro uso. Não é necessário enviar !start ou !rp iniciar; ambos continuam disponíveis por compatibilidade. Escolher profissão, aceitar convites e outras decisões do jogador continuam sendo ações explícitas. Catálogos, menus e rankings não inscrevem pessoas automaticamente. Interações não criam o RP de terceiros nem aceitam consentimento por eles.
+
+São usados os mesmos construtores e a mesma transação de antes. Uma ação inválida não deixa perfil parcial. Perfis antigos, inventários, profissão, família, lobos, cooldowns e saldo existente são preservados. O registro usa o saldo universal existente, inclusive zero, sem repetir bônus de entrada. Banimentos continuam valendo. As regras anteriores de identidade/país do jogo permanecem.
+
+`!addwok 500 @participante` emite 500 WoK coin para o destinatário, sem descontar do dono. Somente donos reais cadastrados em BOT_OWNER/BOT_OWNERS ou !donos podem usar. !doarwok e !doacaowok permanecem disponíveis e passam pelo mesmo serviço de emissão. Quantidade inteira: de 1 a 1.000.000 por operação, respeitando o limite seguro do saldo. A emissão afeta apenas o chat onde foi executada.
+
+O destinatário precisa ser resolvido pelo WhatsApp e, em grupo, estar presente. Não precisa ter enviado !start; o perfil necessário é preparado na transação, preservando carteira anterior. Um destinatário totalmente novo usa a carteira inicial normal do bot integrado (500 atualmente), e então recebe a quantidade solicitada; isso não é um segundo bônus por registro. O addon independente continua com seus padrões anteriores.
+
+A emissão verifica novamente os donos ao executar a transação, registra emissor/destinatário/quantidade/antes/depois/data/origem e deduplica entregas da mesma mensagem. Repetir mensagem não duplica moedas; reutilizar ID com alvo/quantidade diferente é recusado. SQL, perfil, carteira e auditoria são confirmados juntos ou revertidos. Uma falha de envio da resposta não refaz a emissão já salva. Sessões, mídias dos menus e banco existente são preservados; não há migration nesta edição.
+
+
+## Molduras e versão oficial
+
+A rosa antes da borda superior e o lobo depois da borda inferior foram retirados dos menus, submenus e avisos. Os separadores e os emojis dentro do conteúdo permanecem. Não há alteração das capas, das legendas personalizadas de entrada/saída ou do painel de escolha do número para emparelhamento.
+
+A versão oficial permanece `1.0.0` no pacote, no !ping e no manifesto. Cada atualização é identificada pelo commit do GitHub e pelos hashes dos arquivos; não depende de aumentar a versão. A geração e a verificação da release recusam outro número, e a atualização continua aceitando instalações anteriores sem apagar seus dados.

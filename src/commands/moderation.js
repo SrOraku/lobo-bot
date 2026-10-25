@@ -174,7 +174,7 @@ const toggleAntiInatividade = featureCommand('antiinatividade');
 
 const limparInatividade = requireGroupAdmin(async (sock, ctx) => {
   const { jid, msg } = ctx;
-  if (!require('../activations/manager').manager.isEnabled(jid,'antiinatividade')) return sock.sendMessage(jid,{text:'🌹 Ative antiinatividade antes de executar a limpeza manual. 🐺'},{quoted:msg});
+  if (!require('../activations/manager').manager.isEnabled(jid,'antiinatividade')) return sock.sendMessage(jid,{text:'Ative antiinatividade antes de executar a limpeza manual.'},{quoted:msg});
   const group = db.getGroup(jid);
   const days = group?.inactivity_days || 7;
   const botAdm = await isBotAdmin(sock, jid);

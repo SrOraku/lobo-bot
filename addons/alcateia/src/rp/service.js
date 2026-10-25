@@ -1,5 +1,5 @@
 import { GameError, integer, quantity, canonicalPlayerJid } from '../game/validation.js';
-import { registerPlayer, requirePlayer } from '../game/players.js';
+import { ensurePlayer, requirePlayer } from '../game/players.js';
 import { transfer } from '../game/wallet.js';
 import { ensureRP, ensureRPWorld } from './state.js';
 import { JOBS, listJobs, getJob, chooseJob, work, performJobAction } from './jobs.js';
@@ -29,7 +29,7 @@ export function dispatchRP(game, request, { now, rng }) {
   }
   if (command === 'rp' && args[0]?.toLowerCase() === 'iniciar') {
     usage(args, 1, '!rp iniciar');
-    const player = Object.hasOwn(game.players, actor.jid) ? requirePlayer(game, actor.jid) : registerPlayer(game, actor, now);
+    const player = ensurePlayer(game, actor, now);
     const already = !!player.rp;
     const rp = ensureRP(player, now);
     player.updatedAt = now;
@@ -37,7 +37,7 @@ export function dispatchRP(game, request, { now, rng }) {
   }
   // Registered game bans apply across both games, including read-only catalog commands.
   const leaving = command === 'familia' && ['sair', 'divorciar'].includes(args[0]?.toLowerCase());
-  const player = requirePlayer(game, actor.jid, { allowBanned: leaving });
+  const existing = Object.hasOwn(game.players, actor.jid) ? requirePlayer(game, actor.jid, { allowBanned: leaving }) : null;
   if (command === 'profissoes') {
     const categoryArgs = [...args];
     const page = /^\d+$/.test(categoryArgs.at(-1) || '') ? categoryArgs.pop() : 1;
@@ -54,9 +54,13 @@ export function dispatchRP(game, request, { now, rng }) {
   }
   if (command === 'carteira') {
     usage(args, 0, '!carteira');
+    const player = ensurePlayer(game, actor, now);
+    ensureRP(player, now);
     return { type: 'rp-wallet', player };
   }
-  if (!player.rp) throw new GameError('Sua carteira já existe. Use !rp iniciar para criar o personagem sem perder seu saldo.');
+  const player = existing || ensurePlayer(game, actor, now);
+  // A game ban can permit leaving an existing family, not creating a new RP.
+  if (player.banned && !player.rp) throw new GameError('Esse jogador está banido do jogo.', 'BANNED');
   const rp = ensureRP(player, now);
 
   function targetPlayer({ rpRequired = false } = {}) {
@@ -64,7 +68,7 @@ export function dispatchRP(game, request, { now, rng }) {
       throw new GameError('Mencione exatamente um jogador usando @ na mensagem.');
     }
     const target = requirePlayer(game, canonicalPlayerJid(request.target.jid));
-    if (rpRequired && !target.rp) throw new GameError('O outro jogador precisa usar !rp iniciar primeiro.');
+    if (rpRequired && !target.rp) throw new GameError('O outro jogador precisa usar um comando do RP, como !rp perfil, antes de participar dessa interação.');
     return target;
   }
 

@@ -15,10 +15,10 @@ function createActivationHandler({
     const p = config.get('PREFIX'),
       reply = (text) => sock.sendMessage(ctx.jid, { text }, { quoted: ctx.msg });
     if (!ctx.jid?.endsWith('@g.us'))
-      return reply('🌹 Use este painel dentro do grupo que deseja configurar. 🐺');
+      return reply('Use este painel dentro do grupo que deseja configurar.');
     const actor = await (resolveActor || require('../activations/access').resolveActor)(sock, ctx);
     if (!actor.owner && !actor.admin && (actor.securityLevel||0)<2)
-      return reply('🌹 Somente o dono e os administradores do grupo podem abrir este painel. 🐺');
+      return reply('Somente o dono e os administradores do grupo podem abrir este painel.');
     const repository = store || require('../activations/store').getStore(),
       manager = createManager(repository,store?{}:{security:()=>require('../security/groups/service').security().engine});
     const args = (ctx.args || []).map(String),
@@ -76,7 +76,7 @@ function createActivationHandler({
             : await manager.set(ctx.jid, [name], value, context);
         if (!result.changed.length && !Object.keys(options).length)
           return reply(
-            `🌹 ⚠️ ${result.unchanged[0]?.name || 'As funções'} já ${value ? 'está ativado' : 'está desativado'} neste grupo. 🐺`,
+            `⚠️ ${result.unchanged[0]?.name || 'As funções'} já ${value ? 'está ativado' : 'está desativado'} neste grupo.`,
           );
         return reply(
           frameMenu('🐺 ATIVAÇÃO', [
@@ -135,7 +135,7 @@ function createActivationHandler({
         'Alteração de ativação recusada.',
       );
       return reply(
-        `🌹 ⚠️ ${/SQLITE|database|JSON|Configuração de ativação/.test(error.message) ? 'Não consegui salvar/carregar a configuração. Tente novamente; o estado anterior foi preservado.' : error.message}\nUse ${p}ativacoes. 🐺`,
+        `⚠️ ${/SQLITE|database|JSON|Configuração de ativação/.test(error.message) ? 'Não consegui salvar/carregar a configuração. Tente novamente; o estado anterior foi preservado.' : error.message}\nUse ${p}ativacoes.`,
       );
     }
   };

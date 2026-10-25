@@ -126,7 +126,7 @@ test('non-finite attributes and unsafe balances fail instead of producing NaN re
 test('battle message shows both participants, damage, final HP, result and coin changes', () => {
   const result = resolveBattle(player(), player({ jid: D, number: D.split('@')[0], name: 'Lobo Prata', hp: 40 }), { now: NOW });
   const message = generateBattleMessage(result);
-  assert.match(message, /🌹═══\[BATALHA DA ALCATEIA\]═══🌹/);
+  assert.match(message, /═══\[BATALHA DA ALCATEIA\]═══/);
   assert.match(message, /Lobo Rosa/);
   assert.match(message, /Lobo Prata/);
   assert.match(message, /5543920030769/);

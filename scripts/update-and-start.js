@@ -2,10 +2,10 @@
 const path=require('node:path');
 const fs=require('node:fs/promises');
 const root=path.resolve(__dirname,'..');
-async function checkRelease() {
-  const snapshot=await require('../src/updater/source').githubSnapshot();
+async function checkRelease({releaseRoot=root,snapshotSource=()=>require('../src/updater/source').githubSnapshot()}={}) {
+  const snapshot=await snapshotSource();
   let state;
-  try {state=JSON.parse(await fs.readFile(path.join(root,'updates/state.json'),'utf8'));}
+  try {state=JSON.parse(await fs.readFile(path.join(releaseRoot,'updates/state.json'),'utf8'));}
   catch(error){if(error.code!=='ENOENT')throw error;}
   return state?.sha===snapshot.sha ? null : snapshot;
 }

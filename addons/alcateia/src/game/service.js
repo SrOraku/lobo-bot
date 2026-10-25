@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { COOLDOWNS, LIMITS } from './constants.js';
 import { GameError, assertGameOwner, isGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
   integer, quantity, formatRemaining, validatePlayer } from './validation.js';
-import { registerPlayer, requirePlayer, addWolves, trainPlayer, setFormation, rankPlayers } from './players.js';
+import { registerPlayer, requirePlayer, ensurePlayer, addWolves, trainPlayer, setFormation, rankPlayers } from './players.js';
 import { SHOP_ITEMS, buyItem } from './shop.js';
 import { createClan, joinClan, clanProfile } from './clans.js';
 import { runEvent } from './events.js';
@@ -100,7 +100,16 @@ export class GameService {
       exactArgs(args, 0, '!start');
       return { type: 'registered', player: registerPlayer(game, actor, now) };
     }
-    const player = requirePlayer(game, actor.jid);
+    // Browsing does not enroll an unrelated actor, but existing game bans still
+    // apply to these routes. Personal commands enroll only within the action
+    // draft, so rejected actions cannot leave partial profiles or rewards.
+    if (command === 'rank' || command === 'loja') {
+      if (Object.hasOwn(game.players, actor.jid)) requirePlayer(game, actor.jid);
+      exactArgs(args, 0, command === 'rank' ? '!rank' : '!loja');
+      return command === 'rank' ? { type: 'ranking', players: rankPlayers(game).slice(0, 10) }
+        : { type: 'shop', items: SHOP_ITEMS };
+    }
+    const player = ensurePlayer(game, actor, now);
     function targetPlayer() {
       if (!request.target?.jid) throw new GameError('Mencione exatamente um jogador usando @ na mensagem.');
       return requirePlayer(game, canonicalPlayerJid(request.target.jid));
@@ -123,12 +132,6 @@ export class GameService {
         const defender = targetPlayer();
         return completeBattle(game, player, defender, request, now);
       }
-      case 'rank':
-        exactArgs(args, 0, '!rank');
-        return { type: 'ranking', players: rankPlayers(game).slice(0, 10) };
-      case 'loja':
-        exactArgs(args, 0, '!loja');
-        return { type: 'shop', items: SHOP_ITEMS };
       case 'comprar':
         exactArgs(args, 1, '!comprar 1/2/3/4');
         return { type: 'purchase', player, ...buyItem(player, args[0], { now, rng: this.rng }) };

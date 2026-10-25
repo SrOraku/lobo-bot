@@ -64,7 +64,7 @@ export function gameMenu(config) {
     '🌹100 LOBISOMENS ESTRATÉGIA🌹', '⚔️ Treine • lute • conquiste 🐺',
   ], signature: '', sections: [
     { title: '🐺 JORNADA DO LOBO', lines: [
-      `🌙 ${p}start — entrar na alcateia`, `👤 ${p}perfil — ficha e progresso`, `💪 ${p}treino — fortalecer a matilha`,
+      `🌙 ${p}start — cadastro opcional; entrada automática ao jogar`, `👤 ${p}perfil — ficha e progresso`, `💪 ${p}treino — fortalecer a matilha`,
       `🧠 ${p}formacao A/D/C qtd — estratégia`, `⚔️ ${p}ataque @user — batalha PVP`, `🏆 ${p}rank — top 10 jogadores`,
     ] },
     { title: '💰 TESOURO WOK COIN', lines: [

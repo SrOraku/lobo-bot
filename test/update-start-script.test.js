@@ -28,3 +28,15 @@ test('partial protected backup is reported before starting preserved session',as
  assert.equal((await boot(f.args)).updated,true);assert.ok(f.calls.includes('start'));
  assert.equal(warnings.length,1);assert.match(warnings[0],/Backup parcial/);
 });
+
+for (const sameCommit of [false, true]) test(`fixed version startup ${sameCommit ? 'skips identical commit' : 'detects new commit with the same version'}`, async t => {
+ const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+ const releaseRoot=await fs.mkdtemp(path.join(os.tmpdir(),'lobo-fixed-version-'));
+ t.after(()=>fs.rm(releaseRoot,{recursive:true,force:true}));
+ await fs.mkdir(path.join(releaseRoot,'updates'));
+ const available={sha:'a'.repeat(40),version:'1.0.0',files:[]};
+ await fs.writeFile(path.join(releaseRoot,'package.json'),JSON.stringify({version:'1.0.0'}));
+ await fs.writeFile(path.join(releaseRoot,'updates/state.json'),JSON.stringify({version:'1.0.0',sha:sameCommit?available.sha:'b'.repeat(40)}));
+ const snapshot=await require('../scripts/update-and-start').checkRelease({releaseRoot,snapshotSource:async()=>available});
+ assert.equal(snapshot,sameCommit?null:available);
+});

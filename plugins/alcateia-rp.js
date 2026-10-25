@@ -125,7 +125,7 @@ async function defaultLoadModules(root) {
   const base = path.join(root, 'addons/alcateia/src');
   const imported = await Promise.all([
     'store.js', 'game/service.js', 'game/commands.js', 'identity.js', 'messages.js',
-    'game/backup.js', 'game/validation.js', 'game/rate-limit.js',
+    'game/backup.js', 'game/validation.js', 'game/rate-limit.js', 'game/players.js',
   ].map(file => import(pathToFileURL(path.join(base, file)).href)));
   return Object.assign({}, ...imported);
 }
@@ -239,8 +239,30 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
     commands: routes(),
     async donateWok(request) {
       const state=await initialize();
-      return state.store.scoped(request.chat).transactionGame(game=>
-        require('../src/security/wok-donation').applyDonation(game,request,require('../src/utils/owners').ownerNumbers(state.upstream.config)));
+      return state.store.scoped(request.chat).transactionGame(game=>{
+        const {applyDonation,issueError}=require('../src/security/wok-donation');
+        const result=applyDonation(game,request,require('../src/utils/owners').ownerNumbers(state.upstream.config),{
+          prepareTarget(game,target,at){
+            if(game.players[target]?.banned)throw issueError('O destinatário está banido do jogo.');
+            if(state.store.linkWallet){
+              require('../src/isolation/context').run(request.chat,()=>{
+                const api=state.upstream.db;
+                const aliases=[...new Set([target,...(request.targetAliases||[])])];
+                for(const alias of aliases)if([true,1,'1'].includes(api.getUser(alias)?.banned))throw issueError('O destinatário está banido dos comandos neste chat.');
+                for(const alias of aliases)state.store.linkWallet(request.chat,target,alias);
+                api.db.prepare('INSERT INTO users(jid,name) VALUES(?,?) ON CONFLICT(jid) DO NOTHING').run(target,request.targetName||target.split('@')[0]);
+                game.universalBalances ||= {};
+                game.universalBalances[target]=api.getUser(target).gold;
+              });
+            }
+            const player=state.modules.ensurePlayer(game,{jid:target,name:request.targetName||target.split('@')[0]},at);
+            if(Object.hasOwn(game.universalBalances||{},target))player.coins=game.universalBalances[target];
+            return player;
+          },
+        });
+        if(!result.duplicate&&state.store.linkWallet)state.upstream.db.db.prepare('INSERT INTO security_audit(chat_jid,actor,action,details) VALUES(?,?,?,?)').run(request.chat,request.actor,'wok.issue',JSON.stringify(result));
+        return result;
+      });
     },
     async onLoad() {
       const state = await initialize();

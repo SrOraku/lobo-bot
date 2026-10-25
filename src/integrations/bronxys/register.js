@@ -9,7 +9,7 @@ function registerBronxys(register,registry) {
   add({name,aliases,category:'ferramentas',description,usage:'!'+name+' efeito [texto]',cost:5,rateLimit:{max:3,window:60000},handler:(sock,ctx)=>{
    const direct=choices.find(def=>def.name===ctx.command);
    const args=[...(ctx.args||[])],def=direct||choices.find(def=>def.name===String(args.shift()||'').toLowerCase());
-   if(!def)return sock.sendMessage(ctx.jid,{text:'🌹 Efeitos: '+choices.map(item=>item.name).join(', ')+' 🐺'},{quoted:ctx.msg});
+   if(!def)return sock.sendMessage(ctx.jid,{text:'Efeitos: '+choices.map(item=>item.name).join(', ')},{quoted:ctx.msg});
    return queuedHandler(def)(sock,{...ctx,args});
   }});
  }

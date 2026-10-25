@@ -133,6 +133,7 @@ function loadAllCommands() {
   r({name:'donos',description:'Cadastrar e consultar donos autorizados',category:'dono',minLevel:LEVELS.OWNER,usage:'!donos [lista|adicionar número|remover número]',handler:require('../commands/owners').owners});
   r({name:'fotomenu',description:'Definir foto ou GIF da capa dos menus',category:'dono',minLevel:LEVELS.OWNER,usage:'!fotomenu [ver|remover]',handler:require('../commands/menu-photo').menuPhoto});
   r({name:'doarwok',aliases:['doacaowok'],description:'Doar WoK coin com autorização e histórico',category:'dono',minLevel:LEVELS.OWNER,usage:'!doarwok @usuário quantidade',handler:require('../commands/wok-donation').donate});
+  r({name:'addwok',description:'Criar WoK coin para um participante sem debitar o dono',category:'dono',minLevel:LEVELS.OWNER,ownerOnly:true,usage:'!addwok quantidade @usuário',handler:require('../commands/wok-donation').addWok});
   r({name:'adm',replaceMenu:true,description:'Permissões e proteção das informações do grupo',category:'adm',usage:'!adm perm [on|off|permitir @usuário|revogar @usuário]',handler:require('../commands/group-permissions').groupPermissions});
   const activation = require('../commands/activations');
   r({name:'ativar',activationControl:true,description:'Ativar recurso do grupo',category:'adm',groupOnly:true,usage:'!ativar recurso',handler:activation.createActivationHandler({forcedAction:'enable'})});

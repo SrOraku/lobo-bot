@@ -13,7 +13,7 @@ function createGate({ store, resolveActor } = {}) {
     await sock.sendMessage(
       ctx.jid,
       {
-        text: '🌹 🔒 O bot está pausado neste grupo. Consulte os administradores com !ativacoes. 🐺'.replace(
+        text: '🔒 O bot está pausado neste grupo. Consulte os administradores com !ativacoes.'.replace(
           '!ativacoes',
           require('../config').get('PREFIX') + 'ativacoes',
         ),

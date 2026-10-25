@@ -26,7 +26,7 @@ test('doação exige dono, valida limites e saldo, registra emissão e não dupl
   assert.equal(result.after,150);assert.equal(game.players[target].coins,150);
   assert.ok(applyDonation(game,request,[actor.split('@')[0]]).duplicate);
   assert.equal(game.players[target].coins,150);
-  assert.throws(()=>applyDonation({players:{}},request,[actor.split('@')[0]]),/registrar/);
+  assert.throws(()=>applyDonation({players:{}},request,[actor.split('@')[0]]),/perfil válido/);
   game.players[target].coins=Number.MAX_SAFE_INTEGER;
   assert.throws(()=>applyDonation(game,{...request,event:'other'},[actor.split('@')[0]]),/limite seguro/);
 });

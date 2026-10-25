@@ -34,10 +34,10 @@ async function render(result, prefix = '!') {
   assert.equal(await handleRPResponse(f.ctx, result, NOW), true);
   assert.deepEqual(result, before, 'o renderer deve preservar os dados recebidos');
   if (['rp-menu', 'rp-jobs', 'rp-shop'].includes(result.type)) {
-    assert.ok(f.text().startsWith('🌹'));
-    assert.ok(f.text().endsWith('🐺'));
-    assert.match(f.text(), /🌹╔═/);
-  } else assert.match(f.text(), /🌹═══\[/);
+    assert.ok(f.text().startsWith('╔'));
+    assert.ok(f.text().endsWith('╝'));
+    assert.match(f.text(), /╔═/);
+  } else assert.match(f.text(), /═══\[/);
   assert.ok(!f.text().includes(DEV_SIGNATURE));
   assert.match(f.text(), /WoK coin/);
   return f;

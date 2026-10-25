@@ -79,7 +79,7 @@ export function rpMenu(config = {}) {
     '🌹 Viva sua história. Honre sua família.', '💰 A carteira WoK coin é a mesma dos lobisomens.',
   ], signature: '', sections: [
     { title: '🐺 SUA NOVA JORNADA', lines: [
-      `🌙 ${p}rp iniciar — criar personagem`, `👤 ${p}rp perfil — painel do RP`, `📜 ${p}rp menu — abrir este menu`,
+      `🌙 ${p}rp iniciar — cadastro opcional; personagem automático ao jogar`, `👤 ${p}rp perfil — painel do RP`, `📜 ${p}rp menu — abrir este menu`,
     ] },
     { title: '⭐ PROFISSÕES E INFLUÊNCIA', lines: [
       `📚 ${p}profissoes [categoria] [página]`, `🎓 ${p}profissao ID/nome — carreira`,

@@ -19,7 +19,7 @@ function timestamp(now) {
 
 function playerOf(game, candidate, { initialize = true, allowBanned = false } = {}) {
   const player = requirePlayer(game, canonicalPlayerJid(candidate?.jid), { allowBanned });
-  if (!player.rp) throw new GameError('Os participantes precisam iniciar o RP com !rp iniciar.', 'RP_NOT_STARTED');
+  if (!player.rp) throw new GameError('Cada participante precisa usar um comando do RP, como !rp perfil, antes da interação familiar.', 'RP_NOT_STARTED');
   if (initialize) ensureRP(player);
   return player;
 }

@@ -24,10 +24,18 @@ export function registerPlayer(game, identity, now = Date.now()) {
   return player;
 }
 
+/** Idempotent first-use enrollment; existing identities, balances and bans win. */
+export function ensurePlayer(game, identity, now = Date.now(), options = {}) {
+  const jid = canonicalPlayerJid(identity?.jid);
+  return Object.hasOwn(game.players, jid)
+    ? requirePlayer(game, jid, options)
+    : registerPlayer(game, { ...identity, jid }, now);
+}
+
 export function requirePlayer(game, id, { allowBanned = false } = {}) {
   const jid = canonicalPlayerJid(id);
   const player = Object.hasOwn(game.players, jid) ? game.players[jid] : null;
-  if (!player) throw new GameError('Você ainda não faz parte da alcateia. Use !start.', 'NOT_REGISTERED');
+  if (!player) throw new GameError('Esse participante ainda não possui perfil na alcateia. O cadastro é automático ao usar um comando do jogo.', 'NOT_REGISTERED');
   if (!allowBanned && player.banned) throw new GameError('Esse jogador está banido do jogo.', 'BANNED');
   validatePlayer(player);
   return player;

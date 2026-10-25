@@ -7,7 +7,7 @@ function duration(seconds) {
 }
 function renderMediaInfo(info = {}) {
   const rows = [
-    '🌹╔═══❖♆❖═══╗',
+    '╔═══❖♆❖═══╗',
     '*🐺 MÍDIA DA MATILHA*',
     '',
     `🎵 Título: ${info.title || 'Não informado pela fonte'}`,
@@ -18,7 +18,7 @@ function renderMediaInfo(info = {}) {
     '📝 *Descrição original:*',
     info.description || 'Não disponibilizada pela fonte.',
     '',
-    '╚═══❖♆❖═══╝🐺',
+    '╚═══❖♆❖═══╝',
   ];
   return rows.join('\n');
 }

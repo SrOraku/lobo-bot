@@ -47,7 +47,7 @@ const GROUPS = {
 };
 const ADDON = {
   alcateia: ['alcateia', 'menu / start / treino / ataque…', 'Central de comandos da alcateia'],
-  start: ['alcateia', '', 'Registrar jogador'],
+  start: ['alcateia', '', 'Cadastro manual opcional; entrada automática'],
   perfilalcateia: ['alcateia', '', 'Perfil dos lobisomens'],
   treino: ['alcateia', '', 'Treinar; intervalo de 1 hora'],
   formacao: ['alcateia', 'A/D/C quantidade', 'Distribuir lobisomens'],
@@ -62,7 +62,7 @@ const ADDON = {
     'status | addmoedas | removemoedas | ban | unban | backup | broadcast | resetcooldown | sethp | addlobos',
     'Administração dos jogos; donos do jogo',
   ],
-  rp: ['rp', 'iniciar | perfil | menu', 'Personagem e atributos'],
+  rp: ['rp', 'perfil | menu | iniciar', 'Personagem automático; início manual opcional'],
   profissoes: ['rp', '[categoria] [página]', 'Catálogo de 64 profissões'],
   profissao: ['rp', 'ID/nome', 'Escolher carreira'],
   trabalhar: ['rp', '', 'Trabalhar e ganhar WoK coin'],

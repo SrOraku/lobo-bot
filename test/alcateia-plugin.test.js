@@ -20,7 +20,7 @@ let modulePromise;
 function realModules() {
   if (!modulePromise) modulePromise = Promise.all([
     'store.js', 'game/service.js', 'game/commands.js', 'identity.js', 'messages.js',
-    'game/backup.js', 'game/validation.js', 'game/rate-limit.js',
+    'game/backup.js', 'game/validation.js', 'game/rate-limit.js', 'game/players.js',
   ].map(file => import(pathToFileURL(path.join(__dirname, '../addons/alcateia/src', file)).href)))
     .then(modules => Object.assign({}, ...modules));
   return modulePromise;

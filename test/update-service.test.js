@@ -9,7 +9,7 @@ const { UpdateService } = require('../src/updater/service');
 async function fixture(t, options = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'lobo-update-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const pkg = { name: 'lobo-bot', version: '3.3.0', engines: { node: '>=22.12.0' },
+  const pkg = { name: 'lobo-bot', version: options.installedVersion || '3.3.0', engines: { node: '>=22.12.0' },
     dependencies: { '@whiskeysockets/baileys': 'npm:baileys@7.0.0-rc13' } };
   const put = async (name, data) => { const dest = path.join(root, name); await fs.mkdir(path.dirname(dest), { recursive: true }); await fs.writeFile(dest, data); };
   const lock = p => ({ name: p.name, version: p.version, lockfileVersion: 3, packages: { '': p } });
@@ -21,7 +21,7 @@ async function fixture(t, options = {}) {
   const protectedFiles = { '.env': 'BOT_OWNER=5543920030769', 'sessions/creds.json': '{"fixture":true}',
     'data/lobo.db': 'old sqlite fixture', 'storage/alcateia/database.json': '{"coins":123}' };
   for (const [name, data] of Object.entries(protectedFiles)) await put(name, data);
-  const next = { ...pkg, version: '3.4.0', dependencies: options.sameDependencies ? pkg.dependencies : { '@whiskeysockets/baileys': 'npm:baileys@7.0.0-rc14' } };
+  const next = { ...pkg, version: options.targetVersion || '3.4.0', dependencies: options.sameDependencies ? pkg.dependencies : { '@whiskeysockets/baileys': 'npm:baileys@7.0.0-rc14' } };
   const contents = { 'package.json': JSON.stringify(next), 'package-lock.json': JSON.stringify(lock(next)),
     'src/index.js': 'new code', 'src/bootstrap.js': 'new bootstrap', 'scripts/check-startup.js': 'new check', ...(options.contents || {}) };
   const files = Object.keys(contents).map(name => ({ path: name, mode: '100644' }));
@@ -181,3 +181,18 @@ for (const option of ['failSyntax', 'failTests']) {
     await f.preserved();
   });
 }
+
+for (const installedVersion of ['1.0.0', '1.8.6']) test(`commit update applies fixed 1.0.0 over ${installedVersion} without resetting protected data`, async t => {
+  const f = await fixture(t, { installedVersion, targetVersion: '1.0.0', sameDependencies: true });
+  await f.put('updates/state.json', JSON.stringify({ version: installedVersion, sha: 'b'.repeat(40), files: ['src/index.js'] }));
+  const result = await f.service.update('bot');
+  assert.equal(result.version, '1.0.0');
+  assert.equal(result.sha, 'a'.repeat(40));
+  assert.equal(await f.read('src/index.js'), 'new code');
+  assert.equal(JSON.parse(await f.read('package.json')).version, '1.0.0');
+  const state = JSON.parse(await f.read('updates/state.json'));
+  assert.equal(state.sha, result.sha);
+  assert.equal(state.version, '1.0.0');
+  assert.equal(JSON.parse(await f.read(`updates/${result.backup}/package.json`)).version, installedVersion);
+  await f.preserved();
+});
