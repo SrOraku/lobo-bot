@@ -32,10 +32,13 @@ export function center(value) {
   return ' '.repeat(Math.max(0, Math.floor((MAX_WIDTH - displayWidth(value)) / 2))) + value;
 }
 export function panelHeader(title) {
-  return [TOP, ...wrapHeading(title, MAX_WIDTH - 4).map(row => center(`*${row.trim()}*`)), HEAD_BOTTOM].join('\n');
+  return [TOP, ...wrapHeading(title, MAX_WIDTH - 2).map(row => center(`*${row.trim()}*`)), HEAD_BOTTOM].join('\n');
 }
 export function sectionHeading(title) {
-  return wrapHeading(title, MAX_WIDTH - 13).map(row => center(`─ 🌹 *${row.trim()}* 🐺 ─`)).join('\n');
+  return wrapHeading(title, MAX_WIDTH - 13).map(row => {
+    const full = `─── 🌹 *${row.trim()}* 🐺 ───`;
+    return center(displayWidth(full) <= MAX_WIDTH ? full : `─ 🌹 *${row.trim()}* 🐺 ─`);
+  }).join('\n');
 }
 /** Mark numeric values, preserving existing inline-code runs and full values. */
 export function numericText(value) {

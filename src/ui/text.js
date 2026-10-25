@@ -68,9 +68,12 @@ function titleRows(title, kind = 'card') {
   const raw = numericText(String(title).replace(/\*/gu, '').trim());
   if (kind === 'block') {
     const parts = wrapTitle(raw, MAX_WIDTH - 13);
-    return parts.map(line => center('─ 🌹 *' + line + '* 🐺 ─'));
+    return parts.map(line => {
+      const full = '─── 🌹 *' + line + '* 🐺 ───';
+      return center(width(full) <= MAX_WIDTH ? full : '─ 🌹 *' + line + '* 🐺 ─');
+    });
   }
-  return [TOP, ...wrapTitle(raw, MAX_WIDTH - 4).map(line => center('*' + line + '*')), HEAD_BOTTOM];
+  return [TOP, ...wrapTitle(raw, MAX_WIDTH - 2).map(line => center('*' + line + '*')), HEAD_BOTTOM];
 }
 
 function badge(enabled) { return mono(enabled ? '〔 🟢 〕' : '〔 🔴 〕'); }
