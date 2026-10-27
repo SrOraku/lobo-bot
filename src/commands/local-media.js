@@ -6,7 +6,7 @@ const {inspect}=require('../activations/message-rules');
 const R=require('../core/response');
 const backgroundQueue=new (require('../core/keyed-queue').KeyedQueue)({maxKeys:1,maxPending:2});
 const FILTERS=Object.freeze({estourado:'volume=4,alimiter=limit=0.95',esquilo:'asetrate=48000*1.5,aresample=48000',grave:'asetrate=48000*0.75,aresample=48000',lento:'atempo=0.75'});
-function source(ctx){const direct=inspect(ctx.msg.message).message;const context=Object.values(direct).find(v=>v?.contextInfo)?.contextInfo;return {message:inspect(context?.quotedMessage||direct).message,context,quoted:!!context?.quotedMessage};}
+function source(ctx){const direct=inspect(ctx.msg.message).message;const values=Object.values(direct);const context=(values.find(v=>v?.contextInfo?.quotedMessage)||values.find(v=>v?.contextInfo))?.contextInfo;return {message:inspect(context?.quotedMessage||direct).message,context,quoted:!!context?.quotedMessage};}
 function mediaNode(ctx,kind){return source(ctx).message[kind+'Message']||inspect(ctx.msg.message).message[kind+'Message'];}
 async function receive(ctx,kind){const node=mediaNode(ctx,kind);if(!node)throw Error('Responda à mídia compatível com este comando.');if(Number(node.fileLength)>16*1024*1024)throw Error('Limite de mídia: 16 MB.');const {downloadContentFromMessage}=await import('@whiskeysockets/baileys');const stream=await downloadContentFromMessage(node,kind);let size=0;const chunks=[];try{for await(const chunk of stream){size+=chunk.length;if(size>16*1024*1024)throw Error('Limite de mídia: 16 MB.');chunks.push(chunk);}}finally{stream.destroy();}return Buffer.concat(chunks);}
 function xml(value){return String(value).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]));}
@@ -25,7 +25,8 @@ function createLocalMedia({read=receive,remove=async(input,output)=>execFile(pro
  try{
   const sharp=require('sharp');const s=source(ctx);
   if(name==='efeito'&&!Object.hasOwn(FILTERS,ctx.args[0]))throw Error('Use !efeito estourado, esquilo, grave ou lento respondendo a um áudio.');
-  if(name==='sfundo'&&ctx.args.length&&!(ctx.args.length===1&&ctx.args[0]==='sticker'))throw Error('Use !sfundo ou !sfundo sticker.');
+  const backgroundMode=String(ctx.args[0]||'').toLowerCase();
+  if(name==='sfundo'&&ctx.args.length&&!(ctx.args.length===1&&['sticker','figurinha'].includes(backgroundMode)))throw Error('Use !sfundo para imagem sem fundo ou !sfundo sticker para figurinha sem fundo. Responda a uma foto ou use a legenda.');
   if(['toimg','tomp3','qc','efeito'].includes(name)&&!s.quoted)throw Error('Responda à mensagem que deseja converter.');
   await react('⏳');directory=fs.mkdtempSync(path.join(os.tmpdir(),'lobo-local-'));const input=path.join(directory,'input'),output=path.join(directory,'output');
   let payload;
@@ -40,8 +41,9 @@ function createLocalMedia({read=receive,remove=async(input,output)=>execFile(pro
    payload={sticker:await image.resize(512,512,{fit:'contain',background:'#00000000'}).webp().toBuffer()};
   }else if(name==='toimg'){payload={image:await sharp(await read(ctx,'sticker'),{limitInputPixels:25000000}).png().toBuffer(),mimetype:'image/png'};
   }else if(name==='sfundo'){
-   fs.writeFileSync(input,await sharp(await read(ctx,'image'),{limitInputPixels:25000000}).resize({width:1600,height:1600,fit:'inside',withoutEnlargement:true}).png().toBuffer());await backgroundQueue.run('local-background',()=>remove(input,output));
-   payload=ctx.args[0]==='sticker'?{sticker:await sharp(output).resize(512,512,{fit:'contain',background:'#00000000'}).webp().toBuffer()}:{image:await sharp(output).png().toBuffer(),mimetype:'image/png'};
+   // Apply the phone's EXIF orientation before stripping metadata for inference.
+   fs.writeFileSync(input,await sharp(await read(ctx,'image'),{limitInputPixels:25000000}).rotate().resize({width:1600,height:1600,fit:'inside',withoutEnlargement:true}).png().toBuffer());await backgroundQueue.run('local-background',()=>remove(input,output));
+   payload=['sticker','figurinha'].includes(backgroundMode)?{sticker:await sharp(output).resize(512,512,{fit:'contain',background:'#00000000'}).webp().toBuffer()}:{image:await sharp(output).png().toBuffer(),mimetype:'image/png',caption:'🖼️ *Fundo removido!*\n> 🌹 _Para criar figurinha, responda com_ *'+require('../config').get('PREFIX')+'s*.'};
   }else{
    fs.writeFileSync(input,await read(ctx,name==='tomp3'?'video':'audio'));
    const ffmpeg=require('fluent-ffmpeg');ffmpeg.setFfmpegPath(require('@ffmpeg-installer/ffmpeg').path);
@@ -53,5 +55,5 @@ function createLocalMedia({read=receive,remove=async(input,output)=>execFile(pro
  finally{if(directory){for(const file of fs.readdirSync(directory))fs.unlinkSync(path.join(directory,file));fs.rmdirSync(directory);}}
  };}
 async function hidetag(sock,ctx){const text=ctx.args.join(' ').trim();if(!text)return sock.sendMessage(ctx.jid,{text:R.usage('!hidetag texto','!hidetag Aviso da matilha')},{quoted:ctx.msg});const {requireGroupAdmin}=require('../middlewares/permissions');return requireGroupAdmin(async()=>{const meta=await sock.groupMetadata(ctx.jid);return sock.sendMessage(ctx.jid,{text,mentions:meta.participants.map(p=>p.id)},{quoted:ctx.msg});})(sock,ctx);}
-function register(r,registry){for(const [name,category,description,usage]of [['sfundo','figurinhas','Remover fundo localmente','!sfundo [sticker]'],['toimg','figurinhas','Figurinha para PNG','!toimg'],['tomp3','midia','Extrair MP3 de vídeo','!tomp3'],['qc','figurinhas','Citação em figurinha','!qc'],['efeito','midia','Efeitos locais de voz','!efeito estourado/esquilo/grave/lento']]){const old=registry.get(name);r({...old,name,category,description,usage,replace:!!old,handler:createLocalMedia()(name),cost:5,concurrency:'chat'});}r({name:'hidetag',category:'adm',description:'Aviso com menções ocultas',usage:'!hidetag texto',groupOnly:true,minLevel:1,adminOnly:true,handler:hidetag});}
+function register(r,registry){for(const [name,category,description,usage]of [['sfundo','figurinhas','Remover fundo; sticker cria figurinha transparente','!sfundo [sticker|figurinha]'],['toimg','figurinhas','Figurinha para PNG','!toimg'],['tomp3','midia','Extrair MP3 de vídeo','!tomp3'],['qc','figurinhas','Citação em figurinha','!qc'],['efeito','midia','Efeitos locais de voz','!efeito estourado/esquilo/grave/lento']]){const old=registry.get(name);r({...old,name,category,description,usage,replace:!!old,handler:createLocalMedia()(name),cost:5,concurrency:'chat'});}r({name:'hidetag',category:'adm',description:'Aviso com menções ocultas',usage:'!hidetag texto',groupOnly:true,minLevel:1,adminOnly:true,handler:hidetag});}
 module.exports={createLocalMedia,register,quoteSVG,FILTERS,mediaNode};

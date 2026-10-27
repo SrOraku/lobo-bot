@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { command } = require('../ui/text');
+const { inspect } = require('../activations/message-rules');
 
 let baileysModulePromise = null;
 function loadBaileys() {
@@ -13,149 +14,109 @@ function loadBaileys() {
   return baileysModulePromise;
 }
 
-async function getQuotedMedia(sock, msg) {
-  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  if (!quoted) return null;
-
-  const msgType = Object.keys(quoted)[0];
-  if (!['imageMessage', 'videoMessage', 'stickerMessage'].includes(msgType)) return null;
-
-  try {
-    const { downloadContentFromMessage } = await loadBaileys();
-    const stream = await downloadContentFromMessage(quoted[msgType], msgType.replace('Message', ''));
-    const chunks = [];
-    for await (const chunk of stream) chunks.push(chunk);
-    return { buffer: Buffer.concat(chunks), type: msgType };
-  } catch { return null; }
-}
-
-async function getDirectMedia(sock, msg) {
-  const msgType = Object.keys(msg.message)[0];
-  if (!['imageMessage', 'videoMessage'].includes(msgType)) return null;
-
-  try {
-    const { downloadContentFromMessage } = await loadBaileys();
-    const stream = await downloadContentFromMessage(msg.message[msgType], msgType.replace('Message', ''));
-    const chunks = [];
-    for await (const chunk of stream) chunks.push(chunk);
-    return { buffer: Buffer.concat(chunks), type: msgType };
-  } catch { return null; }
-}
-
-// ============================
-// CRIAR STICKER NORMAL
-// ============================
-async function criarSticker(sock, ctx) {
-  const { jid, msg, args } = ctx;
-
-  const media = await getQuotedMedia(sock, msg) || await getDirectMedia(sock, msg);
-  if (!media) {
-    return sock.sendMessage(jid, {
-      text: `❌ *Ação inválida!* _Envie ou responda uma imagem/vídeo._\n> 💡 *Use assim:* ${command('!sticker')} _ou_ ${command('!s')}`
-    }, { quoted: msg });
-  }
-
-  await sock.sendMessage(jid, {
-    text: `⏳ *Aguarde um instante!* _Criando sua figurinha…_`
-  }, { quoted: msg });
-
-  try {
-    const sharp = require('sharp');
-    const tmpInput = path.join(os.tmpdir(), `lobo_input_${Date.now()}`);
-    const tmpOutput = path.join(os.tmpdir(), `lobo_sticker_${Date.now()}.webp`);
-
-    fs.writeFileSync(tmpInput, media.buffer);
-
-    if (media.type === 'imageMessage') {
-      await sharp(media.buffer)
-        .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-        .webp({ quality: 80 })
-        .toFile(tmpOutput);
-    } else {
-      // Para vídeo, usar ffmpeg
-      const ffmpeg = require('fluent-ffmpeg');
-      const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-      ffmpeg.setFfmpegPath(ffmpegPath);
-
-      await new Promise((resolve, reject) => {
-        ffmpeg(tmpInput)
-          .inputOptions(['-t 3'])
-          .outputOptions(['-vf', 'scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:-1:-1:color=0x00000000', '-loop', '0', '-preset', 'default', '-an', '-vsync', '0'])
-          .toFormat('webp')
-          .save(tmpOutput)
-          .on('end', resolve)
-          .on('error', reject);
-      });
+// Media keys need not be the first property, and WhatsApp may wrap messages.
+function selectStickerMedia(msg) {
+  const direct = inspect(msg.message).message;
+  const context = Object.values(direct).find(value => value?.contextInfo?.quotedMessage)?.contextInfo;
+  const quoted = inspect(context?.quotedMessage).message;
+  for (const message of [quoted, direct]) {
+    for (const type of ['imageMessage', 'videoMessage', 'stickerMessage']) {
+      if (message[type]) return { node: message[type], type };
     }
-
-    const packname = args.join(' ') || BOT_NAME;
-
-    await sock.sendMessage(jid, {
-      sticker: fs.readFileSync(tmpOutput),
-      ...(args.length ? { stickerMetadata: { packname, author: BOT_NAME } } : {})
-    }, { quoted: msg });
-
-    fs.unlinkSync(tmpInput);
-    fs.unlinkSync(tmpOutput);
-
-  } catch (err) {
-    await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Erro ao criar figurinha: ${err.message}_` }, { quoted: msg });
   }
+  return null;
 }
 
-// ============================
-// CRIAR STICKER ANIMADO
-// ============================
-async function criarStickerAnimado(sock, ctx) {
-  const { jid, msg } = ctx;
-
-  const media = await getQuotedMedia(sock, msg) || await getDirectMedia(sock, msg);
-  if (!media || media.type !== 'videoMessage') {
-    return sock.sendMessage(jid, {
-      text: `❌ *Ação inválida!* _Envie ou responda um vídeo para criar uma figurinha animada._\n> 💡 *Use assim:* ${command('!stickeranim')}`
-    }, { quoted: msg });
-  }
-
-  await sock.sendMessage(jid, {
-    text: `⏳ *Aguarde um instante!* _Criando sua figurinha animada…_`
-  }, { quoted: msg });
-
+async function downloadMedia(node, type) {
+  if (Number(node.fileLength) > 16 * 1024 * 1024) throw Error('Limite de mídia: 16 MB.');
+  const { downloadContentFromMessage } = await loadBaileys();
+  const stream = await downloadContentFromMessage(node, type.replace('Message', ''));
+  let size = 0;
+  const chunks = [];
   try {
-    const ffmpeg = require('fluent-ffmpeg');
-    const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-    ffmpeg.setFfmpegPath(ffmpegPath);
-
-    const tmpInput = path.join(os.tmpdir(), `lobo_vid_${Date.now()}.mp4`);
-    const tmpOutput = path.join(os.tmpdir(), `lobo_anim_${Date.now()}.webp`);
-
-    fs.writeFileSync(tmpInput, media.buffer);
-
-    await new Promise((resolve, reject) => {
-      ffmpeg(tmpInput)
-        .inputOptions(['-t 6'])
-        .outputOptions([
-          '-vf', 'fps=15,scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:-1:-1:color=0x00000000',
-          '-loop', '0',
-          '-preset', 'default',
-          '-an', '-vsync', '0'
-        ])
-        .toFormat('webp')
-        .save(tmpOutput)
-        .on('end', resolve)
-        .on('error', reject);
-    });
-
-    await sock.sendMessage(jid, {
-      sticker: fs.readFileSync(tmpOutput)
-    }, { quoted: msg });
-
-    fs.unlinkSync(tmpInput);
-    fs.unlinkSync(tmpOutput);
-
-  } catch (err) {
-    await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Erro ao criar figurinha animada: ${err.message}_` }, { quoted: msg });
+    for await (const chunk of stream) {
+      size += chunk.length;
+      if (size > 16 * 1024 * 1024) throw Error('Limite de mídia: 16 MB.');
+      chunks.push(chunk);
+    }
+  } finally {
+    stream.destroy();
   }
+  return Buffer.concat(chunks);
 }
+
+async function renderVideo(input, output, animated) {
+  const ffmpeg = require('fluent-ffmpeg');
+  ffmpeg.setFfmpegPath(require('@ffmpeg-installer/ffmpeg').path);
+  await new Promise((resolve, reject) => {
+    const job = ffmpeg(input)
+      .inputOptions([animated ? '-t 6' : '-t 3'])
+      .outputOptions([
+        '-vf', `${animated ? 'fps=15,' : ''}scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:-1:-1:color=0x00000000`,
+        '-loop', '0', '-preset', 'default', '-an', '-vsync', '0'
+      ])
+      .toFormat('webp');
+    job.on('end', resolve).on('error', reject).save(output);
+  });
+}
+
+function createStickerHandlers({ download = downloadMedia, temporaryRoot = os.tmpdir(), convertVideo = renderVideo } = {}) {
+  function create(animated) {
+    return async (sock, ctx) => {
+      const { jid, msg, args = [] } = ctx;
+      let directory;
+      try {
+        const media = selectStickerMedia(msg);
+        if (!media || (animated && media.type !== 'videoMessage')) {
+          return await sock.sendMessage(jid, {
+            text: animated
+              ? `❌ *Ação inválida!* _Envie ou responda um vídeo para criar uma figurinha animada._\n> 💡 *Use assim:* ${command('!stickeranim')}`
+              : `❌ *Ação inválida!* _Envie ou responda uma imagem/vídeo._\n> 💡 *Use assim:* ${command('!sticker')} _ou_ ${command('!s')}`
+          }, { quoted: msg });
+        }
+        await sock.sendMessage(jid, {
+          text: animated
+            ? `⏳ *Aguarde um instante!* _Criando sua figurinha animada…_`
+            : `⏳ *Aguarde um instante!* _Criando sua figurinha…_`
+        }, { quoted: msg });
+        const buffer = await download(media.node, media.type);
+        directory = fs.mkdtempSync(path.join(temporaryRoot, 'lobo-sticker-'));
+        const input = path.join(directory, 'input');
+        const output = path.join(directory, 'sticker.webp');
+        if (media.type === 'stickerMessage' && media.node.isAnimated) {
+          // An existing WhatsApp animation is already WebP; retain all its frames.
+          fs.writeFileSync(output, buffer);
+        } else if (media.type === 'videoMessage') {
+          fs.writeFileSync(input, buffer);
+          await convertVideo(input, output, animated);
+        } else {
+          // Existing PNG/WebP alpha is preserved; ordinary !s never removes backgrounds.
+          await require('sharp')(buffer, { limitInputPixels: 25000000 })
+            .rotate()
+            .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .webp({ quality: 80 })
+            .toFile(output);
+        }
+        const packname = args.join(' ') || BOT_NAME;
+        await sock.sendMessage(jid, {
+          sticker: fs.readFileSync(output),
+          ...(!animated && args.length ? { stickerMetadata: { packname, author: BOT_NAME } } : {})
+        }, { quoted: msg });
+      } catch (err) {
+        await sock.sendMessage(jid, {
+          text: `❌ *Ação inválida!* _Erro ao criar figurinha${animated ? ' animada' : ''}: ${err.message}_`
+        }, { quoted: msg });
+      } finally {
+        if (directory) {
+          for (const file of fs.readdirSync(directory)) fs.unlinkSync(path.join(directory, file));
+          fs.rmdirSync(directory);
+        }
+      }
+    };
+  }
+  return { criarSticker: create(false), criarStickerAnimado: create(true) };
+}
+const { criarSticker, criarStickerAnimado } = createStickerHandlers();
 
 // ============================
 // STICKER PARA IMAGEM
@@ -186,4 +147,4 @@ async function stickerParaImagem(sock, ctx) {
   }
 }
 
-module.exports = { criarSticker, criarStickerAnimado, stickerParaImagem };
+module.exports = { criarSticker, criarStickerAnimado, stickerParaImagem, createStickerHandlers, selectStickerMedia };

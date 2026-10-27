@@ -6,6 +6,17 @@ const context=(args=[])=>({jid:'120000@g.us',args,msg:{key:{id:'local'},message:
 function socket(){const sent=[];return {sent,sock:{sendMessage:async(_,value)=>sent.push(value),profilePictureUrl:async()=>{throw Error('private');}}};}
 test('toimg emits actual PNG from WebP and completes processing reactions',async()=>{const input=await sharp({create:{width:16,height:16,channels:4,background:'#00ff0080'}}).webp().toBuffer();const f=socket();await createLocalMedia({read:async()=>input})('toimg')(f.sock,context());const image=f.sent.find(v=>v.image);assert.equal((await sharp(image.image).metadata()).format,'png');assert.equal(f.sent.at(-1).react.text,'✅');});
 test('sfundo preserves transparent output and removes temporary directory after sending',async()=>{const input=await sharp({create:{width:16,height:16,channels:4,background:'#00ff0080'}}).png().toBuffer();let folder;const f=socket();await createLocalMedia({read:async()=>input,remove:async(i,o)=>{folder=require('node:path').dirname(i);fs.copyFileSync(i,o);}})('sfundo')(f.sock,context(['sticker']));const sticker=f.sent.find(v=>v.sticker);assert.equal((await sharp(sticker.sticker).metadata()).format,'webp');assert.equal((await sharp(sticker.sticker).metadata()).hasAlpha,true);assert.equal(fs.existsSync(folder),false);});
+test('sfundo figurinha accepts the Portuguese option and preserves transparent pixels',async()=>{
+ const input=await sharp({create:{width:20,height:20,channels:4,background:'#00000000'}}).composite([{input:await sharp({create:{width:10,height:10,channels:4,background:'#e00000ff'}}).png().toBuffer(),left:5,top:5}]).png().toBuffer();
+ const f=socket();await createLocalMedia({read:async()=>input,remove:async(i,o)=>fs.copyFileSync(i,o)})('sfundo')(f.sock,context(['FIGURINHA']));
+ const sticker=f.sent.find(v=>v.sticker);assert.ok(sticker);const {data}=await sharp(sticker.sticker).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+ assert.equal(data[3],0);assert.ok(data[(256*512+256)*4+3]>127);
+});
+test('sfundo corrects phone EXIF orientation before inference',async()=>{
+ const photo=await sharp({create:{width:40,height:20,channels:3,background:'red'}}).jpeg().withMetadata({orientation:6}).toBuffer();let received;
+ const f=socket();await createLocalMedia({read:async()=>photo,remove:async(i,o)=>{received=await sharp(i).metadata();fs.copyFileSync(i,o);}})('sfundo')(f.sock,context());
+ assert.equal(received.width,20);assert.equal(received.height,40);assert.equal(received.orientation,undefined);assert.ok(f.sent.find(v=>v.image));
+});
 test('failed segmentation cleans input and does not report successful media',async()=>{const input=await sharp({create:{width:8,height:8,channels:3,background:'red'}}).png().toBuffer();let folder;const f=socket();await createLocalMedia({read:async()=>input,remove:async(i)=>{folder=require('node:path').dirname(i);throw Error('failed');}})('sfundo')(f.sock,context());assert.equal(fs.existsSync(folder),false);assert.ok(!f.sent.some(v=>v.image||v.sticker));assert.ok(!f.sent.some(v=>v.react?.text==='✅'));});
 test('quote escapes XML and produces a valid WebP when profile photo is unavailable',async()=>{assert.ok(quoteSVG('<nome>','a & b').toString().includes('&lt;nome&gt;'));const f=socket();await createLocalMedia()('qc')(f.sock,context());assert.equal((await sharp(f.sent.find(v=>v.sticker).sticker).metadata()).format,'webp');});
 test('audio effects are fixed filters and reject arbitrary filter input',async()=>{assert.deepEqual(Object.keys(FILTERS),['estourado','esquilo','grave','lento']);const f=socket();await createLocalMedia()('efeito')(f.sock,context(['unknown;sh']));assert.ok(f.sent.some(v=>v.text?.includes('Use !efeito')));assert.ok(!f.sent.some(v=>v.audio));});
@@ -29,6 +40,11 @@ test('hidetag is registered with group/admin requirements and existing toimg ali
 });
 
 test('image captions still select the direct image when replying to plain text',()=>{const image={caption:'!sfundo',contextInfo:{quotedMessage:{conversation:'Mensagem anterior'}}};const ctx={msg:{message:{imageMessage:image}}};assert.equal(require('../src/commands/local-media').mediaNode(ctx,'image'),image);});
+test('sfundo finds the quoted photo past unrelated message metadata and wrappers',()=>{
+ const image={mimetype:'image/jpeg'};
+ const ctx={msg:{message:{ephemeralMessage:{message:{messageContextInfo:{contextInfo:{mentionedJid:[]}},extendedTextMessage:{text:'!sfundo',contextInfo:{quotedMessage:{ephemeralMessage:{message:{imageMessage:image}}}}}}}}}};
+ assert.equal(require('../src/commands/local-media').mediaNode(ctx,'image'),image);
+});
 test('hidetag sends hidden mentions for a real group admin and rejects forged member role flags',async()=>{
  const group='1515151515@g.us',admin='5511976543210@s.whatsapp.net',member='5511965432109@s.whatsapp.net',bot='5511900000000@s.whatsapp.net';
  const defs=new Map();require('../src/commands/local-media').register(def=>defs.set(def.name,def),defs);
