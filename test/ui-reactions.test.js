@@ -27,6 +27,12 @@ test('a command rejection propagates unchanged and does not receive a completion
   await ui.drain(); assert.deepEqual(sent, ['🐺']);
 });
 
+test('a handler that reports a handled failure gets a failure reaction instead of a success mark', async () => {
+  const ui = createReactions(), sent = [], result = { ok: false };
+  assert.equal(await ui.run({ sendMessage: async (_, value) => sent.push(value.react.text) }, ctx('handled-failure'), {}, async () => result), result);
+  await ui.drain(); assert.deepEqual(sent, ['🐺', '❌']);
+});
+
 test('duplicate deliveries do not repeat reactions and history remains bounded', async () => {
   let clock = 0; const ui = createReactions({ now: () => clock, maxEntries: 2 }), sent = [];
   const sock = { sendMessage: async (_, value) => sent.push(value.react.text) };

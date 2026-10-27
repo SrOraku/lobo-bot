@@ -29,3 +29,23 @@ Os demais conversores exigem resposta à mídia. !qc cita até 500 caracteres; a
 Limite de entrada 16 MB, vídeo/áudio convertido até 180 segundos, timeout FFmpeg 60 segundos e inferência local 180 segundos. Temporários exclusivos por operação são removidos no finally, inclusive em falhas. Nenhuma chave/API paga é usada na remoção. A qualidade da máscara depende do modelo; não há promessa de segmentação perfeita para qualquer foto.
 
 Teste opcional de inferência real, sem WhatsApp: `npm run test:background`. Ele usa a imagem de teste do projeto e valida PNG, transparência e preservação do primeiro plano.
+
+## Quando aparece “Mídia não concluída”
+
+As dependências e os modelos são localizados pelo caminho do pacote instalado, independentemente da pasta em que o host iniciar o bot. Antes dessa correção, iniciar em outra pasta fazia o modelo procurar `resources.json` no lugar errado e retornar uma falha genérica. O teste de inferência real também cobre esse caso.
+
+As falhas agora mostram um código e registram a etapa no console e no `logs/error.log`, sem URLs privadas, caminhos da sessão, chaves nem mensagens nativas completas:
+
+- `MEDIA_DOWNLOAD_FAILED`: não foi possível obter a foto do WhatsApp; reenvie a foto.
+- `MEDIA_INVALID_IMAGE`: o arquivo recebido não pôde ser aberto como imagem.
+- `BACKGROUND_DEPENDENCY_MISSING` / `BACKGROUND_ASSET_MISSING`: instalação ou modelo incompleto; execute `npm ci` no projeto.
+- `BACKGROUND_NATIVE_UNAVAILABLE`: biblioteca nativa incompatível com o Linux/processador ou processo nativo com falha. O ONNX distribuído para Linux requer glibc; imagens Alpine/musl precisam de uma imagem compatível.
+- `BACKGROUND_MEMORY`: o motor informou falha de alocação de memória.
+- `BACKGROUND_TERMINATED`: o sistema encerrou o worker por SIGKILL. Limites de recursos são uma possibilidade; esse sinal sozinho não comprova falta de RAM.
+- `BACKGROUND_TIMEOUT`: o worker ultrapassou o prazo de três minutos e foi encerrado.
+- `BACKGROUND_MODEL_FAILED` / `BACKGROUND_INFERENCE_FAILED`: falha ao carregar o modelo ou executar o recorte.
+- `MEDIA_SEND_FAILED`: processamento terminou, mas o WhatsApp recusou o envio.
+
+Mesmo o modelo `small` pode consumir bastante RAM: foi observado pico de aproximadamente 1,1 GiB apenas no worker em uma execução de referência. O consumo varia com a máquina e a imagem; esse valor não é uma garantia nem uma exigência fixa. Planos pequenos podem encerrar o worker. Reduzir a foto não elimina a resolução interna de 1024 × 1024 do modelo.
+
+A reação de falha é ❌; o handler retorna um resultado de falha para que a camada de reações não o substitua por ✅. Os comandos e suas opções continuam iguais.

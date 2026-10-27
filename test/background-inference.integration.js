@@ -4,9 +4,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),sharp=require('sharp');
 const {createLocalMedia}=require('../src/commands/local-media');
-test('bundled CPU model removes a real background without Python or paid API',async()=>{
+test('bundled CPU model removes a real background even when launched from another directory',async()=>{
  const input=fs.readFileSync(path.join(__dirname,'../src/assets/menu-principal.jpg'));
- const sent=[];await createLocalMedia({read:async()=>input})('sfundo')({sendMessage:async(_,payload)=>sent.push(payload)},
+ const execFile=require('node:util').promisify(require('node:child_process').execFile);
+ const remove=require('../src/media/background').createBackgroundRemover({run:(file,args,options)=>execFile(file,args,{...options,cwd:require('node:os').tmpdir()})});
+ const sent=[];await createLocalMedia({read:async()=>input,remove})('sfundo')({sendMessage:async(_,payload)=>sent.push(payload)},
   {jid:'120000@g.us',args:[],msg:{key:{id:'real-background'},message:{imageMessage:{caption:'!sfundo'}}}});
  const result=sent.find(payload=>payload.image);assert.ok(result,'Local inference must deliver an image');
  const meta=await sharp(result.image).metadata();assert.equal(meta.format,'png');assert.equal(meta.hasAlpha,true);

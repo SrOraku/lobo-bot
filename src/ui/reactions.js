@@ -35,18 +35,18 @@ function createReactions({ now = Date.now, timeout = 1000, maxEntries = 1000, lo
     entry.pending = post(sock, ctx.jid, entry.key, icons[sequence++ % icons.length]);
     entries.set(id, entry);
   }
-  function complete(sock, ctx) {
+  function complete(sock, ctx, success = true) {
     const entry = entries.get(`${ctx.jid}|${ctx.msg?.key?.id}`);
     if (!entry || entry.complete) return;
     entry.complete = true;
-    entry.pending = entry.pending.then(sent => sent ? post(sock, ctx.jid, entry.key, '✅') : false);
+    entry.pending = entry.pending.then(sent => sent ? post(sock, ctx.jid, entry.key, success ? '✅' : '❌') : false);
   }
   return {
     begin, complete,
     async run(sock, ctx, definition, execute) {
       begin(sock, ctx, definition);
       const result = await execute();
-      complete(sock, ctx);
+      complete(sock, ctx, result?.ok !== false);
       return result;
     },
     size: () => entries.size,
