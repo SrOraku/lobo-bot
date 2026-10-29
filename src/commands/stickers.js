@@ -5,14 +5,7 @@ const path = require('path');
 const os = require('os');
 const { command } = require('../ui/text');
 const { inspect } = require('../activations/message-rules');
-
-let baileysModulePromise = null;
-function loadBaileys() {
-  if (!baileysModulePromise) {
-    baileysModulePromise = import('@whiskeysockets/baileys');
-  }
-  return baileysModulePromise;
-}
+const { loadBaileys } = require('../utils/baileys');
 
 // Media keys need not be the first property, and WhatsApp may wrap messages.
 function selectStickerMedia(msg) {

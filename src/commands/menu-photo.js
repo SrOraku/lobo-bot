@@ -28,7 +28,7 @@ async function menuPhoto(sock,ctx) {
   const id = randomUUID(), input = path.join(directory,id+'.input'), output = path.join(directory,id+(kind === 'image'?'.jpg':'.mp4'));
   processing = true;
   try {
-    const {downloadContentFromMessage} = await import('@whiskeysockets/baileys');
+    const {downloadContentFromMessage} = await require('../utils/baileys').loadBaileys();
     const stream = await downloadContentFromMessage(message[sourceKind+'Message'],sourceKind), chunks = [];let bytes = 0;
     const downloadTimer = setTimeout(()=>stream.destroy(Error('Tempo de download excedido.')),30000);
     try {
