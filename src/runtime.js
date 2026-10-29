@@ -13,16 +13,7 @@ const terminal = require('./utils/quiet-console').installQuietConsole();
 const path      = require('path');
 const fs        = require('fs');
 const { CacheMessageStore } = require('./utils/message-store');
-
-// Baileys 7 é ESM. O restante do Lobo-bot continua CommonJS,
-// então carregamos o módulo oficialmente via import() dinâmico.
-let baileysModulePromise = null;
-function loadBaileys() {
-  if (!baileysModulePromise) {
-    baileysModulePromise = import('@whiskeysockets/baileys');
-  }
-  return baileysModulePromise;
-}
+const { loadBaileys } = require('./utils/baileys');
 
 // ── Utils & Config ──────────────────────────────────────────
 const { printBanner, logger, BOT_NAME, OWNER, sleep } = require('./utils/helpers');

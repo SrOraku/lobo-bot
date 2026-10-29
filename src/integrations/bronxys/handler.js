@@ -27,7 +27,7 @@ async function incoming(ctx,signal) {
  if(!kind)throw Error('Responda a uma imagem, áudio ou vídeo compatível com o comando.');
  const node=message[kind+'Message'];
  if(Number(node.fileLength)>8*1024*1024)throw Error('Limite de upload: 8 MB.');
- const {downloadContentFromMessage}=await import('@whiskeysockets/baileys');
+ const {downloadContentFromMessage}=await require('../../utils/baileys').loadBaileys();
  const stream=await downloadContentFromMessage(node,kind),chunks=[];let bytes=0;
  const abort=()=>stream.destroy(Error('BRONXYS_TIMEOUT'));signal.addEventListener('abort',abort,{once:true});
  try{for await(const chunk of stream){bytes+=chunk.length;if(bytes>8*1024*1024)throw Error('Limite de upload: 8 MB.');chunks.push(chunk);}}
