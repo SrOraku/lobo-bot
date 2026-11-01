@@ -23,7 +23,7 @@ function managedPath(name) {
 
 async function request(url, binary = false) {
   const response = await require('axios').get(url, {
-    timeout: 30_000, maxContentLength: binary && url.includes('/src/assets/Menu.gif') ? MAX_MENU_GIF_SIZE : 4 * 1024 * 1024,
+    timeout: 30_000, maxContentLength: binary && url.includes('/src/assets/Menu.gif') ? MAX_MENU_GIF_SIZE : url.includes('/git/blobs/') ? 90 * 1024 * 1024 : 4 * 1024 * 1024,
     responseType: binary ? 'arraybuffer' : 'json',
     headers: { 'User-Agent': 'Lobo-bot-updater', Accept: 'application/vnd.github+json' },
   });
