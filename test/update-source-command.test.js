@@ -68,6 +68,7 @@ function sourceFixture({ corrupt = false, truncated = false } = {}) {
   };
   const pkg = file('package.json', '{}'), lock = file('package-lock.json', '{}');
   const index = file('src/index.js', 'entry'), boot = file('src/bootstrap.js', 'boot'), check = file('scripts/check-startup.js', 'check');
+  const menuGif = file('src/assets/Menu.gif', Buffer.alloc(3 * 1024 * 1024, 7));
   const get = async (url, binary) => {
     calls.push(url);
     if (binary) { const name = url.split('/').slice(6).join('/'); return corrupt ? Buffer.from('corrupt') : bodies.get(name); }
@@ -75,9 +76,11 @@ function sourceFixture({ corrupt = false, truncated = false } = {}) {
     if (url.endsWith(`/git/trees/${'b'.repeat(40)}`)) return { truncated, tree: [pkg, lock,
       { path: 'src', type: 'tree', mode: '040000', sha: 'c'.repeat(40) },
       { path: 'scripts', type: 'tree', mode: '040000', sha: 'd'.repeat(40) },
+      { path: 'assets', type: 'tree', mode: '040000', sha: 'f'.repeat(40) },
       { path: '.ssh', type: 'tree', mode: '040000', sha: 'e'.repeat(40) }] };
     if (url.includes('c'.repeat(40))) return { tree: [index, boot].map(item => ({ ...item, path: item.path.slice(4) })) };
     if (url.includes('d'.repeat(40))) return { tree: [{ ...check, path: 'check-startup.js' }] };
+    if (url.includes('f'.repeat(40))) return { tree: [{ ...menuGif, path: 'Menu.gif' }] };
     throw new Error('unexpected request');
   };
   return { calls, get, bodies };
@@ -85,10 +88,30 @@ function sourceFixture({ corrupt = false, truncated = false } = {}) {
 
 test('GitHub snapshot downloads only allowlisted files from a pinned commit and verifies blob hashes', async () => {
   const f = sourceFixture(); const snapshot = await githubSnapshot({ get: f.get });
-  assert.equal(snapshot.files.length, 5); assert.equal(snapshot.sha, 'a'.repeat(40));
+  assert.equal(snapshot.files.length, 6); assert.equal(snapshot.sha, 'a'.repeat(40));
   assert.equal((await snapshot.download(snapshot.files.find(x => x.path === 'src/index.js'))).toString(), 'entry');
   assert.ok(!f.calls.some(url => url.includes('e'.repeat(40))));
   assert.ok(f.calls.at(-1).includes(`/lobo-bot/${'a'.repeat(40)}/src/index.js`));
+});
+
+
+test('large approved Menu.gif is downloadable while oversized source files remain rejected', async () => {
+  const f = sourceFixture();
+  const snapshot = await githubSnapshot({ get: f.get });
+  const gif = snapshot.files.find(item => item.path === 'src/assets/Menu.gif');
+  assert.ok(gif);
+  assert.equal((await snapshot.download(gif)).length, 3 * 1024 * 1024);
+  const oversized = sourceFixture();
+  const originalGet = oversized.get;
+  oversized.get = async (url, binary) => {
+    if (url.includes('/git/trees/') && url.includes('c'.repeat(40))) {
+      const result = await originalGet(url, binary);
+      result.tree.push({ path: 'large.js', type: 'blob', mode: '100644', sha: '1'.repeat(40), size: 3 * 1024 * 1024 });
+      return result;
+    }
+    return originalGet(url, binary);
+  };
+  await assert.rejects(githubSnapshot({ get: oversized.get }), /excede o limite/);
 });
 
 test('GitHub integrity failure or incomplete tree stops the update', async () => {
