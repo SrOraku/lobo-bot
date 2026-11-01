@@ -7,6 +7,9 @@ const API = `https://api.github.com/repos/${REPOSITORY}`;
 const ROOT_FILES = new Set(['.version','manifest.json','manifest.sig','EXPANSAO.md','atualizar.sh', 'package.json', 'package-lock.json', 'README.md', 'DEPLOY.md',
   'MENUS.md', 'BRONXYS.md', 'MODERNIZACAO.md', 'MOEDA-UNIVERSAL.md', 'eslint.config.js', 'ATALHOS.md', 'ATIVACOES.md', 'ISOLAMENTO.md', 'SECURITY.md', '.dockerignore', 'Dockerfile', 'docker-compose.yml', 'ecosystem.config.js', '.gitignore', '.env.example', 'INICIAR-AQUI.txt']);
 const ROOT_DIRS = ['src', 'scripts', 'plugins', 'addons', 'test'];
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const MAX_MENU_GIF_SIZE = 64 * 1024 * 1024;
+function maxSizeFor(name) { return name === 'src/assets/Menu.gif' ? MAX_MENU_GIF_SIZE : MAX_FILE_SIZE; }
 const BLOCKED = new Set(['.git', '.env', 'node_modules', 'data', 'sessions', 'auth', 'storage', 'logs', 'backups', 'updates']);
 
 function managedPath(name) {
@@ -20,7 +23,7 @@ function managedPath(name) {
 
 async function request(url, binary = false) {
   const response = await require('axios').get(url, {
-    timeout: 30_000, maxContentLength: 4 * 1024 * 1024,
+    timeout: 30_000, maxContentLength: binary && url.includes('/src/assets/Menu.gif') ? MAX_MENU_GIF_SIZE : 4 * 1024 * 1024,
     responseType: binary ? 'arraybuffer' : 'json',
     headers: { 'User-Agent': 'Lobo-bot-updater', Accept: 'application/vnd.github+json' },
   });
@@ -62,7 +65,7 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
     if (!['100644', '100755'].includes(item.mode) || item.type !== 'blob' || !/^[a-f0-9]{40}$/.test(item.sha || '')) {
       throw new Error('O código da atualização contém um arquivo não suportado.');
     }
-    if (item.size > 2 * 1024 * 1024) throw new Error('Arquivo da atualização excede o limite.');
+    if (!Number.isSafeInteger(item.size) || item.size < 0 || item.size > maxSizeFor(name)) throw new Error('Arquivo da atualização excede o limite.');
     files.push({ path: name, sha: item.sha, mode: item.mode });
   };
   for (const item of root.tree) if (ROOT_FILES.has(item.path)) add(item);
@@ -81,7 +84,7 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
     if (!files.includes(file)) throw new Error('Arquivo não pertence ao manifesto.');
     const url = `https://raw.githubusercontent.com/${REPOSITORY}/${sha}/${file.path.split('/').map(encodeURIComponent).join('/')}`;
     const validate = data => {
-      if (data.length > 2 * 1024 * 1024) throw downloadError('Arquivo da atualização excede o limite.', 'DOWNLOAD_FILE_TOO_LARGE', file);
+      if (data.length > maxSizeFor(file.path)) throw downloadError('Arquivo da atualização excede o limite.', 'DOWNLOAD_FILE_TOO_LARGE', file);
       const digest = createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex');
       if (digest !== file.sha) throw downloadError('Falha na integridade de um arquivo da atualização.', 'DOWNLOAD_HASH_MISMATCH', file);
       return data;
@@ -94,7 +97,7 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
     try {
       const blob = await fetch(`${API}/git/blobs/${file.sha}`);
       const content = typeof blob?.content === 'string' ? blob.content.replace(/\s/g, '') : '';
-      if (blob?.sha !== file.sha || blob.encoding !== 'base64' || !/^[A-Za-z0-9+/]*={0,2}$/.test(content) || blob.size > 2 * 1024 * 1024) {
+      if (blob?.sha !== file.sha || blob.encoding !== 'base64' || !/^[A-Za-z0-9+/]*={0,2}$/.test(content) || blob.size > maxSizeFor(file.path)) {
         throw downloadError('Resposta inválida ao baixar o arquivo pela API do GitHub.', 'DOWNLOAD_INVALID_BLOB', file);
       }
       return validate(Buffer.from(content, 'base64'));
