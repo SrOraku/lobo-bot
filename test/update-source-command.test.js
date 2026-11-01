@@ -76,11 +76,10 @@ function sourceFixture({ corrupt = false, truncated = false } = {}) {
     if (url.endsWith(`/git/trees/${'b'.repeat(40)}`)) return { truncated, tree: [pkg, lock,
       { path: 'src', type: 'tree', mode: '040000', sha: 'c'.repeat(40) },
       { path: 'scripts', type: 'tree', mode: '040000', sha: 'd'.repeat(40) },
-      { path: 'assets', type: 'tree', mode: '040000', sha: 'f'.repeat(40) },
       { path: '.ssh', type: 'tree', mode: '040000', sha: 'e'.repeat(40) }] };
-    if (url.includes('c'.repeat(40))) return { tree: [index, boot].map(item => ({ ...item, path: item.path.slice(4) })) };
+    if (url.includes('c'.repeat(40))) return { tree: [index, boot].map(item => ({ ...item, path: item.path.slice(4) })).concat([{ path: 'assets', type: 'tree', mode: '040000', sha: 'f'.repeat(40) }]) };
     if (url.includes('d'.repeat(40))) return { tree: [{ ...check, path: 'check-startup.js' }] };
-    if (url.includes('f'.repeat(40))) return { tree: [{ ...menuGif, path: 'Menu.gif' }] };
+    if (url.includes('f'.repeat(40))) return { tree: [{ ...menuGif, path: 'assets/Menu.gif' }] };
     throw new Error('unexpected request');
   };
   return { calls, get, bodies };
