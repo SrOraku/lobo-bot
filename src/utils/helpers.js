@@ -50,15 +50,15 @@ function cleanJid(jid) {
 
 function getNumber(jid) {
   if (typeof jid !== 'string') return '';
-  return jid.split('@')[0].replace(/:\\d+$/, '').replace(/\\D/g, '');
+  return jid.split('@')[0].replace(/:\d+$/, '').replace(/\D/g, '');
 }
 
 function toJid(value) {
   if (typeof value !== 'string' && typeof value !== 'number') return '';
   const input = String(value).trim();
   if (!input) return '';
-  if (/^\\d+@(s\\.whatsapp\\.net|lid)$/.test(input)) return input;
-  const normalized = input.replace(/:\\d+(?=@)/, '').replace(/@s\\.whatsapp\\.net$/i, '').replace(/@lid$/i, '').replace(/\\D/g, '');
+  if (/^\d+@(s\.whatsapp\.net|lid)$/.test(input)) return input;
+  const normalized = input.replace(/:\d+(?=@)/, '').replace(/@s\.whatsapp\.net$/i, '').replace(/@lid$/i, '').replace(/\D/g, '');
   return normalized ? `${normalized}@s.whatsapp.net` : '';
 }
 
@@ -68,7 +68,7 @@ function mention(jid) {
 }
 
 function isBrazilianFake(number) {
-  const n = String(number ?? '').replace(/\\D/g, '');
+  const n = String(number ?? '').replace(/\D/g, '');
   return n.startsWith('55') && n.length === 12;
 }
 
