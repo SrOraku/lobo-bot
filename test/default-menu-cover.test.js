@@ -8,7 +8,8 @@ test('approved cover accompanies main menu but not submenus; removal remains res
  const defaultFile=path.join(dir,'cover.jpg');await fs.writeFile(defaultFile,'cover');
  const messages=[],sock={sendMessage:async(jid,payload)=>messages.push(payload)},ctx={jid:'123@g.us',args:[]};
  const options={getMedia:()=>null,useDefault:()=>true,defaultFile,defaultParts:[]};
- await sendMenu(sock,ctx,'main',options);assert.equal(messages[0].caption,'main');assert.equal(messages[0].image.toString(),'cover');
+ await sendMenu(sock,ctx,'main',options);assert.equal(messages[0].caption,'main');assert.equal(messages[0].document.toString(),'cover');
+ assert.equal(messages[0].mimetype,'image/gif');
  await sendMenu(sock,{...ctx,args:['jogos']},'games',options);assert.deepEqual(messages[1],{text:'games'});
  await sendMenu(sock,ctx,'removed',{...options,useDefault:()=>false});assert.deepEqual(messages[2],{text:'removed'});
  await sendMenu(sock,ctx,'missing',{...options,defaultFile:path.join(dir,'missing.jpg')});assert.deepEqual(messages[3],{text:'missing'});
@@ -23,7 +24,7 @@ test('animated default cover is assembled and sent with gif playback',async t=>{
   getMedia:()=>null,useDefault:()=>true,defaultParts:[partA,partB],defaultFile:path.join(dir,'missing.jpg')
  });
  assert.equal(messages[0].caption,'main');
- assert.equal(messages[0].video.toString(),'animated');
- assert.equal(messages[0].gifPlayback,true);
- assert.equal(messages[0].mimetype,'video/mp4');
+ assert.equal(messages[0].document.toString(),'animated');
+ assert.equal(messages[0].fileName,'Menu.gif');
+ assert.equal(messages[0].mimetype,'image/gif');
 });
