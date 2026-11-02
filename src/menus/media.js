@@ -7,6 +7,7 @@ async function sendMenu(sock, ctx, text, {
   getMedia = () => require('../security/settings').get('menu-media', null),
   directory = path.join(__dirname, '../../data/menu'),
   defaultFile = path.join(__dirname, '../assets/Menu.gif'),
+  defaultParts = [],
   useDefault = () => !require('../security/settings').get('menu-default-disabled', false)
 } = {}) {
   const media = getMedia();
@@ -40,16 +41,17 @@ async function sendMenu(sock, ctx, text, {
 
   if (!media && !ctx.args?.length && useDefault()) {
     try {
-      if ((await fs.lstat(defaultFile)).isSymbolicLink()) {
-        throw new Error('GIF inválido.');
+      let gif;
+      if (defaultParts.length) {
+        gif = Buffer.concat(await Promise.all(defaultParts.map(part => fs.readFile(part).then(data => Buffer.from(data.toString(), 'base64')))));
+      } else {
+        if ((await fs.lstat(defaultFile)).isSymbolicLink()) throw new Error('GIF inválido.');
+        gif = await fs.readFile(defaultFile);
       }
-
-      const gif = await fs.readFile(defaultFile);
-
       return await sock.sendMessage(ctx.jid, {
-        document: gif,
-        mimetype: 'image/gif',
-        fileName: 'Menu.gif',
+        video: gif,
+        gifPlayback: true,
+        mimetype: 'video/mp4',
         caption: text
       }, { quoted: ctx.msg });
     } catch (_) {
