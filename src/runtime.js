@@ -227,7 +227,8 @@ async function startBot() {
         '5. Digite o código acima',
         '⏳ O código expira em 60 segundos!',
         'Reinicie o bot se expirar.',
-        '👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺',
+        ...(config.get('DEVELOPER_NAME') ? ['👨‍💻 Dev: ' + config.get('DEVELOPER_NAME')] : []),
+        ...(config.get('DEVELOPER_CONTACT') ? ['📞 Contato: ' + config.get('DEVELOPER_CONTACT')] : []),
       ], { formatNumbers: false })));
     } catch (err) {
       if (!session.isActive()) return currentSocket;
