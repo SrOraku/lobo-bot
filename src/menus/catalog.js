@@ -24,6 +24,10 @@ const CATEGORY_ALIASES = {
   gold: 'economia',
   wok: 'economia',
   wokcoin: 'economia',
+  lobo: 'alcateia',
+  stats: 'rp',
+  mod: 'adm',
+  geral: 'info',
   lobos: 'alcateia',
   lobo: 'alcateia',
   mod: 'adm',
@@ -113,7 +117,9 @@ function categoryOf(command) {
   for (const [category, names] of Object.entries(GROUPS))
     if (names.split(' ').includes(command.name)) return category;
   if (command.minLevel > 0) return 'adm';
-  return CATEGORIES[command.category] ? command.category : 'util';
+  const declared = String(command.category || '').toLowerCase();
+  const category = CATEGORY_ALIASES[declared] || declared;
+  return CATEGORIES[category] ? category : 'util';
 }
 function buildCatalog(commands, pluginCommands = {}) {
   const catalog = commands
