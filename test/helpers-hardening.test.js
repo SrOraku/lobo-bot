@@ -11,6 +11,8 @@ test('JID helpers normalize device suffixes and preserve complete JIDs', () => {
   assert.equal(helpers.toJid('5511999999999@s.whatsapp.net'), '5511999999999@s.whatsapp.net');
   assert.equal(helpers.toJid('5511999999999:4@s.whatsapp.net'), '5511999999999@s.whatsapp.net');
   assert.equal(helpers.toJid(''), '');
+  assert.equal(helpers.getNumber('5511999999999:4@s.whatsapp.net'), '5511999999999');
+  assert.equal(helpers.toJid('5511999999999'), '5511999999999@s.whatsapp.net');
 });
 
 test('formatTime, progressBar e validateStrategy lidam com entradas inválidas', () => {
