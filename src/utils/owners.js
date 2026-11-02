@@ -14,7 +14,7 @@ async function protectedOwner(sock, jid, group) {
   const { IdentityResolver, normalizeJid } = await import('../../addons/alcateia/src/identity.js');
   const id = normalizeJid(jid);
   if (!id) throw Error('Não foi possível validar o destinatário.');
-  const numbers = [...new Set(['5543920030769', ...ownerNumbers()])];
+  const numbers = ownerNumbers();
   if (numbers.some(n => id === n + '@s.whatsapp.net')) return true;
   const metadata = group ? await sock.groupMetadata(group) : null;
   for (const number of numbers) {
