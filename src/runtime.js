@@ -219,7 +219,6 @@ async function startBot() {
         '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
         `✨ ${fmt} ✨`,
         `📱 WhatsApp escolhido para conectar: +${numero}`,
-        '👑 Dono do bot: +5543920030769',
         '📱 Como usar no WhatsApp:',
         '1. Abra o WhatsApp',
         '2. Configurações → Aparelhos Conectados',
@@ -229,7 +228,6 @@ async function startBot() {
         '⏳ O código expira em 60 segundos!',
         'Reinicie o bot se expirar.',
         '👨‍💻 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺',
-        '📞 Contato do desenvolvedor: +5543920030769',
       ], { formatNumbers: false })));
     } catch (err) {
       if (!session.isActive()) return currentSocket;
