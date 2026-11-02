@@ -81,9 +81,9 @@ function validate() {
     }
     if (rule.type === 'number') {
       const n = Number(val);
-      if (isNaN(n)) errors.push(`❌ ${key} deve ser um número. Recebido: "${val}"`);
-      else if (rule.min !== undefined && n < rule.min) warnings.push(`⚠️ ${key}=${n} abaixo do mínimo recomendado (${rule.min})`);
-      else if (rule.max !== undefined && n > rule.max) warnings.push(`⚠️ ${key}=${n} acima do máximo recomendado (${rule.max})`);
+      if (!Number.isFinite(n)) errors.push(`❌ ${key} deve ser um número finito. Recebido: "${val}"`);
+      else if (rule.min !== undefined && n < rule.min) errors.push(`❌ ${key}=${n} abaixo do mínimo permitido (${rule.min})`);
+      else if (rule.max !== undefined && n > rule.max) errors.push(`❌ ${key}=${n} acima do máximo permitido (${rule.max})`);
     }
     if (rule.type === 'enum' && !rule.values.includes(val)) {
       errors.push(`❌ ${key}="${val}" inválido. Valores aceitos: ${rule.values.join(', ')}`);
