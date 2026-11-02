@@ -6,12 +6,12 @@
 // ============================================================
 
 const DEFAULTS = {
-  BOT_OWNER:             '5543920030769',
+  BOT_OWNER:             '',
   BOT_OWNERS:            '',
   BOT_NAME:              '🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑',
   BOT_DESCRIPTION:       '🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺',
   DEVELOPER_NAME:        '🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺',
-  DEVELOPER_CONTACT:     '+5543920030769',
+  DEVELOPER_CONTACT:     '',
   PREFIX:                '!',
   SESSION_NAME:          'lobo-bot-session',
   LOG_LEVEL:             'info',
