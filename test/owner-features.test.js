@@ -35,7 +35,7 @@ test('painel de donos recusa membros e reserva cadastro ao principal',async t=>{
   const settings=createSettings(db),sent=[];let actor={owner:false,phone:'5511999999999@s.whatsapp.net'};
   const file=require('node:path').join(__dirname,'../src/commands/owners.js');
   const native=require('node:module').createRequire(file),loaded={exports:{}};
-  const mocks={'../activations/access':{resolveActor:async()=>actor},'../security/settings':settings};
+  const mocks={'../activations/access':{resolveActor:async()=>actor},'../security/settings':settings,'../config':{get:key=>key==='BOT_OWNER'?'5543920030769':key==='PREFIX'?'!':''}};
   require('node:vm').runInNewContext(require('node:fs').readFileSync(file,'utf8'),{module:loaded,require:id=>mocks[id]||native(id)});
   const ctx={jid:'test',args:['adicionar','5511888888888'],msg:{}};
   const sock={sendMessage:async(_,c)=>sent.push(c.text)};

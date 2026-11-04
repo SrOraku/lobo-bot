@@ -87,7 +87,7 @@ function sourceFixture({ corrupt = false, truncated = false } = {}) {
 
 test('GitHub snapshot downloads only allowlisted files from a pinned commit and verifies blob hashes', async () => {
   const f = sourceFixture(); const snapshot = await githubSnapshot({ get: f.get });
-  assert.equal(snapshot.files.length, 5); assert.equal(snapshot.sha, 'a'.repeat(40));
+  assert.equal(snapshot.files.length, 6); assert.equal(snapshot.sha, 'a'.repeat(40));
   assert.equal((await snapshot.download(snapshot.files.find(x => x.path === 'src/index.js'))).toString(), 'entry');
   assert.ok(!f.calls.some(url => url.includes('e'.repeat(40))));
   assert.ok(f.calls.at(-1).includes(`/lobo-bot/${'a'.repeat(40)}/src/index.js`));
