@@ -72,9 +72,27 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
   for (const name of ROOT_DIRS) {
     const directory = root.tree.find(e => e.path === name && e.type === 'tree' && e.mode === '040000');
     if (!directory) continue;
-    const nested = await fetch(`${API}/git/trees/${directory.sha}?recursive=1`);
-    if (!Array.isArray(nested.tree) || nested.truncated) throw new Error('Diretório incompleto na atualização.');
-    for (const item of nested.tree) if (item.type !== 'tree') add(item, `${name}/`);
+    const visited = new Set();
+    const walk = async (treeSha, prefix, depth = 0) => {
+      if (!/^[a-f0-9]{40}$/.test(treeSha || '') || visited.has(treeSha) || depth > 12) {
+        throw new Error('Estrutura de diretórios inválida na atualização.');
+      }
+      visited.add(treeSha);
+      const nested = await fetch(`${API}/git/trees/${treeSha}`);
+      if (!Array.isArray(nested.tree) || nested.truncated) throw new Error('Diretório incompleto na atualização.');
+      for (const item of nested.tree) {
+        if (item.type === 'tree') {
+          if (item.mode !== '040000' || !/^[a-f0-9]{40}$/.test(item.sha || '') || !/^[A-Za-z0-9._-]+$/.test(item.path || '')) {
+            throw new Error('Diretório inválido na atualização.');
+          }
+          await walk(item.sha, `${prefix}${item.path}/`, depth + 1);
+        } else {
+          add(item, prefix);
+        }
+        if (files.length > 500) throw new Error('Manifesto de atualização inválido.');
+      }
+    };
+    await walk(directory.sha, `${name}/`);
   }
   if (files.length > 500 || new Set(files.map(f => f.path)).size !== files.length) throw new Error('Manifesto de atualização inválido.');
   for (const name of ['package.json', 'package-lock.json', 'src/index.js', 'src/bootstrap.js', 'scripts/check-startup.js']) {
