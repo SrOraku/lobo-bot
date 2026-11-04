@@ -71,10 +71,19 @@ function acquireLock(root, { action = 'update', probe = processState } = {}) {
       // replacement lease: a nonempty directory cannot replace the old archive.
       // Legacy file locks become file tombstones; new leases are directories.
       const archive = path.join(location, `retired-lock-${previous.key}`);
-      if (stat(archive)) throw failure('BUSY', 'Outra instância está recuperando a atualização interrompida.');
+      if (stat(archive)) {
+        // Another contender may already have retired this exact stale lease.
+        // If the live path is now absent, retry acquisition instead of
+        // incorrectly making every contender report BUSY.
+        if (!stat(file)) continue;
+        throw failure('BUSY', 'Outra instância está recuperando a atualização interrompida.');
+      }
       try { fs.renameSync(file, archive); recovered = true; }
       catch (error) {
         if (!['ENOENT', 'EEXIST', 'ENOTEMPTY', 'ENOTDIR', 'EISDIR'].includes(error.code)) throw error;
+        // ENOENT means a competing process won the stale-lock rename.
+        // Retry so exactly one process can publish the replacement lease.
+        if (error.code === 'ENOENT' && !stat(file)) continue;
         throw failure('BUSY', 'A trava mudou durante a recuperação; tente novamente.');
       }
     }
