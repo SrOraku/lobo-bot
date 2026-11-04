@@ -11,11 +11,22 @@ jobs:
       matrix:
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+      - name: Refresh dependency lockfile on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.node == 22
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json
+            git commit -m 'chore: refresh secure dependency lockfile'
+            git push
+          fi
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npm run check:syntax
