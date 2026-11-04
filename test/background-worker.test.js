@@ -126,7 +126,7 @@ test('worker stderr protocol never includes raw input paths or errors', async t 
   await assert.rejects(execFile(process.execPath, [path.resolve(__dirname, '../src/media/remove-background-worker.js'), path.join(f.directory, 'PRIVATE-INPUT-NOT-EXPOSED'), f.output], { cwd: f.directory }), error => {
     assert.ok(!error.stderr.includes('PRIVATE-INPUT-NOT-EXPOSED'));
     const lines = error.stderr.trim().split('\n');
-    for (const line of lines) assert.match(line, new RegExp(`^BACKGROUND_(?:STAGE:(?:DEPENDENCIES|INPUT)|ERROR:(?:${BACKGROUND_ERROR_CODES.join('|')}))'use strict';
+    for (const line of lines) assert.match(line, new RegExp('^BACKGROUND_(?:STAGE:(?:DEPENDENCIES|INPUT)|ERROR:(?:' + BACKGROUND_ERROR_CODES.join('|') + '))$'));
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
