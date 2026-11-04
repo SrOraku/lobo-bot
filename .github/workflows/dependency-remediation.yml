@@ -25,6 +25,8 @@ jobs:
           if ! git diff --quiet -- package.json package-lock.json; then
             git add package.json package-lock.json
             git commit -m 'security: apply compatible dependency updates'
+            git fetch origin security/dependency-remediation
+            git rebase origin/security/dependency-remediation
             git push origin HEAD:security/dependency-remediation
           fi
       - name: Verify lint and syntax
