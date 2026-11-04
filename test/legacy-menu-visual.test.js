@@ -114,7 +114,8 @@ test('atalhos não concedem permissões e usuário não injeta linhas no menu', 
   assert.ok(!text.includes('Pessoa\n*Dono*'));
 });
 
-test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async () => {
+test('roteamento mantém grupo, níveis e cooldown no dispatcher real', async t => {
+  const previousOwner=process.env.BOT_OWNER;process.env.BOT_OWNER='5543920030769';t.after(()=>{if(previousOwner===undefined)delete process.env.BOT_OWNER;else process.env.BOT_OWNER=previousOwner;});
   const { execute, register } = registry;
   let calls = 0;
   const sent = [];
