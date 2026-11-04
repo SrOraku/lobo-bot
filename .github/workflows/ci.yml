@@ -3,7 +3,7 @@ on:
   push:
   pull_request:
 permissions:
-  contents: read
+  contents: write
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,6 +21,17 @@ jobs:
       - run: npm run check:syntax
       - run: npm test
       - run: npm run check:startup
+      - name: Refresh integrity manifest on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          npm run release:manifest
+          if ! git diff --quiet -- .version manifest.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add .version manifest.json
+            git commit -m 'chore: refresh managed-file integrity manifest'
+            git push
+          fi
       - run: npm run release:verify
       - run: npm run security
         continue-on-error: true
