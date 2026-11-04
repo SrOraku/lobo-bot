@@ -51,8 +51,11 @@ async function authorizeStartup() {
   try {
     const registered = await client.request('register_installation', meta);
     if (!allowed(registered)) deny(registered);
+    recordSuccess();
     const validated = await client.request('validate', { installation_id: id });
     if (!allowed(validated)) deny(validated);
+    const pairing = await client.request('authorize_pairing', { installation_id: id });
+    if (!allowed(pairing)) deny(pairing);
     recordSuccess();
     return { enabled: true, installationId: id };
   } catch (error) {
