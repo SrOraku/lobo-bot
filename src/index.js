@@ -35,4 +35,26 @@ if (isRender || configuredPort) {
   });
 }
 
-require('./updater/supervisor').start();
+// A validação da licença acontece no processo supervisor, antes de iniciar o runtime WhatsApp.
+require('dotenv').config();
+const licenseGuard = require('./licensing/licenseGuard');
+(async () => {
+  try {
+    const license = await licenseGuard.authorizeStartup();
+    if (license.enabled) {
+      if (license.grace) console.warn('[LICENÇA] API indisponível; inicialização permitida dentro da tolerância local de 24h.');
+      else console.log('[LICENÇA] Instalação autorizada pelo LOBO-BOT LICENSE.');
+      licenseGuard.startHeartbeat({
+        log: code => console.error('[LICENÇA] Verificação periódica falhou:', code),
+        onDenied: reason => {
+          console.error('[LICENÇA] Autorização negada. Encerrando o bot:', String(reason).slice(0, 80));
+          process.exit(1);
+        },
+      });
+    }
+    require('./updater/supervisor').start();
+  } catch (error) {
+    console.error('[LICENÇA] Inicialização bloqueada:', error.code || 'LICENSE_START_FAILED');
+    process.exit(1);
+  }
+})();
