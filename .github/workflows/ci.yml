@@ -1,26 +1,46 @@
 name: JavaScript checks
+
 on:
   push:
   pull_request:
+
+concurrency:
+  group: lobo-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: [22, 24]
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      NODE_ENV: test
+      LOBO_API_URL: ""
+      LOBO_LICENSE_KEY: ""
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: ${{ matrix.node }}
+          node-version: "22"
           cache: npm
-      - run: npm ci --no-audit --no-fund
-      - run: npm run lint
-      - run: npm run check:syntax
-      - run: npm test
-      - run: npm run check:startup
-      - run: npm run release:verify
-      - run: npm run security
-        continue-on-error: true
+      - name: Verify lockfile is synchronized
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund --dry-run
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
+      - name: Check JavaScript syntax
+        run: npm run check:syntax
+      - name: Run tests
+        run: npm test
+      - name: Check startup
+        run: npm run check:startup
+      - name: Rebuild and verify managed-file integrity
+        run: |
+          npm run release:manifest
+          npm run release:verify
+      - name: Enforce production dependency security audit
+        run: npm run security
