@@ -72,11 +72,12 @@
       "onnxruntime-node": "1.16.3"
     },
     "lodash": "4.18.1",
-    "minimatch": "11.0.1",
+    "minimatch": "11.0.3",
     "redstar": {
-      "minimatch": "3.1.4"
+      "minimatch": "11.0.3"
     },
-    "zod": "3.25.76"
+    "zod": "4.6.7",
+    "follow-redirects": "1.16.2"
   },
   "allowScripts": {
     "@ffmpeg-installer/linux-x64@4.1.0": true,
