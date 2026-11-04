@@ -7,6 +7,7 @@ async function sendMenu(sock, ctx, text, {
   getMedia = () => require('../security/settings').get('menu-media', null),
   directory = path.join(__dirname, '../../data/menu'),
   defaultFile = path.join(__dirname, '../assets/Menu.gif'),
+  defaultParts = [],
   useDefault = () => !require('../security/settings').get('menu-default-disabled', false)
 } = {}) {
   const media = getMedia();
@@ -40,8 +41,24 @@ async function sendMenu(sock, ctx, text, {
 
   if (!media && !ctx.args?.length && useDefault()) {
     try {
-      if ((await fs.lstat(defaultFile)).isSymbolicLink()) throw new Error('GIF inválido.');
-      const gif = await fs.readFile(defaultFile);
+      let gif;
+      if (Array.isArray(defaultParts) && defaultParts.length) {
+        const chunks = [];
+        for (const part of defaultParts) {
+          const stat = await fs.lstat(part);
+          if (stat.isSymbolicLink() || !stat.isFile()) throw new Error('Parte de GIF inválida.');
+          const encoded = (await fs.readFile(part, 'utf8')).trim();
+          if (!encoded || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) throw new Error('Parte de GIF inválida.');
+          const decoded = Buffer.from(encoded, 'base64');
+          if (decoded.toString('base64') !== encoded) throw new Error('Parte de GIF inválida.');
+          chunks.push(decoded);
+        }
+        gif = Buffer.concat(chunks);
+      } else {
+        const stat = await fs.lstat(defaultFile);
+        if (stat.isSymbolicLink() || !stat.isFile()) throw new Error('GIF inválido.');
+        gif = await fs.readFile(defaultFile);
+      }
       return await sock.sendMessage(ctx.jid, {
         document: gif,
         mimetype: 'image/gif',
