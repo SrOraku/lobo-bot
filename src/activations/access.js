@@ -30,7 +30,7 @@ async function resolveActor(sock, ctx) {
     jid: sender,
     groupName: metadata?.subject || key.remoteJid,
     botAdmin: bot?.isAdmin === true,
-    owner: group?securityMember?.globalOwner===true:require('../utils/owners')
+    owner: group?(securityMember?.globalOwner===true || actor?.isOwner===true):require('../utils/owners')
       .ownerNumbers(config)
       .includes(actor?.phoneNumber?.split('@')[0]),
     admin: group?securityMember?.isAdmin===true:actor?.isAdmin===true,
