@@ -33,5 +33,5 @@ jobs:
             git push
           fi
       - run: npm run release:verify
-      - run: npm run security
-        continue-on-error: true
+      - name: Enforce production dependency security audit
+        run: npm run security
