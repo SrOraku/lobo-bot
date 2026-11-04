@@ -1,39 +1,46 @@
 name: JavaScript checks
+
 on:
   push:
   pull_request:
+
+concurrency:
+  group: lobo-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: write
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: [22, 24]
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      NODE_ENV: test
+      LOBO_API_URL: ""
+      LOBO_LICENSE_KEY: ""
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: ${{ matrix.node }}
+          node-version: "22"
           cache: npm
-      - run: npm ci --no-audit --no-fund
-      - run: npm run lint
-      - run: npm run check:syntax
-      - run: npm test
-      - run: npm run check:startup
-      - name: Refresh integrity manifest on main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.node == 22
+      - name: Verify lockfile is synchronized
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund --dry-run
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
+      - name: Check JavaScript syntax
+        run: npm run check:syntax
+      - name: Run tests
+        run: npm test
+      - name: Check startup
+        run: npm run check:startup
+      - name: Rebuild and verify managed-file integrity
         run: |
           npm run release:manifest
-          if ! git diff --quiet -- .version manifest.json; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add .version manifest.json
-            git commit -m 'chore: refresh managed-file integrity manifest'
-            git push
-          fi
-      - name: Rebuild integrity manifest for this checkout
-        run: npm run release:manifest
-      - run: npm run release:verify
+          npm run release:verify
       - name: Enforce production dependency security audit
         run: npm run security
