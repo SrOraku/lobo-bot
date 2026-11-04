@@ -65,7 +65,7 @@
     "ecosystem.config.js": "c4f856d03f0536346c78b7c05e91386dc512b34a48d3d184eaccd9f02fe00159",
     "eslint.config.js": "c91e7fa5c48a209b5e39af84ff65b2d88c6c8543d7f7177f8a8691cbcc1cd5ca",
     "package-lock.json": "90bce509ab51994661ec01c1cb96ee96743a0132b74f7b29bd2a2dee68be8a2c",
-    "package.json": "a82e5c8eaffd68877e3aa1f63c07fcf34f7bb0e525e8aac89cdcc35d1dcc20c8",
+    "package.json": "c07fa374ce940223ee47456656bd5505a1cc1dd2b5bb7b4ef7d009d2f8ad48f9",
     "plugins/alcateia-rp.js": "8a341050c90b82c60a335ee1299bf532e964082c58bf4d822fb8d93a9a7e8b02",
     "plugins/exemplo-plugin.js": "546fe6502c1f0c7094c83260273bbf58dae52e61212839814ad3ad61abbdb5d6",
     "scripts/audit-commands.js": "0134fcbfb50fefadabc00b9e21ab2f439a8aee20e3af8432368f6cc69db8f940",
