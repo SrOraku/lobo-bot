@@ -116,7 +116,8 @@ test('painel valida cargo, não aceita flags forjadas e responde no privado', as
   await handler(sock, { jid: 'p@s.whatsapp.net', args: [] });
   assert.match(sent.at(-1), /dentro do grupo/);
 });
-test('dono é confirmado por identidade PN/LID e não pelo número logado', async () => {
+test('dono é confirmado por identidade PN/LID e não pelo número logado', async t => {
+  const previousOwner=process.env.BOT_OWNER;process.env.BOT_OWNER='5543920030769';t.after(()=>{if(previousOwner===undefined)delete process.env.BOT_OWNER;else process.env.BOT_OWNER=previousOwner;});
   const { resolveActor } = require('../src/activations/access');
   const sock = {
     user: { id: '5511888888888@s.whatsapp.net' },
