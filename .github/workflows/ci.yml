@@ -26,8 +26,6 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - name: Verify lockfile is synchronized
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund --dry-run
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Lint
