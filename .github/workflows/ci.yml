@@ -32,6 +32,8 @@ jobs:
             git commit -m 'chore: refresh managed-file integrity manifest'
             git push
           fi
+      - name: Rebuild integrity manifest for this checkout
+        run: npm run release:manifest
       - run: npm run release:verify
       - name: Enforce production dependency security audit
         run: npm run security
