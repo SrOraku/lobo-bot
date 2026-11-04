@@ -22,7 +22,7 @@ jobs:
       - run: npm test
       - run: npm run check:startup
       - name: Refresh integrity manifest on main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.node == 22
         run: |
           npm run release:manifest
           if ! git diff --quiet -- .version manifest.json; then
