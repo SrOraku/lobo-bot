@@ -1,5 +1,9 @@
 'use strict';
 
+// Instale dependências antes de carregar dotenv, a licença e o supervisor.
+const { ensureDependencies } = require('./bootstrap');
+if (!ensureDependencies()) process.exit(1);
+
 const http = require('node:http');
 
 // Hosts that provide PORT (including Render) can use this lightweight
@@ -39,6 +43,7 @@ if (isRender || configuredPort) {
 require('dotenv').config();
 const licenseGuard = require('./licensing/licenseGuard');
 (async () => {
+  let phase = 'LICENÇA';
   try {
     const license = await licenseGuard.authorizeStartup();
     if (license.enabled) {
@@ -52,9 +57,13 @@ const licenseGuard = require('./licensing/licenseGuard');
         },
       });
     }
+    phase = 'CONFIG';
+    await require('./config/owner-setup').ensureOwner();
+    phase = 'INICIALIZAÇÃO';
     require('./updater/supervisor').start();
   } catch (error) {
-    console.error('[LICENÇA] Inicialização bloqueada:', error.code || 'LICENSE_START_FAILED');
+    console.error(`[${phase}] Inicialização bloqueada:`, error.code || 'STARTUP_FAILED');
+    if (phase === 'CONFIG') console.error(error.message);
     process.exit(1);
   }
 })();

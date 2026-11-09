@@ -1,8 +1,39 @@
 'use strict';
 const { randomUUID } = require('node:crypto');
-function localAsk(question) {
-  const rl = require('node:readline').createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise(resolve => rl.question(question, answer => { rl.close(); resolve(answer.trim()); }));
+function localAsk(question, { input = process.stdin, output = process.stdout } = {}) {
+  return new Promise((resolve, reject) => {
+    const closedError = () => Object.assign(new Error('O console foi fechado antes de receber uma resposta.'), { code: 'CONSOLE_CLOSED' });
+    if (input.destroyed || input.readableEnded) {
+      reject(closedError());
+      return;
+    }
+    let rl, settled = false;
+    function finish(error, answer) {
+      if (settled) return;
+      settled = true;
+      input.removeListener('close', closed);
+      output.removeListener('error', failed);
+      if (rl) {
+        rl.removeListener('close', closed);
+        rl.removeListener('error', failed);
+        rl.close();
+      }
+      if (error) reject(error);
+      else resolve(answer.trim());
+    }
+    function closed() { finish(closedError()); }
+    function failed(cause) {
+      finish(Object.assign(new Error('Não foi possível ler a resposta do console.', { cause }), { code: 'CONSOLE_ERROR' }));
+    }
+    try {
+      rl = require('node:readline').createInterface({ input, output });
+      rl.once('close', closed);
+      rl.once('error', failed);
+      input.once('close', closed);
+      output.once('error', failed);
+      rl.question(question, answer => finish(null, answer));
+    } catch (error) { failed(error); }
+  });
 }
 function askConsole(question, { channel = process, supervised = process.env.LOBO_SUPERVISED === '1', ask = localAsk } = {}) {
   if (!supervised || !channel.connected || typeof channel.send !== 'function') return ask(question);

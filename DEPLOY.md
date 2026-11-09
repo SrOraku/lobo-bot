@@ -9,7 +9,7 @@
 
 ## 🐦 Pterodactyl
 
-Na Bronxys, use `node src/index.js` como comando de inicialização e Node 22.12 ou superior. Desde a versão 3.3.1, o libsignal é obtido como arquivo HTTPS do mesmo commit oficial, com integridade no lockfile, sem exigir dependências do tipo Git. Isso resolve `EALLOWGIT` em instalações com `allow-git=none`; mantenha `package.json` e `package-lock.json` atualizados juntos.
+Na Bronxys, use `node src/index.js` como comando de inicialização e Node 22.12 ou superior. O libsignal usa a versão oficial `6.0.0` do registro npm, publicada a partir do mesmo commit anteriormente fixado pelo projeto, com integridade no lockfile. Isso permite instalar em hospedagens com `allow-git=none` e `allow-remote=none`, sem liberar downloads Git ou arquivos externos. Mantenha `package.json` e `package-lock.json` atualizados juntos.
 
 1. Crie um servidor com Node.js 22 atualizado (mínimo 22.12; validado em 22.23.3)
 2. Configure o startup como: `node src/index.js`
@@ -28,11 +28,16 @@ NODE_ENV=production
 npm ci --omit=dev --no-audit --no-fund
 ```
 
-6. Após instalar, o código de pareamento aparecerá no console. Nos próximos inícios os pacotes existentes são reutilizados. Não digite comandos de sistema no console de um processo Node em execução.
+6. Se `BOT_OWNER` estiver vazio, o console solicita primeiro o número do dono (DDI + DDD + número, de 10 a 15 dígitos, sem `+` ou espaços). O cadastro é salvo privadamente em `data/bot-owner.json` e reutilizado nos próximos inícios. Um `BOT_OWNER` preenchido no painel ou `.env` tem prioridade. Esse cadastro é separado do número que será conectado ao WhatsApp.
+7. Depois, siga o pareamento pelo console. Nos próximos inícios os pacotes existentes são reutilizados. Não digite comandos de sistema no console de um processo Node em execução.
+
+Se aparecer `Variável obrigatória ausente: BOT_OWNER`, atualize o código e mantenha o startup `node src/index.js` (ou `npm start`). O supervisor aguarda o cadastro antes de iniciar o processo WhatsApp. Em hospedagens sem entrada de console, configure `BOT_OWNER` diretamente no painel ou `.env`. O processo interno `src/runtime.js` deve ser iniciado pelo supervisor.
 
 Se já houve `MODULE_NOT_FOUND` na linha que carrega `dotenv`, atualize os arquivos pelo GitHub ou ZIP, mantenha o startup `node src/index.js` e reinicie. Preserve `.env`, `sessions/`, `data/` e `storage/alcateia/` da instalação existente.
 
 Para verificar apenas as dependências, sem conectar ao WhatsApp nem alterar os dados: `npm run check:startup`.
+
+Se aparecer `EALLOWREMOTE` citando `libsignal@https://codeload.github.com/...`, a instalação ainda usa o endereço antigo. Pare o servidor, atualize `package.json`, `package-lock.json`, `src/index.js` e `src/bootstrap.js` juntos e reinicie com o startup acima. Preserve `.env`, `sessions/`, `data/` e `storage/`. O inicializador instala os pacotes antes de carregar `dotenv` e interrompe a inicialização se o npm falhar, mantendo o erro de instalação visível. Não é necessário alterar as restrições de download da hospedagem.
 
 ### Atualizar pelo WhatsApp
 
