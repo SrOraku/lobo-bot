@@ -4,7 +4,7 @@ Comandos: !sfundo [sticker|png|contorno|blur|cor], !tomp3, !qc, !efeito estourad
 
 O projeto já inclui sharp, fluent-ffmpeg e @ffmpeg-installer/ffmpeg. Instalação reproduzível: `npm ci`. O pacote IMG.LY também consta no package.json e no lockfile; npm ci instala todos.
 
-A remoção de fundo usa `@imgly/background-removal-node@1.4.5` com o Sharp já utilizado no bot. O runtime ONNX de CPU está fixado em 1.16.3 para evitar o download de bibliotecas CUDA. A biblioteca valida sua configuração com `z.function().args()`, que só existe no zod 3; por isso o package.json instala o zod 3.25.76 **apenas dentro** de `@imgly/background-removal-node`, enquanto o restante do bot continua no zod 4. Sem esse ajuste a biblioteca nem carregava e o !sfundo falhava sempre. A combinação foi verificada com inferência real em Node 22 e 24:
+A remoção de fundo usa `@imgly/background-removal-node@1.4.5` com o Sharp já utilizado no bot. O runtime ONNX de CPU está fixado em 1.16.3 para evitar o download de bibliotecas CUDA. A biblioteca valida sua configuração com `z.function().args()`, que só existe no zod 3; por isso o package.json instala o zod 3.25.76 **apenas dentro** de `@imgly/background-removal-node`, enquanto o restante do bot continua no zod 4. Sem esse ajuste a biblioteca nem carregava e o !sfundo falhava sempre. O `npm audit` aponta um aviso nesse zod 3; ele é a única exceção aceita pela auditoria do projeto (`npm run security`), fica visível em toda execução e está explicado no [SECURITY.md](../../SECURITY.md). A combinação foi verificada com inferência real em Node 22 e 24:
 
 ```sh
 npm ci
