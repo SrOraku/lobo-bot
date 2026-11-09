@@ -18,3 +18,17 @@ test('instalação usa pacotes do registro em hosts com allow-git=none e allow-r
     }
   }
 });
+
+test('!sfundo usa zod 3 aninhado enquanto o restante do projeto continua no zod 4', () => {
+  // @imgly/background-removal-node chama z.function().args(), que só existe no zod 3.
+  assert.equal(pkg.overrides['@imgly/background-removal-node'].zod, '3.25.76');
+  const nested = lock.packages['node_modules/@imgly/background-removal-node/node_modules/zod'];
+  assert.ok(nested, 'o lockfile precisa ter o zod aninhado da biblioteca do !sfundo');
+  assert.equal(nested.version, '3.25.76');
+  assert.equal(nested.resolved, 'https://registry.npmjs.org/zod/-/zod-3.25.76.tgz');
+  assert.match(nested.integrity, /^sha512-/);
+  const top = lock.packages['node_modules/zod'];
+  assert.equal(top.version, pkg.overrides.zod);
+  assert.match(top.version, /^4\./);
+  assert.equal(top.resolved, `https://registry.npmjs.org/zod/-/zod-${top.version}.tgz`);
+});
