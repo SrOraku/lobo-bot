@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { COOLDOWNS, LIMITS } from './constants.js';
+import { COOLDOWNS, LIMITS, OWNER_NUMBER } from './constants.js';
 import { GameError, assertGameOwner, isGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
   integer, quantity, formatRemaining, validatePlayer } from './validation.js';
 import { registerPlayer, requirePlayer, ensurePlayer, addWolves, trainPlayer, setFormation, rankPlayers } from './players.js';
@@ -172,7 +172,7 @@ export class GameService {
     if (!Object.hasOwn(counts, action)) throw new GameError('Use !admin status/addmoedas/removemoedas/ban/unban/backup/broadcast/resetcooldown/sethp/addlobos.');
     exactArgs(args, counts[action], `!admin ${action} numero${counts[action] === 3 ? ' quantidade' : ''}`);
     const jid = `${brazilianNumber(args[1])}@s.whatsapp.net`;
-    if (action === 'ban' && jid === '5543920030769@s.whatsapp.net')
+    if (action === 'ban' && jid === `${OWNER_NUMBER}@s.whatsapp.net`)
       throw new GameError('O desenvolvedor não pode ser banido do jogo.', 'OWNER_PROTECTED');
     const player = requirePlayer(game, jid, { allowBanned: true });
     switch (action) {

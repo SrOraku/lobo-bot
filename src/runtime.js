@@ -7,7 +7,7 @@ const terminal = require('./utils/quiet-console').installQuietConsole();
 // ============================================================
 // 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑ — PONTO DE ENTRADA PRINCIPAL
 // Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
-// +5543920030769
+// Contato do criador: comando !criador
 // ============================================================
 
 const path      = require('path');

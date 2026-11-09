@@ -6,16 +6,20 @@ async function owners(sock, ctx) {
   const reply = lines => sock.sendMessage(ctx.jid,{text:frameNotice('👑 DONOS DO BOT',lines)},{quoted:ctx.msg});
   if (!actor.owner) return reply(['Este painel é exclusivo dos donos cadastrados.']);
   const config = require('../config'), p = config.get('PREFIX'), action = String(ctx.args[0] || 'lista').toLowerCase();
-  const root = String(config.get('BOT_OWNER')).replace(/\D/g,'');
+  const { configuredOwners, primaryOwner, isCreator, CREATOR } = require('../utils/owners');
+  const root = primaryOwner(config);
   const settings = require('../security/settings');
   if (action === 'lista') return reply([
-    ...require('../utils/owners').ownerNumbers().map(n => `${n === root ? '👑 Principal' : '🛡️ Dono autorizado'}: +${n}`),
-    `${command(p + 'donos adicionar número')}\n${command(p + 'donos remover número')}\n> Somente o principal gerencia donos; a conta conectada não recebe esse cargo automaticamente.`,
+    `💎 Criador (dono absoluto): +${CREATOR.number}`,
+    ...configuredOwners(config).filter(n => !isCreator(n)).map(n => `${n === root ? '👑 Principal' : '🛡️ Dono autorizado'}: +${n}`),
+    `${command(p + 'donos adicionar número')}\n${command(p + 'donos remover número')}\n> Somente o dono principal ou o criador gerenciam donos; a conta conectada não recebe esse cargo automaticamente.`,
   ]);
-  if (actor.phone !== root + '@s.whatsapp.net') return reply(['Somente o dono principal pode cadastrar ou remover outros donos.']);
+  if (!(root && actor.phone === root + '@s.whatsapp.net') && !isCreator(actor.phone))
+    return reply(['Somente o dono principal ou o criador podem cadastrar ou remover donos.']);
   if (!['adicionar','remover'].includes(action) || ctx.args.length !== 2 || !/^\d{10,15}$/.test(ctx.args[1]))
     return reply([`> Use ${command(p + 'donos adicionar/remover número')}, com DDI e somente dígitos.`]);
   const number = ctx.args[1];
+  if (isCreator(number)) return reply(['O criador é dono absoluto em qualquer instalação; não precisa ser cadastrado e não pode ser removido.']);
   if (number === root) return reply(['O dono principal não pode ser removido ou substituído por comando.']);
   const configured = [root,...String(config.get('BOT_OWNERS') || '').split(/[,;\s]+/).map(s => s.replace(/\D/g,''))];
   if (action === 'remover' && configured.includes(number)) return reply(['Esse dono foi configurado no ambiente. Sua remoção exige alterar BOT_OWNERS na instalação.']);

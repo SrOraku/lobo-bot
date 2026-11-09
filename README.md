@@ -68,11 +68,17 @@ Somente o dono configurado pode usar `!atualizar status`, `!atualizar bot` e `!a
 
 A atualização prepara e verifica os arquivos antes de substituir o código, mantém backup em `updates/` e preserva `.env`, sessões e dados dos jogos. Funciona também em instalações por ZIP. Após concluir, **reinicie pelo painel** para carregar a atualização. O Node é atualizado pelo painel do servidor, com mínimo **22.12**. Para receber estes comandos pela primeira vez, instale esta versão via GitHub ou ZIP.
 
+## 👑 Dono do bot e criador
+
+- **Dono desta instalação:** no 1º início, se `BOT_OWNER` estiver vazio, o console pergunta o número do dono (DDI + DDD + número, só dígitos) e salva em `data/bot-owner.json` (privado), reutilizado nos próximos inícios. `BOT_OWNER` preenchido no painel ou no `.env` tem prioridade sobre o arquivo. Para trocar o dono, apague `data/bot-owner.json` e reinicie (ou altere `BOT_OWNER`). Donos adicionais ficam em `BOT_OWNERS` ou são cadastrados pelo `!donos`.
+- **Dono absoluto:** o criador do Lobo-bot (veja `!criador`) é dono em qualquer instalação, além do dono configurado: tem acesso aos comandos de dono, aos jogos, ao `!atualizar` e é dono global na segurança dos grupos — nenhum admin consegue banir, silenciar, advertir, remover ou rebaixar o criador. Ele nunca vira o dono principal sozinho: o principal continua sendo o `BOT_OWNER`. O `!donos` pode ser gerenciado pelo principal ou pelo criador; o criador não precisa ser cadastrado e não pode ser removido.
+- **Contato do criador:** somente pelo comando `!criador` (e na lista do `!donos`, que só os donos veem). O número não aparece nos menus.
+
 ## RP e WOK Coin
 
 O bot existente continua com seus comandos, sessão e banco de dados. O plugin adiciona **64 profissões, família, 19 itens e uma carteira WOK Coin compartilhada entre o novo RP e o novo 100 Lobisomens Estratégia**. Os duelos foram retirados; o ataque direto continua.
 
-Identidade padrão: **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑**. Desenvolvedor: **🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺**. Dono do bot: **+5543920030769**. Em instalações com `.env` existente, confira `BOT_NAME`, `DEVELOPER_NAME` e `BOT_OWNER` para usar esses valores. Os pacotes de download usam a pasta `Lobo-bot-v1`.
+Identidade padrão: **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑**. Desenvolvedor: **🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺**. Contato do criador: comando `!criador`. Em instalações com `.env` existente, confira `BOT_NAME`, `DEVELOPER_NAME` e `BOT_OWNER`. Os pacotes de download usam a pasta `Lobo-bot-v1`.
 
 ```text
 !rp iniciar
@@ -102,7 +108,7 @@ O comando `check:startup` verifica as dependências reais, as APIs do Baileys, S
 
 **Dev:** 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
 
-**Contato:** +5543920030769
+**Contato:** comando `!criador`
 
 ---
 
@@ -117,7 +123,7 @@ npm ci
 
 # 3. Configurar
 cp .env.example .env
-nano .env        # coloque seu número em BOT_OWNER
+nano .env        # coloque SEU número em BOT_OWNER (ou deixe vazio: o 1º início pergunta)
 
 # 4. Iniciar
 npm start
