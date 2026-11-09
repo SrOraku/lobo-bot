@@ -5,7 +5,20 @@ const {createLocalMedia,quoteSVG,FILTERS}=require('../src/commands/local-media')
 const context=(args=[])=>({jid:'120000@g.us',args,msg:{key:{id:'local'},message:{extendedTextMessage:{contextInfo:{participant:'5511999@s.whatsapp.net',quotedMessage:{conversation:'Olá <matilha> & lua'}}}}}});
 function socket(){const sent=[];return {sent,sock:{sendMessage:async(_,value)=>sent.push(value),profilePictureUrl:async()=>{throw Error('private');}}};}
 test('toimg emits actual PNG from WebP and completes processing reactions',async()=>{const input=await sharp({create:{width:16,height:16,channels:4,background:'#00ff0080'}}).webp().toBuffer();const f=socket();await createLocalMedia({read:async()=>input})('toimg')(f.sock,context());const image=f.sent.find(v=>v.image);assert.equal((await sharp(image.image).metadata()).format,'png');assert.equal(f.sent.at(-1).react.text,'✅');});
-test('sfundo preserves transparent output and removes temporary directory after sending',async()=>{const input=await sharp({create:{width:16,height:16,channels:4,background:'#00ff0080'}}).png().toBuffer();let folder;const f=socket();await createLocalMedia({read:async()=>input,remove:async(i,o)=>{folder=require('node:path').dirname(i);fs.copyFileSync(i,o);}})('sfundo')(f.sock,context(['sticker']));const sticker=f.sent.find(v=>v.sticker);assert.equal((await sharp(sticker.sticker).metadata()).format,'webp');assert.equal((await sharp(sticker.sticker).metadata()).hasAlpha,true);assert.equal(fs.existsSync(folder),false);});
+test('toimg flattens sticker transparency on white instead of the black WhatsApp paints',async()=>{
+ const input=await sharp({create:{width:16,height:16,channels:4,background:{r:0,g:0,b:0,alpha:0}}}).composite([{input:{create:{width:4,height:4,channels:4,background:{r:255,g:0,b:0,alpha:1}}},left:6,top:6}]).webp({lossless:true}).toBuffer();
+ const f=socket();await createLocalMedia({read:async()=>input})('toimg')(f.sock,context());
+ const {data,info}=await sharp(f.sent.find(v=>v.image).image).raw().toBuffer({resolveWithObject:true});
+ assert.deepEqual([...data.subarray(0,3)],[255,255,255]);const center=(8*info.width+8)*info.channels;assert.ok(data[center]>200&&data[center+1]<60);
+});
+test('sfundo validates its option before downloading the photo',async()=>{
+ let downloads=0;const f=socket();
+ await createLocalMedia({read:async()=>{downloads++;return Buffer.alloc(0);},remove:async()=>assert.fail('Invalid options never reach inference')})('sfundo')(f.sock,context(['arco-iris']));
+ assert.equal(downloads,0);assert.ok(f.sent.some(v=>v.text?.includes('Use !sfundo')));assert.ok(!f.sent.some(v=>v.react?.text==='⏳'));
+ await createLocalMedia({read:async()=>{downloads++;return Buffer.alloc(0);}})('sfundo')(f.sock,context(['png','azul']));
+ assert.equal(downloads,0);
+});
+test('sfundo preserves transparent output and removes temporary directory after sending',async()=>{const input=await sharp({create:{width:16,height:16,channels:4,background:'#00ff0080'}}).png().toBuffer();let folder;const f=socket();await createLocalMedia({read:async()=>input,remove:async(i,o)=>{folder=require('node:path').dirname(i);fs.copyFileSync(i,o);}})('sfundo')(f.sock,context(['sticker']));const sticker=f.sent.find(v=>v.sticker);assert.equal((await sharp(sticker.sticker).metadata()).format,'webp');assert.equal((await sharp(sticker.sticker).metadata()).hasAlpha,true);assert.equal(fs.existsSync(folder),false);assert.equal(f.sent.filter(v=>v.sticker||v.document||v.image).length,1,'sticker sends only the sticker');});
 test('sfundo figurinha accepts the Portuguese option and preserves transparent pixels',async()=>{
  const input=await sharp({create:{width:20,height:20,channels:4,background:'#00000000'}}).composite([{input:await sharp({create:{width:10,height:10,channels:4,background:'#e00000ff'}}).png().toBuffer(),left:5,top:5}]).png().toBuffer();
  const f=socket();await createLocalMedia({read:async()=>input,remove:async(i,o)=>fs.copyFileSync(i,o)})('sfundo')(f.sock,context(['FIGURINHA']));
@@ -15,7 +28,10 @@ test('sfundo figurinha accepts the Portuguese option and preserves transparent p
 test('sfundo corrects phone EXIF orientation before inference',async()=>{
  const photo=await sharp({create:{width:40,height:20,channels:3,background:'red'}}).jpeg().withMetadata({orientation:6}).toBuffer();let received;
  const f=socket();await createLocalMedia({read:async()=>photo,remove:async(i,o)=>{received=await sharp(i).metadata();fs.copyFileSync(i,o);}})('sfundo')(f.sock,context());
- assert.equal(received.width,20);assert.equal(received.height,40);assert.equal(received.orientation,undefined);assert.ok(f.sent.find(v=>v.image));
+ assert.equal(received.width,20);assert.equal(received.height,40);assert.equal(received.orientation,undefined);
+ // Sem opção: figurinha + PNG transparente em documento (mensagens de imagem pintariam a transparência de preto).
+ assert.ok(f.sent.find(v=>v.sticker));const document=f.sent.find(v=>v.document);assert.equal(document.mimetype,'image/png');assert.equal(document.fileName,'sem-fundo.png');
+ const meta=await sharp(document.document).metadata();assert.equal(meta.format,'png');assert.ok(meta.height>meta.width,'O PNG mantém a orientação corrigida');assert.ok(!f.sent.some(v=>v.image));
 });
 test('failed segmentation cleans input and does not report successful media',async()=>{const input=await sharp({create:{width:8,height:8,channels:3,background:'red'}}).png().toBuffer();let folder;const f=socket();await createLocalMedia({read:async()=>input,remove:async(i)=>{folder=require('node:path').dirname(i);throw Error('failed');}})('sfundo')(f.sock,context());assert.equal(fs.existsSync(folder),false);assert.ok(!f.sent.some(v=>v.image||v.sticker));assert.ok(!f.sent.some(v=>v.react?.text==='✅'));});
 test('quote escapes XML and produces a valid WebP when profile photo is unavailable',async()=>{assert.ok(quoteSVG('<nome>','a & b').toString().includes('&lt;nome&gt;'));const f=socket();await createLocalMedia()('qc')(f.sock,context());assert.equal((await sharp(f.sent.find(v=>v.sticker).sticker).metadata()).format,'webp');});

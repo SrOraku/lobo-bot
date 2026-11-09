@@ -1,4 +1,4 @@
-> **Mídia local:** `!sfundo [sticker]`, `!toimg`, `!tomp3`, `!qc`, `!efeito` e `!hidetag` integrados aos menus. [Dependências, remoção local sem Python e limites](src/ui/MIDIA-LOCAL.md).
+> **Mídia local:** `!sfundo [sticker|png|contorno|blur|cor]` (recorte de precisão: figurinha + PNG transparente), `!toimg`, `!tomp3`, `!qc`, `!efeito` e `!hidetag` integrados aos menus. Toda figurinha leva pacote e autor de verdade (`STICKER_PACK`/`STICKER_AUTHOR` ou `!s pacote | autor`). [Dependências, modos, remoção local sem Python e limites](src/ui/MIDIA-LOCAL.md).
 
 > **LOBO-BOT v1.0.0:** a versão oficial permanece fixa em `1.0.0`; as atualizações são identificadas pelo commit e pela integridade dos arquivos, sem depender de aumentar esse número.
 

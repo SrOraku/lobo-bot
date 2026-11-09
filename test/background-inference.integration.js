@@ -10,9 +10,14 @@ test('bundled CPU model removes a real background even when launched from anothe
  const remove=require('../src/media/background').createBackgroundRemover({run:(file,args,options)=>execFile(file,args,{...options,cwd:require('node:os').tmpdir()})});
  const sent=[];await createLocalMedia({read:async()=>input,remove})('sfundo')({sendMessage:async(_,payload)=>sent.push(payload)},
   {jid:'120000@g.us',args:[],msg:{key:{id:'real-background'},message:{imageMessage:{caption:'!sfundo'}}}});
- const result=sent.find(payload=>payload.image);assert.ok(result,'Local inference must deliver an image');
- const meta=await sharp(result.image).metadata();assert.equal(meta.format,'png');assert.equal(meta.hasAlpha,true);
- const {data}=await sharp(result.image).ensureAlpha().raw().toBuffer({resolveWithObject:true});let transparent=0,foreground=0;
+ // Padrão: figurinha + PNG em documento. Mensagens "image" viram JPEG e pintariam a transparência de preto.
+ assert.ok(!sent.some(payload=>payload.image),'The transparent cutout must not be sent as a photo');
+ const cutout=sent.find(payload=>payload.sticker);assert.ok(cutout,'Local inference must deliver a sticker');
+ const stickerMeta=await sharp(cutout.sticker).metadata();assert.equal(stickerMeta.width,512);assert.equal(stickerMeta.height,512);assert.ok(cutout.sticker.length<=100*1024);
+ assert.ok(require('../src/media/webp-exif').readStickerMetadata(cutout.sticker).packname,'The sticker must carry its pack name');
+ const result=sent.find(payload=>payload.document);assert.ok(result,'Local inference must deliver the PNG document');assert.equal(result.mimetype,'image/png');
+ const meta=await sharp(result.document).metadata();assert.equal(meta.format,'png');assert.equal(meta.hasAlpha,true);
+ const {data}=await sharp(result.document).ensureAlpha().raw().toBuffer({resolveWithObject:true});let transparent=0,foreground=0;
  for(let index=3;index<data.length;index+=4){if(data[index]===0)transparent++;if(data[index]>127)foreground++;}
  assert.ok(transparent>0,'Background pixels must be transparent');assert.ok(foreground>0,'Foreground must be retained');
  assert.equal(sent.at(-1).react.text,'✅');
@@ -21,7 +26,7 @@ test('bundled CPU model removes a real background even when launched from anothe
  // Only the WhatsApp download is mocked; both inference and WebP conversion run.
  const stickers=[];
  const {createStickerHandlers}=require('../src/commands/stickers');
- await createStickerHandlers({download:async()=>result.image}).criarSticker({sendMessage:async(_,payload)=>stickers.push(payload)},
+ await createStickerHandlers({download:async()=>result.document}).criarSticker({sendMessage:async(_,payload)=>stickers.push(payload)},
   {jid:'120000@g.us',args:[],msg:{key:{id:'real-sticker'},message:{extendedTextMessage:{text:'!s',contextInfo:{quotedMessage:{imageMessage:{mimetype:'image/png'}}}}}}});
  const sticker=stickers.find(payload=>payload.sticker);assert.ok(sticker,'The recut image must convert to a sticker');
  const webp=await sharp(sticker.sticker).metadata();assert.equal(webp.format,'webp');assert.equal(webp.width,512);assert.equal(webp.height,512);

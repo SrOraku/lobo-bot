@@ -86,7 +86,7 @@ function loadAllCommands() {
   r({name:'spotify',  aliases:['spot'],        description:'Buscar Spotify',      category:'midia',  usage:'!spotify [nome]',                       example:'!spotify Blinding Lights',    handler:media.spotify});
 
   // Figurinhas
-  r({name:'sticker',  aliases:['s'],           description:'Criar figurinha',     category:'midia',  usage:'!sticker [pack]',                       example:'!sticker',                    handler:stick.criarSticker});
+  r({name:'sticker',  aliases:['s'],           description:'Criar figurinha',     category:'midia',  usage:'!sticker [pacote | autor]',              example:'!sticker',                    handler:stick.criarSticker});
   r({name:'stickeranim',aliases:['sanim'],     description:'Sticker animado',     category:'midia',  usage:'!stickeranim',                          example:'!stickeranim',                handler:stick.criarStickerAnimado});
   r({name:'toimg',    aliases:['stickertoimg'],description:'Sticker → imagem',    category:'midia',  usage:'!toimg',                                example:'!toimg',                      handler:stick.stickerParaImagem});
 
