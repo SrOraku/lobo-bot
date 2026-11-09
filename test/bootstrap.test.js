@@ -187,14 +187,14 @@ for (const entry of ['index.js', 'runtime.js']) {
 
 // Executa o ponto de entrada real em uma instalação limpa. O npm local simulado
 // evita rede, e os módulos de licença/supervisor não iniciam serviços externos.
-test('index.js instala dotenv antes de iniciar e preserva a falha útil do npm', { skip: process.platform === 'win32' }, t => {
+function entryFixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lobo-entry-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  for (const dir of ['src/licensing', 'src/updater', 'bin']) fs.mkdirSync(path.join(root, dir), { recursive: true });
-  for (const file of ['index.js', 'bootstrap.js']) fs.copyFileSync(path.join(__dirname, '../src', file), path.join(root, 'src', file));
+  for (const dir of ['src/licensing', 'src/updater', 'src/config', 'src/utils', 'bin']) fs.mkdirSync(path.join(root, dir), { recursive: true });
+  for (const file of ['index.js', 'bootstrap.js', 'config/owner-setup.js', 'utils/terminal-input.js']) fs.copyFileSync(path.join(__dirname, '../src', file), path.join(root, 'src', file));
   fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'lobo-entry-test', version: '1.0.0', dependencies: { dotenv: '^16.4.5' } }));
-  fs.writeFileSync(path.join(root, 'src/licensing/licenseGuard.js'), "exports.authorizeStartup = async () => ({ enabled: false });");
-  fs.writeFileSync(path.join(root, 'src/updater/supervisor.js'), "exports.start = () => { require('node:assert/strict').equal(process.env.DOTENV_LOADED, '1'); console.log('supervisor iniciado'); };");
+  fs.writeFileSync(path.join(root, 'src/licensing/licenseGuard.js'), "exports.authorizeStartup = async () => { console.log('licença verificada'); if (process.env.FAKE_LICENSE_DENIED === '1') throw Object.assign(new Error('negada'), { code: 'LOBO_LICENSE_DENIED' }); return { enabled: false }; };");
+  fs.writeFileSync(path.join(root, 'src/updater/supervisor.js'), "exports.start = () => { require('node:assert/strict').equal(process.env.DOTENV_LOADED, '1'); console.log('supervisor iniciado: ' + process.env.BOT_OWNER); };");
   fs.writeFileSync(path.join(root, 'bin/npm'), `#!${process.execPath}
 const fs = require('node:fs');
 fs.appendFileSync('npm-calls.log', JSON.stringify(process.argv.slice(2)) + '\\n');
@@ -202,8 +202,13 @@ if (process.env.FAIL_NPM === '1') process.exit(1);
 fs.mkdirSync('node_modules/dotenv', { recursive: true });
 fs.writeFileSync('node_modules/dotenv/index.js', "exports.config = () => { process.env.DOTENV_LOADED = '1'; };");
 `, { mode: 0o755 });
-  const env = { ...process.env, PATH: path.join(root, 'bin') + path.delimiter + process.env.PATH, PORT: '', RENDER: '', NODE_PATH: '', DOTENV_LOADED: '' };
-  const run = extra => spawnSync(process.execPath, ['src/index.js'], { cwd: root, env: { ...env, ...extra }, encoding: 'utf8', timeout: 10000 });
+  const env = { ...process.env, PATH: path.join(root, 'bin') + path.delimiter + process.env.PATH, PORT: '', RENDER: '', NODE_PATH: '', DOTENV_LOADED: '', BOT_OWNER: '5511987654321' };
+  const run = (extra, input = '') => spawnSync(process.execPath, ['src/index.js'], { cwd: root, env: { ...env, ...extra }, input, encoding: 'utf8', timeout: 10000 });
+  return { root, run, ownerFile: path.join(root, 'data/bot-owner.json') };
+}
+
+test('index.js instala dotenv antes de iniciar e preserva a falha útil do npm', { skip: process.platform === 'win32' }, t => {
+  const { root, run } = entryFixture(t);
 
   const failed = run({ FAIL_NPM: '1' });
   assert.equal(failed.status, 1, failed.stderr);
@@ -220,4 +225,40 @@ fs.writeFileSync('node_modules/dotenv/index.js', "exports.config = () => { proce
   assert.equal(warm.status, 0, warm.stderr);
   assert.match(warm.stdout, /supervisor iniciado/);
   assert.equal(fs.readFileSync(path.join(root, 'npm-calls.log'), 'utf8').trim().split('\n').length, 2);
+});
+
+test('index.js cadastra dono no primeiro início e reutiliza o cadastro com prioridade do ambiente', { skip: process.platform === 'win32' }, t => {
+  const { run, ownerFile } = entryFixture(t);
+  const first = run({ BOT_OWNER: '' }, '5511987654321\n');
+  assert.equal(first.status, 0, first.stderr);
+  assert.match(first.stdout, /supervisor iniciado: 5511987654321/);
+  assert.ok(first.stdout.indexOf('licença verificada') < first.stdout.indexOf('Número do dono'));
+  assert.deepEqual(JSON.parse(fs.readFileSync(ownerFile, 'utf8')), { owner: '5511987654321' });
+
+  const saved = run({ BOT_OWNER: '' });
+  assert.equal(saved.status, 0, saved.stderr);
+  assert.match(saved.stdout, /supervisor iniciado: 5511987654321/);
+
+  const overridden = run({ BOT_OWNER: '5543987654321' });
+  assert.equal(overridden.status, 0, overridden.stderr);
+  assert.match(overridden.stdout, /supervisor iniciado: 5543987654321/);
+  assert.deepEqual(JSON.parse(fs.readFileSync(ownerFile, 'utf8')), { owner: '5511987654321' });
+});
+
+test('index.js não inicia o supervisor quando console fecha sem cadastrar dono', { skip: process.platform === 'win32' }, t => {
+  const { run, ownerFile } = entryFixture(t);
+  const closed = run({ BOT_OWNER: '' });
+  assert.equal(closed.status, 1, closed.stderr);
+  assert.match(closed.stdout, /licença verificada/);
+  assert.doesNotMatch(closed.stdout, /supervisor iniciado/);
+  assert.equal(fs.existsSync(ownerFile), false);
+});
+
+test('index.js exige autorização da licença antes de cadastrar dono', { skip: process.platform === 'win32' }, t => {
+  const { run, ownerFile } = entryFixture(t);
+  const denied = run({ BOT_OWNER: '', FAKE_LICENSE_DENIED: '1' }, '5511987654321\n');
+  assert.equal(denied.status, 1, denied.stderr);
+  assert.match(denied.stderr, /LOBO_LICENSE_DENIED/);
+  assert.doesNotMatch(denied.stdout, /Número do dono|supervisor iniciado/);
+  assert.equal(fs.existsSync(ownerFile), false);
 });

@@ -28,7 +28,10 @@ NODE_ENV=production
 npm ci --omit=dev --no-audit --no-fund
 ```
 
-6. Após instalar, o código de pareamento aparecerá no console. Nos próximos inícios os pacotes existentes são reutilizados. Não digite comandos de sistema no console de um processo Node em execução.
+6. Se `BOT_OWNER` estiver vazio, o console solicita primeiro o número do dono (DDI + DDD + número, de 10 a 15 dígitos, sem `+` ou espaços). O cadastro é salvo privadamente em `data/bot-owner.json` e reutilizado nos próximos inícios. Um `BOT_OWNER` preenchido no painel ou `.env` tem prioridade. Esse cadastro é separado do número que será conectado ao WhatsApp.
+7. Depois, siga o pareamento pelo console. Nos próximos inícios os pacotes existentes são reutilizados. Não digite comandos de sistema no console de um processo Node em execução.
+
+Se aparecer `Variável obrigatória ausente: BOT_OWNER`, atualize o código e mantenha o startup `node src/index.js` (ou `npm start`). O supervisor aguarda o cadastro antes de iniciar o processo WhatsApp. Em hospedagens sem entrada de console, configure `BOT_OWNER` diretamente no painel ou `.env`. O processo interno `src/runtime.js` deve ser iniciado pelo supervisor.
 
 Se já houve `MODULE_NOT_FOUND` na linha que carrega `dotenv`, atualize os arquivos pelo GitHub ou ZIP, mantenha o startup `node src/index.js` e reinicie. Preserve `.env`, `sessions/`, `data/` e `storage/alcateia/` da instalação existente.
 
