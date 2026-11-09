@@ -67,7 +67,7 @@
   "license": "MIT",
   "displayName": "🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑",
   "overrides": {
-    "libsignal": "https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7",
+    "libsignal": "6.0.0",
     "@imgly/background-removal-node": {
       "sharp": "$sharp",
       "onnxruntime-node": "1.16.3"

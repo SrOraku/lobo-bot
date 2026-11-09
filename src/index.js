@@ -1,5 +1,9 @@
 'use strict';
 
+// Instale dependências antes de carregar dotenv, a licença e o supervisor.
+const { ensureDependencies } = require('./bootstrap');
+if (!ensureDependencies()) process.exit(1);
+
 const http = require('node:http');
 
 // Hosts that provide PORT (including Render) can use this lightweight
