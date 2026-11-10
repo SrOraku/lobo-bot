@@ -102,6 +102,8 @@ async function startBot() {
 
   if (!commonReady) commonReady = (async () => {
     printBanner();
+    const remoteBronxys = await require('./integrations/bronxys/key').refreshRemote();
+    if (remoteBronxys.configured && !remoteBronxys.loaded) logger.warn({ component: 'bronxys', code: remoteBronxys.error }, 'Configuração remota Bronxys indisponível; mantendo a configuração privada local, se existir.');
     await cache.initRedis();
     loadAllCommands();
     require('./activations/store').getStore().preload();
