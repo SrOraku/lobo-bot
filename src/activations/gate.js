@@ -3,6 +3,13 @@ const { allowed, commandSector } = require('./policy');
 function createGate({ store, resolveActor } = {}) {
   return async (sock, ctx, name, definition) => {
     if (!ctx.jid?.endsWith('@g.us')) return true;
+
+    const central = await require('../integrations/control-center').controlCenter().authorizeGroup(sock, ctx.jid);
+    if (!central.allowed) {
+      await require('../integrations/control-center').controlCenter().notifyDenied(sock, ctx.jid, central, ctx.msg);
+      return false;
+    }
+
     const key = commandSector(name, ctx.args, definition);
     if (!key) return true; // Navegação e recuperação continuam disponíveis.
     const policy = (store || require('./store').getStore()).get(ctx.jid);

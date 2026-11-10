@@ -59,6 +59,7 @@ test('message pipeline applies protection before automatic downloads and keeps p
  const replacements={
   '../automation/anti-pv':{createAntiPV:()=>({handle:async()=>false})},'../games/gartic':{gartic:()=>({guess:async()=>null})},'../progression/service':{progression:()=>({touch(){},refresh:()=>[]})},
   '../services/universal-currency':{linkMessageWallet:async()=>{}},
+  '../integrations/control-center':{controlCenter:()=>({authorizeGroup:async()=>({allowed:true,status:'disabled'}),notifyDenied:async()=>false})},
   dotenv:{config(){}},'../utils/helpers':{cleanJid:j=>j,getNumber:j=>j.split('@')[0],PREFIX:'!',logger:{error(){}},BOT_NAME:'Lobo'},
   '../utils/database':{upsertUser(){},getUser:()=>({}),upsertActivity(){},upsertGroup(){},getGroup:()=>({name:'Grupo de teste'})},
   '../core/eventBus':{bus:{emit(){}},EVENTS:{}},'../core/commandRegistry':{execute:async(_name,_sock,ctx)=>{calls.push('command');assert.equal(ctx.groupName,'Grupo de teste');}},
