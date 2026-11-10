@@ -7,6 +7,7 @@ export function ensureRP(player, now = Date.now()) {
     energy: 100, hunger: 100, health: 100, lastCareAt: now,
     wanted: 0, jailedUntil: null, reputation: 0,
     inventory: {}, home: null, vehicle: null, relationship: null,
+    equipment: null, lastRest: null,
     familyId: null, createdAt: now, updatedAt: now,
   };
   if (player.rp === undefined || player.rp === null) player.rp = defaults;
@@ -19,6 +20,8 @@ export function ensureRP(player, now = Date.now()) {
   for (const field of ['experience', 'wanted', 'reputation']) integer(rp[field], { label: field });
   if (!rp.inventory || typeof rp.inventory !== 'object' || Array.isArray(rp.inventory)) throw new GameError('Inventário RP inválido.');
   for (const count of Object.values(rp.inventory)) integer(count, { max: 999, label: 'Estoque' });
+  if (rp.equipment !== null && typeof rp.equipment !== 'string') throw new GameError('Equipamento RP inválido.');
+  if (rp.lastRest !== null) integer(rp.lastRest, { label: 'Último descanso' });
   return rp;
 }
 

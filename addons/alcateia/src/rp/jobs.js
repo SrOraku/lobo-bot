@@ -3,6 +3,7 @@ import { GameError, integer, formatRemaining } from '../game/validation.js';
 import { assertPlayable } from '../game/players.js';
 import { credit, debit } from '../game/wallet.js';
 import { ensureRP } from './state.js';
+import { workEquipment } from './shop.js';
 
 const HOUR = 3_600_000;
 const ACTION_COOLDOWN = 300_000;
@@ -137,21 +138,28 @@ export function work(player, { now = Date.now(), rng = Math.random, modifiers } 
     throw new GameError(`Aguarde ${formatRemaining(job.cooldownMs - (now - rp.lastWork))} para trabalhar.`, 'COOLDOWN');
   }
   if (rp.energy < 15 || rp.hunger < 10) throw new GameError('Para trabalhar, tenha ao menos 15 de energia e 10 de saciedade RP.', 'RP_NEEDS');
-  const experience = advance(rp.experience, 10, 'Experiência');
+  const vehicleLevel = rp.vehicle ? integer(rp.vehicle.level, { min: 1, max: 6, label: 'Nível do veículo' }) : 0;
+  const energyCost = 10 - vehicleLevel;
+  const equipment = workEquipment(player, job.category);
+  const equipmentBonus = equipment ? Math.min(20, Math.floor(job.salary / 10)) : 0;
+  const equipmentExperience = equipment ? 2 : 0;
+  const experience = advance(rp.experience, 10 + equipmentExperience, 'Experiência');
   const caught = job.illegal && random(rng) < 0.25;
-  let salary=job.salary;
-  if(!caught&&modifiers)salary=careerPolicy.record(rp,now,modifiers.day,Math.floor(job.salary*(modifiers.salary||1))).paid;
+  let salary=job.salary + equipmentBonus;
+  if(!caught&&modifiers)salary=careerPolicy.record(rp,now,modifiers.day,Math.floor(job.salary*(modifiers.salary||1)) + equipmentBonus).paid;
   const coinChange = caught ? -Math.min(20, player.coins) : salary;
   if (coinChange < 0) debit(player, -coinChange);
   else credit(player, coinChange);
   rp.experience = experience;
-  rp.energy -= 10;
+  rp.energy -= energyCost;
   rp.hunger -= 10;
   rp.lastWork = now;
   if (job.illegal) rp.wanted = Math.min(100, (rp.wanted ?? 0) + 1);
   rp.jailedUntil = caught ? now + JAIL_TIME : rp.jailedUntil ?? null;
   touch(player, now);
-  return { job, salary: caught ? 0 : salary, coinChange, experienceGain: 10,
+  const scene = caught ? 'A cena de trabalho é interrompida por uma ocorrência fictícia.'
+    : `${equipment ? `Com ${equipment.name}, você conclui um serviço caprichado.` : 'Você percorre a cidade e conclui mais um expediente.'}${rp.vehicle ? ` ${rp.vehicle.name} torna o trajeto menos cansativo.` : ''}`;
+  return { job, salary: caught ? 0 : salary, coinChange, experienceGain: 10 + equipmentExperience, equipment, equipmentBonus: caught ? 0 : equipmentBonus, equipmentExperience, energyCost, scene,
     energy: rp.energy, hunger: rp.hunger, event: caught ? 'fine' : job.illegal ? 'fictional-success' : 'salary',
     wanted: rp.wanted ?? 0, jailedUntil: rp.jailedUntil };
 }

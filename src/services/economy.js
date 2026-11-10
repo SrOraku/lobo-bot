@@ -1,5 +1,6 @@
 'use strict';
 const DAY = 86400000;
+const { getShopItem } = require('../economy/shop-catalog');
 function isPremium(user, now = Date.now()) {
   if (!user?.premium) return false;
   // Preserve explicitly granted legacy permanent Premium; dated grants expire normally.
@@ -28,8 +29,13 @@ function createEconomy(api, { now = Date.now, scope = () => require('../isolatio
     if (row.changes !== 1) throw Error('Não foi possível movimentar o saldo.');
   }
   function effect(jid, type, duration, multiplier = 1) {
-    const old = db.prepare('SELECT expires_at FROM user_effects WHERE chat_jid=? AND user_jid=? AND type=?').get(scope(),jid,type);
-    const end = Math.max(now(),old?.expires_at || 0)+duration;
+    const old = db.prepare('SELECT expires_at,multiplier FROM user_effects WHERE chat_jid=? AND user_jid=? AND type=?').get(scope(),jid,type);
+    const time = now(), previous = old?.expires_at || 0;
+    if (previous > time && old.multiplier > multiplier)
+      throw Error('Você já possui um efeito mais forte ativo. Aguarde terminar antes de comprar este item.');
+    const end = Math.max(time, previous) + duration;
+    if (!Number.isSafeInteger(time) || !Number.isSafeInteger(previous) || !Number.isSafeInteger(end) || end - time > 90 * DAY)
+      throw Error('A duração acumulada desse efeito pode chegar a no máximo 90 dias.');
     db.prepare('INSERT INTO user_effects VALUES (?,?,?,?,?,?) ON CONFLICT(chat_jid,user_jid,type) DO UPDATE SET multiplier=excluded.multiplier,expires_at=excluded.expires_at').run(scope(),jid,type,multiplier,now(),end);
     return end;
   }
@@ -55,21 +61,29 @@ function createEconomy(api, { now = Date.now, scope = () => require('../isolatio
         return {success:true,premium,gold,xp};
       });
     },
-    buy(jid,item,event) {
+    buy(jid,offered,event) {
+      const item = getShopItem(offered?.id);
+      if (!item) throw Error('Item inválido.');
       return operation(event,'purchase',()=>{
         ensure(jid);amount(item.price);move(jid,-item.price);
         let message;
-        if(item.id===1) {
+        if(item.type==='premium') {
           const user=api.getUser(jid),old=Number(user.premium_until)||Date.parse(user.premium_until)||0;
-          const end=Math.max(now(),old)+7*DAY;
+          if (user.premium && user.premium_until == null) throw Error('Seu Premium permanente já está ativo.');
+          const time = now(), end=Math.max(time,old)+item.duration;
+          if (!Number.isSafeInteger(time) || !Number.isSafeInteger(end) || end - time > 365 * DAY)
+            throw Error('O Premium acumulado pode chegar a no máximo 365 dias.');
           api.setPremium(jid,1,new Date(end).toISOString());message='👑 Premium válido até '+new Date(end).toISOString();
-        } else if(item.id===2) { if(!api.getStrategy(jid)) api.upsertStrategy(jid,34,33,33);api.updateWolvesAlive(jid,100);message='🐺 Todos os lobos foram curados.';
-        } else if(item.id===3) { const atk=20+Math.floor(Math.random()*60),def=Math.floor(Math.random()*(80-atk));api.upsertStrategy(jid,atk,def,100-atk-def);message='🔮 Estratégia sorteada e salva.';
-        } else if(item.id===4) { effect(jid,'xp',DAY,3);message='⚡ Boost XP 3× ativado por 24h.';
-        } else if(item.id===5) { effect(jid,'shield',3*3600000);message='🛡️ Escudo ativado por 3h.';
-        } else if(item.id===6) {
+        } else if(item.type==='heal') { if(!api.getStrategy(jid)) api.upsertStrategy(jid,34,33,33);api.updateWolvesAlive(jid,100);message='🐺 Todos os lobos foram curados.';
+        } else if(item.type==='strategy') { const atk=20+Math.floor(Math.random()*60),def=Math.floor(Math.random()*(80-atk));api.upsertStrategy(jid,atk,def,100-atk-def);message='🔮 Estratégia sorteada e salva.';
+        } else if(item.type==='effect') {
+          const end = effect(jid,item.effect,item.duration,item.multiplier || 1);
+          message=(item.effect === 'xp' ? '⚡ XP por mensagem 3×' : '🛡️ Escudo do combate clássico') + ' ativo até ' + new Date(end).toISOString();
+        } else if(item.type==='title') {
+          if (db.prepare('SELECT 1 FROM user_titles WHERE chat_jid=? AND user_jid=? AND title_id=?').get(scope(),jid,item.titleId))
+            throw Error('Você já possui esse título. Use titulo usar ' + item.titleId + ' para equipá-lo.');
           db.prepare('UPDATE user_titles SET equipped=0 WHERE chat_jid=? AND user_jid=?').run(scope(),jid);
-          db.prepare("INSERT INTO user_titles VALUES (?,?, 'alfa-lua','Alfa da Lua',?,1) ON CONFLICT(chat_jid,user_jid,title_id) DO UPDATE SET equipped=1").run(scope(),jid,now());message='🌕 Título Alfa da Lua salvo e equipado.';
+          db.prepare('INSERT INTO user_titles VALUES (?,?,?,?,?,1)').run(scope(),jid,item.titleId,item.title,now());message='🌕 Título '+item.title+' salvo e equipado. Consulte titulos para trocar.';
         } else throw Error('Item inválido.');
         api.logGoldTransaction(jid,'shop',item.price,'Compra: '+item.id);
         return {message};

@@ -22,7 +22,7 @@ function safeAdd(value, delta, label = 'Saldo') {
 }
 
 function ensureBattlePlayer(player, now) {
-  if (player.hp <= 0) throw new GameError('Um dos jogadores está sem HP. Recupere HP no evento lunar ou com um administrador do jogo.', 'HP');
+  if (player.hp <= 0) throw new GameError('Um dos jogadores está sem HP. Consulte !loja e compre um item de recuperação; o evento lunar e a administração do jogo também podem recuperar HP.', 'HP');
   if (player.lastBattle !== null && now - player.lastBattle < COOLDOWNS.battle) {
     throw new GameError(`${player.name}: aguarde ${formatRemaining(COOLDOWNS.battle - (now - player.lastBattle))} para outra batalha.`, 'COOLDOWN');
   }
@@ -105,9 +105,15 @@ export class GameService {
     // draft, so rejected actions cannot leave partial profiles or rewards.
     if (command === 'rank' || command === 'loja') {
       if (Object.hasOwn(game.players, actor.jid)) requirePlayer(game, actor.jid);
-      exactArgs(args, 0, command === 'rank' ? '!rank' : '!loja');
-      return command === 'rank' ? { type: 'ranking', players: rankPlayers(game).slice(0, 10) }
-        : { type: 'shop', items: SHOP_ITEMS };
+      if (command === 'rank') {
+        exactArgs(args, 0, '!rank');
+        return { type: 'ranking', players: rankPlayers(game).slice(0, 10) };
+      }
+      if (args.length > 1) throw new GameError('Use !loja [página].');
+      const pageSize = 8;
+      const totalPages = Math.max(1, Math.ceil(SHOP_ITEMS.length / pageSize));
+      const page = integer(args[0] ?? 1, { min: 1, max: totalPages, label: 'Página' });
+      return { type: 'shop', items: SHOP_ITEMS.slice((page - 1) * pageSize, page * pageSize), page, totalPages };
     }
     const player = ensurePlayer(game, actor, now);
     function targetPlayer() {
@@ -133,7 +139,7 @@ export class GameService {
         return completeBattle(game, player, defender, request, now);
       }
       case 'comprar':
-        exactArgs(args, 1, '!comprar 1/2/3/4');
+        exactArgs(args, 1, '!comprar ID');
         return { type: 'purchase', player, ...buyItem(player, args[0], { now, rng: this.rng }) };
       case 'clan': {
         const subcommand = args[0]?.toLowerCase();

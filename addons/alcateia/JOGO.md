@@ -109,7 +109,7 @@ Após uma batalha, **os dois jogadores** aguardam 5 minutos para outra, inclusiv
 
 ## Loja e boosts
 
-Consulte `!loja` e compre pelo número do item:
+Consulte `!loja [página]` no addon independente ou `!lojaalcateia [página]` no bot integrado e compre pelo número do item. Os quatro itens originais continuam disponíveis com os mesmos IDs e preços:
 
 | Item | Nome | Preço | Efeito |
 | --- | --- | --- | --- |
@@ -117,6 +117,8 @@ Consulte `!loja` e compre pelo número do item:
 | `!comprar 2` | Pele de Prata 🛡️ | 100 WOK Coins | +20% de defesa por 1 hora. |
 | `!comprar 3` | Instinto Selvagem ⚡ | 150 WOK Coins | +30% de contra-ataque por 1 hora. |
 | `!comprar 4` | Treino Alfa 🐺 | 200 WOK Coins | Acrescenta um crédito de treino extra. |
+
+O catálogo ampliado contém 12 itens, incluindo ervas (+25 HP), elixir (+60 HP), recuperação total, boosts de duas horas, ritual e pacote de três treinos. No bot integrado use `!compraralcateia ID`. Os itens de recuperação funcionam mesmo com HP zero e respeitam o máximo de 100; com HP cheio, a compra é recusada sem cobrar. Eles não apagam o intervalo de batalha. Preços e efeitos completos estão no [guia das lojas](LOJAS.md).
 
 O boost começa na compra e expira pelo horário real, inclusive enquanto o bot estiver desligado. Comprar novamente o mesmo tipo renova a duração para 1 hora a partir da nova compra; o percentual não se acumula. Tipos diferentes podem ficar ativos ao mesmo tempo.
 

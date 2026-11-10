@@ -2,14 +2,7 @@
 const db = require('../utils/database');
 const { formatNumber, cleanJid, getNumber } = require('../utils/helpers');
 const { card, mono, command } = require('../ui/text');
-const SHOP_ITEMS = [
-  { id: 1, name: '💎 Premium 7 dias', price: 2000, description: 'XP dobrado por 7 dias' },
-  { id: 2, name: '🐺 Cure Total de Lobos', price: 200, description: 'Restaura todos os 100 lobos' },
-  { id: 3, name: '🔮 Estratégia Aleatória', price: 100, description: 'Sorteia uma estratégia misteriosa' },
-  { id: 4, name: '⚡ Boost XP 24h', price: 500, description: 'XP triplicado por 24 horas' },
-  { id: 5, name: '🎯 Escudo de Batalha 3h', price: 300, description: 'Imunidade a ataques por 3 horas' },
-  { id: 6, name: '🌕 Título "Alfa da Lua"', price: 5000, description: 'Título exclusivo no perfil' },
-];
+const { SHOP_ITEMS, shopPage } = require('../economy/shop-catalog');
 
 // ============================
 // VER GOLD
@@ -115,17 +108,29 @@ async function daily(sock, ctx) {
 // ============================
 async function loja(sock, ctx) {
   const { jid, msg } = ctx;
-  const items = SHOP_ITEMS.map(item =>
+  const prefix = require('../config').get('PREFIX') || '!';
+  let page;
+  try { page = shopPage(ctx.args || []); }
+  catch (error) { return sock.sendMessage(jid, { text: `❌ *Ação inválida!* _${error.message}_\n> ${command(prefix + 'loja')}` }, { quoted: msg }); }
+  const items = page.items.map(item =>
     `│ ▸ ${mono(item.id)} *${item.name}*\n*Preço:* ${mono(formatNumber(item.price))} WoK coin\n_${item.description}_`
   ).join('\n\n');
 
   await sock.sendMessage(jid, {
     text: card('🏪 LOJA DA MATILHA', [
+      '_O Mercador da Lua abre as tendas do refúgio. Escolha suprimentos, proteção ou um título para sua jornada._',
+      `*${page.name}* • Página ${mono(page.page + '/' + page.pages)} • ${mono(page.total)} itens`,
       items,
-      `│ ▸ ${command('!comprarescudo')} — _Escudo econômico_`,
-      `│ ▸ ${command('!boosts')} — _Boosts ativos e catálogo_`,
-      `*Comprar:* ${command('!comprar [ID]')}`,
-    ], { tip: `Exemplo: ${command('!comprar 2')}` })
+      `*Categorias:* ${command(prefix + 'loja premium')} • ${command(prefix + 'loja xp')}\n${command(prefix + 'loja protecao')} • ${command(prefix + 'loja titulos')}`,
+      ...(page.pages > 1 ? [`*Páginas:* ${command(prefix + 'loja' + (page.category === 'todos' ? '' : ' ' + page.category) + ' ' + (page.page < page.pages ? page.page + 1 : 1))}`] : []),
+      `│ ▸ ${command(prefix + 'comprarescudo')} — _Escudo econômico_`,
+      `│ ▸ ${command(prefix + 'boosts')} — _Boosts ativos e catálogo_`,
+      `│ ▸ ${command(prefix + 'lojaalcateia')} — _Suprimentos e recuperação da Alcateia_`,
+      `│ ▸ ${command(prefix + 'rploja equipamentos')} — _Ferramentas e equipamentos RP_`,
+      `│ ▸ ${command(prefix + 'rploja')} — _Comida, presentes, moradias e veículos RP_`,
+      `*Comprar:* ${command(prefix + 'comprar [ID]')}\n*Títulos adquiridos:* ${command(prefix + 'titulos')}`,
+      `_A cura e os escudos desta tenda atendem o combate clássico (${prefix}atacar). A Alcateia (${prefix}ataque) possui sua própria loja._`,
+    ], { tip: `Exemplo: ${command(prefix + 'comprar 2')}` })
   }, { quoted: msg });
 }
 

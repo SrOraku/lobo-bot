@@ -3,7 +3,7 @@ import { panel, progress, mono } from '../presentation.js';
 
 const COMMANDS = new Set([
   'rp', 'profissoes', 'profissao', 'trabalhar', 'acao', 'carteira', 'transferir',
-  'rploja', 'rpcomprar', 'usar', 'inventario', 'familia',
+  'rploja', 'rpcomprar', 'usar', 'inventario', 'familia', 'descansar',
 ]);
 const PAGE_SIZE = 10;
 
@@ -68,7 +68,7 @@ function itemDescription(item) {
 function pageFooter(command, result, prefix) {
   const page = Math.max(1, result.page || 1);
   const total = Math.max(page, result.totalPages || 1);
-  const filter = command === 'profissoes' && result.category ? `${clean(result.category)} ` : '';
+  const filter = ['profissoes', 'rploja'].includes(command) && result.category ? `${clean(result.category)} ` : '';
   return [`📖 Página ${page}/${total}`, page < total ? `🐺 Próxima: ${prefix}${command} ${filter}${page + 1}` : undefined];
 }
 
@@ -91,8 +91,9 @@ export function rpMenu(config = {}) {
     ] },
     { title: '💰 PATRIMÔNIO WOK COIN', lines: [
       `👛 ${p}carteira — saldo compartilhado`, `💸 ${p}transferir @jogador quantidade`,
-      `🛍️ ${p}rploja [página] — catálogo`, `💳 ${p}rpcomprar ITEM [quantidade]`,
-      `🎒 ${p}inventario — seus pertences`, `💎 ${p}usar ITEM [@destinatário para presentes]`,
+      `🛍️ ${p}rploja [categoria] [página] — catálogo`, `💳 ${p}rpcomprar ITEM [quantidade]`,
+      `🎒 ${p}inventario [página] — seus pertences`, `💎 ${p}usar ITEM [@destinatário para presentes]`,
+      `🧰 ${p}rploja equipamentos — ferramentas de profissão`, `🏠 ${p}descansar — recuperar forças na sua moradia`,
     ] },
     { title: '🏰 DINASTIA E FAMÍLIA', lines: [
       `🌹 ${p}familia criar Nome`, `📖 ${p}familia perfil`, `🐺 ${p}familia convidar @jogador parentesco`,
@@ -120,6 +121,7 @@ function profileText(result, at) {
     `🌹 Família: ${family ? nameOf(family) : rp.familyId ? clean(rp.familyId) : 'nenhuma'}`,
     `💍 Cônjuge: ${nameOf(spouse, 'nenhum')}`,
     `🏠 Casa: ${nameOf(rp.home, 'nenhuma')} • 🚗 Veículo: ${nameOf(rp.vehicle, 'nenhum')}`,
+    `🧰 Equipamento: ${nameOf(result.equipment, rp.equipment ? clean(rp.equipment) : 'nenhum')}`,
   ]);
 }
 
@@ -146,14 +148,16 @@ function shopText(result, config) {
     `💎 ${mono(clean(item.id))} • *${clean(item.name)}*`,
     `💰 ${money(item.price)}`,
     `🐺 _${itemDescription(item)}_`,
+    item.description && effectsText(item.effects) ? `💚 ${effectsText(item.effects)}` : undefined,
   ]);
   if (!lines.length) lines.push('🐺 Nenhum item nessa página.');
   return formatMenu({ title: 'LOJA RP', botName: config?.botName, botDescription: config?.botDescription,
     ownerNumber: config?.ownerNumber, prefix,
-    subtitle: '🌹 Elegância, conforto e prestígio', signature: '',
+    subtitle: result.category ? `🌹 Seção: ${clean(result.category)}` : '🌹 Elegância, conforto e prestígio', signature: '',
     sections: [{ title: '🛍️ VITRINE DA ALCATEIA', lines },
       { title: '💳 ESCOLHA SEU TESOURO', lines: [...pageFooter('rploja', result, prefix),
-        `💰 Comprar: ${prefix}rpcomprar ITEM [quantidade].`] }] });
+        ...(result.categories?.length ? [`🧭 Categorias: ${result.categories.join(' • ')}`, `📚 Exemplo: ${prefix}rploja equipamentos`] : []),
+        `💰 Comprar: ${prefix}rpcomprar ITEM [quantidade].`, `🎒 Usar ou equipar: ${prefix}usar ITEM.`] }] });
 }
 
 function familyText(family) {
@@ -204,6 +208,9 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
       text = frame('TRABALHO RP', [
         `⭐ ${nameOf(response.job)}`, `🐺 _${clean(reward.description, reward.event === 'fine' ? 'Sua ação RP terminou em multa e prisão fictícias.' : 'Expediente concluído.', 200)}_`,
         `💰 Resultado: ${change(reward.amount ?? reward.coinChange ?? reward.salary)} • XP: +${reward.xp ?? reward.experienceGain ?? 0}`,
+        reward.scene ? `🌆 _${clean(reward.scene, '', 220)}_` : undefined,
+        reward.equipmentBonus ? `🧰 Ferramenta: +${reward.equipmentBonus} WoK coin • +${reward.equipmentExperience || 0} XP` : undefined,
+        Number.isFinite(reward.energyCost) ? `⚡ Energia gasta: ${reward.energyCost}` : undefined,
         reward.fine ? `⚔️ Multa RP: ${money(reward.fine)}` : undefined,
         reward.jailedUntil > at ? `⏳ Prisão RP: ${duration(reward.jailedUntil - at)}` : undefined,
         `💰 Carteira: ${money(player.coins)}`,
@@ -229,20 +236,38 @@ export async function handleRPResponse(ctx, response, at = Date.now()) {
     case 'rp-transfer': text = frame('TRANSFERÊNCIA WOK', [`🐺 Destinatário: ${nameOf(response.target)}`, `💰 Transferido: ${money(response.amount)}`, `💰 Seu saldo: ${money(player.coins)}`]); break;
     case 'rp-shop': text = shopText(response, ctx.config); break;
     case 'rp-purchase':
-      text = frame('COMPRA RP', [`💎 ${nameOf(response.result.item)} × ${response.result.quantity}`, `💰 Total: ${money(response.result.totalCost)}`, `💰 Carteira: ${money(player.coins)}`]);
+      text = frame('COMPRA RP', [`💎 ${nameOf(response.result.item)} × ${response.result.quantity}`, `💰 Total: ${money(response.result.totalCost)}`,
+        response.result.item.description ? `🌆 _${clean(response.result.item.description, '', 220)}_` : undefined,
+        response.result.item.type === 'home' ? `🏠 Descanse com ${p}descansar.` :
+          response.result.item.type === 'vehicle' ? '🚗 Veículo adquirido; o deslocamento no trabalho gastará menos energia RP.' :
+          response.result.item.type === 'ring' ? `💍 Faça o pedido com ${p}familia casar @jogador.` :
+          response.result.item.type === 'gift' ? `🎁 Entregue com ${p}usar ${response.result.item.id} @jogador.` : `🎒 Use ou equipe com ${p}usar ${response.result.item.id}.`,
+        `💰 Carteira: ${money(player.coins)}`]);
       break;
     case 'rp-use':
       text = frame('ITEM RP', [`💎 ${nameOf(response.result.item)}`,
-        `🐺 _${clean(response.result.message, effectsText(response.result.effects) || 'Item utilizado.', 250)}_`,
-        Number.isFinite(response.result.remaining) ? `💎 Restam: ${response.result.remaining}` : undefined,
+        `🐺 _${clean(response.result.scene || response.result.message, effectsText(response.result.effects) || 'Item utilizado.', 250)}_`,
+        (response.result.scene || response.result.message) && effectsText(response.result.effects) ? `💚 ${effectsText(response.result.effects)}` : undefined,
+        response.result.equipped ? `🧰 Equipamento ativo; a ferramenta permanece no inventário. Use ${p}trabalhar para aproveitar sua profissão.` :
+          Number.isFinite(response.result.remaining) ? `💎 Restam: ${response.result.remaining}` : undefined,
         `💰 Carteira: ${money(player.coins)}`]);
+      break;
+    case 'rp-rest':
+      text = frame('DESCANSO NO LAR', [`🏠 ${nameOf(response.result.home, 'Sua moradia')}`,
+        `🌙 _${clean(response.result.scene, 'Você descansa em casa e recupera suas forças.', 240)}_`,
+        `💚 ${effectsText(response.result.effects)}`,
+        `⏳ Novo descanso em ${duration(response.result.cooldownMs)}.`, `💰 Carteira: ${money(player.coins)}`]);
       break;
     case 'rp-inventory': {
       const rp = response.rp || player.rp;
       const entries = Object.entries(rp.inventory || {}).filter(([, count]) => count > 0);
       text = frame('INVENTÁRIO RP', [
-        ...(entries.length ? entries.slice(0, PAGE_SIZE).map(([id, count]) => `💎 ${mono(clean(id))} × ${count}`) : ['🐺 Seu inventário está vazio.']),
-        entries.length > PAGE_SIZE ? `🐺 Exibindo ${PAGE_SIZE} de ${entries.length} tipos de item.` : undefined,
+        ...(response.items ? response.items.map(item => `💎 ${mono(clean(item.id))} • ${clean(item.name)} × ${item.count}`) :
+          entries.slice(0, PAGE_SIZE).map(([id, count]) => `💎 ${mono(clean(id))} × ${count}`)),
+        !entries.length ? '🐺 Seu inventário está vazio.' : undefined,
+        ...(response.totalPages ? pageFooter('inventario', response, p) :
+          entries.length > PAGE_SIZE ? [`🐺 Exibindo ${PAGE_SIZE} de ${entries.length} tipos de item.`] : []),
+        `🧰 Equipado: ${nameOf(response.equipment, rp.equipment ? clean(rp.equipment) : 'nenhum')}`,
         `💰 Carteira: ${money(player.coins)}`, `💎 Use *${p}usar* ${mono('ITEM')}.`,
       ]);
       break;
