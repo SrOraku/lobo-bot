@@ -42,3 +42,18 @@ O dono e contato públicos foram mantidos conforme determinação do proprietár
 O atualizador ainda usa `main`, validando o snapshot e preparando backup antes da troca. Isso não protege contra comprometimento da conta mantenedora. Proteja a conta e as permissões de escrita. Migração para releases assinadas exige definir o processo de publicação e a raiz de confiança; um checksum publicado pela mesma conta, sozinho, não resolve esse risco.
 
 A CI executa testes, sintaxe e diagnóstico em Node 22/24. Verificação de sintaxe não substitui ESLint ou uma auditoria de segurança. A configuração Compose foi validada com o exemplo de ambiente. O build da imagem e a conexão real do WhatsApp não foram executados nesta revisão.
+
+## Auditoria das dependências e exceção aceita
+
+`npm run security` (executado em toda CI) roda `scripts/check-audit.js`, com o mesmo critério de `npm audit --omit=dev --audit-level=high`: qualquer vulnerabilidade **alta ou crítica** nas dependências de produção reprova. A diferença é que as exceções aceitas ficam no próprio script, documentadas, e são **mostradas em toda execução** — no GitHub Actions também como anotação de aviso —, em vez de silenciadas.
+
+Hoje existe uma única exceção:
+
+| Aviso | Pacote | Onde | Versão |
+| --- | --- | --- | --- |
+| [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) (alta) | `zod` | `node_modules/@imgly/background-removal-node/node_modules/zod` | `3.25.76` |
+
+- **Por que existe:** a biblioteca do `!sfundo` só funciona com o zod 3 (usa `z.function().args()`), e não há zod 3 corrigido para esse aviso. Com o zod 4 a biblioteca nem carrega.
+- **Por que o risco é aceito:** nessa biblioteca o zod valida apenas a configuração fixa que o próprio bot passa ao iniciar o recorte, nunca dados enviados por usuários; o esgotamento de memória descrito no aviso depende de validar coleções grandes controladas por um atacante. O restante do projeto continua no zod 4 corrigido.
+- **Limites da exceção:** vale só para esse aviso, nesse pacote, nesse caminho e nessa versão. O mesmo aviso em outro lugar (por exemplo, no zod do topo do projeto), outra versão instalada ou qualquer aviso novo no mesmo pacote reprova normalmente. `test/security-audit.test.js` cobre esses casos e falha se alguém acrescentar outra exceção sem revisar o teste.
+- **Quando remover:** assim que `@imgly/background-removal-node` aceitar o zod 4. O script avisa quando a exceção deixa de ser usada.

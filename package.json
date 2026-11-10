@@ -14,7 +14,7 @@
     "audit:commands": "node scripts/audit-commands.js",
     "lint": "eslint src/utils/platform.js src/media src/commands/local-media.js src/commands/stickers.js src/ui src/services/economy.js src/services/universal-currency.js src/core/keyed-queue.js src/core/plugin-contract.js src/middlewares/command-limits.js src/integrations/bronxys/*.js src/commands/bronxys-config.js src/handlers/autoDownload.js src/progression src/economy src/automation src/events src/games/modules src/games/registry.js src/services/lastfm.js src/services/transcription.js src/updater/source.js src/updater/lock.js src/updater/recovery.js src/updater/health.js src/updater/integrity.js src/security/groups src/commands/security.js src/commands/group-removal.js src/connection/lifecycle.js src/utils/activity-logger.js src/commands/update.js src/updater/supervisor.js src/commands/wok-donation.js src/security/wok-donation.js",
     "check": "npm run lint && npm run check:syntax && npm run check:platform && npm test && npm run check:startup",
-    "security": "npm audit --omit=dev --audit-level=high",
+    "security": "node scripts/check-audit.js",
     "docs": "node scripts/audit-commands.js",
     "release:manifest": "node scripts/build-manifest.js",
     "release:verify": "node scripts/check-manifest.js",
@@ -70,7 +70,8 @@
     "libsignal": "6.0.0",
     "@imgly/background-removal-node": {
       "sharp": "$sharp",
-      "onnxruntime-node": "1.16.3"
+      "onnxruntime-node": "1.16.3",
+      "zod": "3.25.76"
     },
     "lodash": "4.18.1",
     "minimatch": "11.0.3",

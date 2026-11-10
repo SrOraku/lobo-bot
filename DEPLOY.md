@@ -3,7 +3,7 @@
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
 **Dev:** 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
-**Contato:** +5543920030769
+**Contato:** comando `!criador`
 
 ---
 
@@ -11,24 +11,27 @@
 
 Na Bronxys, use `node src/index.js` como comando de inicialização e Node 22.12 ou superior. O libsignal usa a versão oficial `6.0.0` do registro npm, publicada a partir do mesmo commit anteriormente fixado pelo projeto, com integridade no lockfile. Isso permite instalar em hospedagens com `allow-git=none` e `allow-remote=none`, sem liberar downloads Git ou arquivos externos. Mantenha `package.json` e `package-lock.json` atualizados juntos.
 
-1. Crie um servidor com Node.js 22 atualizado (mínimo 22.12; validado em 22.23.3)
+1. Crie um servidor com Node.js 22 atualizado (mínimo 22.12; validado em 22.23.3). Testado no Node 22 e no Node 24.
 2. Configure o startup como: `node src/index.js`
 3. Faça upload do projeto completo ou conecte via GitHub. `package.json`, `package-lock.json` e a pasta `src/` precisam estar juntos na raiz do servidor, normalmente `/home/container`.
 4. No painel, adicione as variáveis de ambiente:
 
 ```
-BOT_OWNER=5543920030769
 PREFIX=!
 LOG_LEVEL=info
 NODE_ENV=production
 ```
+
+   `BOT_OWNER` é opcional: deixe vazio para o console perguntar no 1º início, ou preencha com o **seu** número (DDI + DDD + número, só dígitos). Não copie o número de outra instalação: quem estiver em `BOT_OWNER` vira o dono principal.
 
 5. Inicie o servidor. Caso faltem dependências, o próprio `src/index.js` executa a instalação antes de carregar o bot. Aguarde a primeira instalação terminar. Se tiver acesso a um terminal de sistema, também pode instalar previamente:
 ```bash
 npm ci --omit=dev --no-audit --no-fund
 ```
 
-6. Se `BOT_OWNER` estiver vazio, o console solicita primeiro o número do dono (DDI + DDD + número, de 10 a 15 dígitos, sem `+` ou espaços). O cadastro é salvo privadamente em `data/bot-owner.json` e reutilizado nos próximos inícios. Um `BOT_OWNER` preenchido no painel ou `.env` tem prioridade. Esse cadastro é separado do número que será conectado ao WhatsApp.
+6. Se `BOT_OWNER` estiver vazio, o console solicita primeiro o número do dono (DDI + DDD + número, de 10 a 15 dígitos, sem `+` ou espaços). O cadastro é salvo privadamente em `data/bot-owner.json` e reutilizado nos próximos inícios. Um `BOT_OWNER` preenchido no painel ou `.env` tem prioridade. Esse cadastro é separado do número que será conectado ao WhatsApp. Para trocar o dono, apague `data/bot-owner.json` e reinicie (ou altere `BOT_OWNER`).
+
+   O criador do Lobo-bot (veja `!criador`) é **dono absoluto** em qualquer instalação, além do dono configurado: acessa os comandos de dono, os jogos e o `!atualizar`, e é dono global na segurança dos grupos (não pode ser punido). Ele nunca vira o dono principal sozinho; o principal continua sendo o `BOT_OWNER`.
 7. Depois, siga o pareamento pelo console. Nos próximos inícios os pacotes existentes são reutilizados. Não digite comandos de sistema no console de um processo Node em execução.
 
 Se aparecer `Variável obrigatória ausente: BOT_OWNER`, atualize o código e mantenha o startup `node src/index.js` (ou `npm start`). O supervisor aguarda o cadastro antes de iniciar o processo WhatsApp. Em hospedagens sem entrada de console, configure `BOT_OWNER` diretamente no painel ou `.env`. O processo interno `src/runtime.js` deve ser iniciado pelo supervisor.

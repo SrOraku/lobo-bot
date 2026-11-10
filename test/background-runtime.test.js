@@ -60,5 +60,22 @@ test('grayscale photos are normalized to RGBA before segmentation', async () => 
   let channels;
   const sent = [];
   const result = await createLocalMedia({ read: async () => grayscale, remove: async (input, output) => { channels = (await sharp(input).metadata()).channels; fs.copyFileSync(input, output); } })('sfundo')({ sendMessage: async (_, value) => sent.push(value) }, context());
-  assert.equal(channels, 4); assert.equal(result.ok, true); assert.ok(sent.some(value => value.image));
+  assert.equal(channels, 4); assert.equal(result.ok, true);
+  // O padrão do !sfundo envia figurinha + PNG em documento; nunca "image", que perderia a transparência.
+  assert.ok(sent.some(value => value.sticker)); assert.ok(sent.some(value => value.document && value.mimetype === 'image/png'));
+  assert.ok(!sent.some(value => value.image));
+});
+
+test('worker result from stdout is returned to the command and empty cutouts send nothing', async () => {
+  const line = 'BACKGROUND_RESULT:{"model":"small","bbox":{"left":1,"top":2,"width":3,"height":4},"coverage":0.01,"width":16,"height":16}';
+  const remove = createBackgroundRemover({ run: async () => ({ stdout: 'BACKGROUND_STAGE:OUTPUT\n' + line + '\n', stderr: '' }) });
+  assert.deepEqual(await remove('input', 'output'), { model: 'small', bbox: { left: 1, top: 2, width: 3, height: 4 }, coverage: 0.01, width: 16, height: 16 });
+  const photo = await sharp({ create: { width: 16, height: 16, channels: 3, background: 'red' } }).png().toBuffer();
+  const transparent = await sharp({ create: { width: 16, height: 16, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
+  const sent = [], logs = [];
+  const result = await createLocalMedia({ read: async () => photo, remove: async (_, output) => { fs.writeFileSync(output, transparent); return { model: 'medium', bbox: null, coverage: 0, width: 16, height: 16 }; }, log: entry => logs.push(entry) })('sfundo')({ sendMessage: async (_, value) => sent.push(value) }, context());
+  assert.equal(result.ok, false);
+  assert.ok(!sent.some(value => value.sticker || value.document || value.image));
+  assert.ok(sent.some(value => value.text?.includes('BACKGROUND_EMPTY') && value.text.includes('Não encontrei uma pessoa ou objeto em destaque')));
+  assert.equal(sent.findLast(value => value.react)?.react.text, '❌');
 });

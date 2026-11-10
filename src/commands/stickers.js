@@ -1,10 +1,10 @@
 'use strict';
-const { BOT_NAME } = require('../utils/helpers');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { command } = require('../ui/text');
 const { inspect } = require('../activations/message-rules');
+const { encodeStaticSticker, metadataFor, parseStickerArgs, withMetadata } = require('../media/sticker-tools');
 
 let baileysModulePromise = null;
 function loadBaileys() {
@@ -91,17 +91,17 @@ function createStickerHandlers({ download = downloadMedia, temporaryRoot = os.tm
           await convertVideo(input, output, animated);
         } else {
           // Existing PNG/WebP alpha is preserved; ordinary !s never removes backgrounds.
-          await require('sharp')(buffer, { limitInputPixels: 25000000 })
+          const canvas = await require('sharp')(buffer, { limitInputPixels: 25000000 })
             .rotate()
             .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-            .webp({ quality: 80 })
-            .toFile(output);
+            .png()
+            .toBuffer();
+          fs.writeFileSync(output, await encodeStaticSticker(canvas));
         }
-        const packname = args.join(' ') || BOT_NAME;
-        await sock.sendMessage(jid, {
-          sticker: fs.readFileSync(output),
-          ...(!animated && args.length ? { stickerMetadata: { packname, author: BOT_NAME } } : {})
-        }, { quoted: msg });
+        // O Baileys ignora `stickerMetadata`; pacote e autor vão no EXIF do
+        // próprio WebP, inclusive nas animadas ("!s pacote | autor").
+        const metadata = await metadataFor(sock, ctx, parseStickerArgs(args));
+        await sock.sendMessage(jid, { sticker: withMetadata(fs.readFileSync(output), metadata) }, { quoted: msg });
       } catch (err) {
         await sock.sendMessage(jid, {
           text: `❌ *Ação inválida!* _Erro ao criar figurinha${animated ? ' animada' : ''}: ${err.message}_`

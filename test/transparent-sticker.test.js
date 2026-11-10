@@ -4,13 +4,14 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const sharp=require('sharp');
 const {createStickerHandlers}=require('../src/commands/stickers');
+const {readStickerMetadata,listChunks}=require('../src/media/webp-exif');
 function setup(t,download,convertVideo){
  const temporaryRoot=fs.mkdtempSync(path.join(os.tmpdir(),'lobo-sticker-test-'));
  t.after(()=>fs.rmSync(temporaryRoot,{recursive:true,force:true}));
  const sent=[];
  return {temporaryRoot,sent,sock:{sendMessage:async(_,payload)=>sent.push(payload)},...createStickerHandlers({temporaryRoot,download,...(convertVideo?{convertVideo}:{})})};
 }
-function ctx(message,args=[]){return {jid:'120000@g.us',args,msg:{key:{id:'transparent-sticker'},message}};}
+function ctx(message,args=[]){return {jid:'120000@g.us',args,pushName:'Luna',msg:{key:{id:'transparent-sticker'},message}};}
 function quoted(media){return {extendedTextMessage:{text:'!s',contextInfo:{quotedMessage:media}}};}
 async function transparentPNG(){return sharp({create:{width:64,height:64,channels:4,background:'#00000000'}}).composite([{input:{create:{width:24,height:24,channels:4,background:'#33aa44ff'}},left:20,top:20}]).png().toBuffer();}
 async function assertTransparentSticker(payload){
@@ -25,7 +26,17 @@ test('!s preserves transparent PNG foreground and alpha with custom pack metadat
  const f=setup(t,async(selected,type)=>{assert.equal(selected,node);assert.equal(type,'imageMessage');return input;});
  await f.criarSticker(f.sock,ctx(quoted({imageMessage:node}),['Minha','matilha']));
  const payload=f.sent.find(value=>value.sticker);await assertTransparentSticker(payload);
- assert.equal(payload.stickerMetadata.packname,'Minha matilha');assert.ok(payload.stickerMetadata.author);assert.deepEqual(fs.readdirSync(f.temporaryRoot),[]);
+ // O Baileys ignora `stickerMetadata`: o pacote precisa estar no EXIF do WebP.
+ assert.equal(payload.stickerMetadata,undefined);
+ const meta=readStickerMetadata(payload.sticker);assert.equal(meta.packname,'Minha matilha');assert.equal(meta.author,'Pedido por Luna');
+ assert.ok(payload.sticker.length<=100*1024,'Static stickers stay within WhatsApp limit');assert.deepEqual(fs.readdirSync(f.temporaryRoot),[]);
+});
+test('!s pacote | autor customizes both fields and plain !s uses the configured defaults',async t=>{
+ const input=await transparentPNG(),f=setup(t,async()=>input);
+ await f.criarSticker(f.sock,ctx(quoted({imageMessage:{}}),['Lobos','da','Lua','|','Matilha','{nome}']));
+ let meta=readStickerMetadata(f.sent.find(value=>value.sticker).sticker);assert.equal(meta.packname,'Lobos da Lua');assert.equal(meta.author,'Matilha Luna');
+ f.sent.length=0;await f.criarSticker(f.sock,ctx(quoted({imageMessage:{}})));
+ meta=readStickerMetadata(f.sent.find(value=>value.sticker).sticker);assert.equal(meta.packname,require('../src/config').get('BOT_NAME'));assert.equal(meta.author,'Pedido por Luna');
 });
 test('!s resolves a wrapped quoted image even when metadata is its first property',async t=>{
  const input=await transparentPNG(),node={mimetype:'image/png'};
@@ -72,6 +83,7 @@ test('video and animated sticker commands retain real FFmpeg conversion and clea
  for(const name of ['criarSticker','criarStickerAnimado']){
   f.sent.length=0;await f[name](f.sock,ctx(quoted({videoMessage:{}})));
   const payload=f.sent.find(value=>value.sticker);assert.ok(payload,`${name} must deliver a sticker`);assert.equal(payload.sticker.subarray(0,4).toString(),'RIFF');assert.equal(payload.sticker.subarray(8,12).toString(),'WEBP');assert.deepEqual(fs.readdirSync(f.temporaryRoot),[]);
+  assert.equal(readStickerMetadata(payload.sticker).author,'Pedido por Luna',`${name} must carry pack metadata`);
  }
 });
 test('!s preserves every frame when replying to an existing animated WebP sticker',async t=>{
@@ -80,6 +92,14 @@ test('!s preserves every frame when replying to an existing animated WebP sticke
  const exec=require('node:util').promisify(require('node:child_process').execFile),file=path.join(root,'animated.webp');
  await exec(require('@ffmpeg-installer/ffmpeg').path,['-y','-f','lavfi','-i','testsrc=duration=0.3:size=32x32:rate=10','-loop','0',file]);
  const input=fs.readFileSync(file);assert.ok((await sharp(input).metadata()).pages>1,'The fixture must have multiple frames');
- const f=setup(t,async()=>input);await f.criarSticker(f.sock,ctx(quoted({stickerMessage:{isAnimated:true,mimetype:'image/webp'}})));
- assert.deepEqual(f.sent.find(value=>value.sticker)?.sticker,input,'No frame may be flattened or lost');assert.deepEqual(fs.readdirSync(f.temporaryRoot),[]);
+ const f=setup(t,async()=>input);await f.criarSticker(f.sock,ctx(quoted({stickerMessage:{isAnimated:true,mimetype:'image/webp'}}),['Pacote','|','Autor']));
+ const output=f.sent.find(value=>value.sticker)?.sticker;assert.ok(output);
+ // Todos os quadros ficam idênticos; só mudam o EXIF e a flag EXIF do VP8X.
+ const frames=webp=>listChunks(webp).filter(chunk=>!['EXIF','VP8X'].includes(chunk.type)).map(chunk=>chunk.type+':'+chunk.data.toString('base64'));
+ assert.deepEqual(frames(output),frames(input),'No frame may be flattened or lost');
+ const before=listChunks(input).find(chunk=>chunk.type==='VP8X').data,after=listChunks(output).find(chunk=>chunk.type==='VP8X').data;
+ assert.equal(after[0],before[0]|0x08);assert.deepEqual(after.subarray(1),before.subarray(1));
+ const meta=readStickerMetadata(output);assert.equal(meta.packname,'Pacote');assert.equal(meta.author,'Autor');assert.equal(meta.animated,true);
+ assert.equal(meta.frames,(await sharp(input).metadata()).pages);assert.equal((await sharp(output,{animated:true}).metadata()).pages,meta.frames);
+ assert.deepEqual(fs.readdirSync(f.temporaryRoot),[]);
 });

@@ -8,7 +8,7 @@
 
 🌹 Dev: 🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺
 
-👑 Dono: +5543920030769
+🧑‍💻 Criador: comando `!criador`
 
 O RP é uma simulação por texto com personagens persistentes. Você escolhe uma profissão, trabalha, usa a função da carreira, cuida dos atributos, compra itens e forma uma família com consentimento dos participantes. Instalação e backups estão no [README](INTEGRACAO.md); o jogo da alcateia está em [JOGO.md](JOGO.md).
 
@@ -230,7 +230,7 @@ Qualquer membro pode depositar saldo próprio. Somente a liderança pode retirar
 
 RP e alcateia compartilham o limite global de **1 comando por segundo** e **50 comandos em uma janela móvel de 1 hora por jogador**, inclusive para os donos. Os limites e tempos de espera são salvos e continuam após reiniciar o bot. As regras do grupo para bot pausado e comandos somente de administradores também se aplicam ao atendimento.
 
-Os dois donos do jogo continuam sendo `5543996375955` e `5543920030769`. A permissão de dono dos comandos administrativos de grupo é configurada separadamente. Um banimento do jogo restringe o acesso ao RP e à alcateia, preservando os dados.
+Os dois donos do jogo continuam sendo `5543996375955` e o criador do bot (veja `!criador`). A permissão de dono dos comandos administrativos de grupo é configurada separadamente. Um banimento do jogo restringe o acesso ao RP e à alcateia, preservando os dados.
 
 Perfis, carteira, inventários, profissões, famílias, convites e histórico RP ficam no mesmo banco indicado por `DATA_FILE`. Os backups automáticos de 6 horas e `!admin backup` incluem esses dados. Leia o [README](README.md#backups-e-restauração) antes de atualizar ou restaurar uma instalação.
 

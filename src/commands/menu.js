@@ -79,7 +79,7 @@ function createMenu({
         );
       if (category === 'info')
         sections.push(
-          `⭐ *Versão:* ${mono(version)}\n⏱️ *Uptime:* ${mono(uptime(online()))}\n📜 *Comandos:* ${mono(all.length)}\n👑 *Dono:* ${mono('+' + config.get('BOT_OWNER'))}\n📞 ${mono('+5543920030769')}`,
+          `⭐ *Versão:* ${mono(version)}\n⏱️ *Uptime:* ${mono(uptime(online()))}\n📜 *Comandos:* ${mono(all.length)}\n🧑‍💻 *Criador:* ${p}criador`,
         );
       sections = [`${center('_' + greeting(instant) + ', lobo(a)!_')}\n👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}\n${[ctx.senderLevelName || ['Membro', 'Admin do grupo', 'Admin do bot', 'Dono'][ctx.senderLevel], ctx.user?.level !== undefined ? '*Nível:* ' + mono(ctx.user.level) : null, ctx.user?.gold !== undefined ? '*WoK coin:* ' + mono(ctx.user.gold) : null, ctx.user?.xp !== undefined ? '*XP:* ' + mono(ctx.user.xp) : null].filter(Boolean).join(' • ')}\n🕒 *Hora:* ${mono(clock(instant))}${ctx.ping !== undefined ? ' • *Ping:* ' + mono(ctx.ping + ' ms') : ''}`, block('COMANDOS', sections), `> 📖 _Volte à matilha com_ ${command(p + 'menu')}.`];
     }

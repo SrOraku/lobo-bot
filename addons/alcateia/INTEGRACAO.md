@@ -6,7 +6,7 @@ Esta integração adiciona o novo **100 Lobisomens Estratégia + RP** por um plu
 
 Nome exibido: **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑**. Descrição: 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
-Desenvolvedor: **🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺**. Dono do bot: **+5543920030769**. A pasta de entrega é `Lobo-bot-v1/`; o nome técnico do pacote continua `lobo-bot`.
+Desenvolvedor: **🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺**. Contato do criador: comando `!criador`. A pasta de entrega é `Lobo-bot-v1/`; o nome técnico do pacote continua `lobo-bot`.
 
 ## Comandos e compatibilidade
 
@@ -27,7 +27,7 @@ Qualquer comando do addon também pode ser chamado pelo namespace: `!alcateia co
 
 Os comandos antigos **`!perfil`/`!profile`, `!loja`/`!shop` e `!comprar`/`!buy`** continuam com a função original. Também são preservados `!atacar`, `!estrategia`, `!lobos`, `!daily`, `!gold`, transferências antigas, moderação, mídia, figurinhas, XP e plugins. Os menus das categorias antigas continuam com o conteúdo original.
 
-Os comandos dos novos jogos passam pelo fluxo original de mensagens, proteções e bloqueios globais do bot. O addon também verifica banimento/mute pelos identificadores de telefone e LID confiáveis. Seus limites de 1 comando por segundo e 50 por hora são persistentes e valem nos dois jogos novos. Os dois administradores do jogo são `5543996375955` e `5543920030769`; isso não concede permissões adicionais sobre o bot legado.
+Os comandos dos novos jogos passam pelo fluxo original de mensagens, proteções e bloqueios globais do bot. O addon também verifica banimento/mute pelos identificadores de telefone e LID confiáveis. Seus limites de 1 comando por segundo e 50 por hora são persistentes e valem nos dois jogos novos. Os dois administradores do jogo são `5543996375955` e o criador do bot (veja `!criador`); isso não concede permissões adicionais sobre o bot legado.
 
 ## Duas economias preservadas
 

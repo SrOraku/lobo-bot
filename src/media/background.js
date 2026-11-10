@@ -26,17 +26,40 @@ function workerFailure(error) {
   return failure;
 }
 
+// O worker imprime uma única linha BACKGROUND_RESULT:{json} só com números
+// (e o nome do modelo). Qualquer outro campo ou valor é descartado.
+function workerResult(stdout) {
+  const line = String(stdout || '').split(/\r?\n/).reverse().find(row => row.startsWith('BACKGROUND_RESULT:'));
+  if (!line) return null;
+  let parsed;
+  try { parsed = JSON.parse(line.slice('BACKGROUND_RESULT:'.length)); } catch { return null; }
+  const integer = value => (Number.isSafeInteger(value) && value >= 0 ? value : null);
+  const width = integer(parsed?.width), height = integer(parsed?.height);
+  const coverage = Number.isFinite(parsed?.coverage) && parsed.coverage >= 0 && parsed.coverage <= 1 ? parsed.coverage : null;
+  if (!width || !height || coverage === null) return null;
+  let bbox = null;
+  if (parsed.bbox) {
+    const box = { left: integer(parsed.bbox.left), top: integer(parsed.bbox.top), width: integer(parsed.bbox.width), height: integer(parsed.bbox.height) };
+    if (Object.values(box).some(value => value === null) || !box.width || !box.height || box.left + box.width > width || box.top + box.height > height) return null;
+    bbox = box;
+  }
+  return { model: ['medium', 'small'].includes(parsed.model) ? parsed.model : 'medium', bbox, coverage, width, height };
+}
+
 function createBackgroundRemover({ run = execFile, timeout = 180000 } = {}) {
   return async (input, output) => {
+    let completed;
     try {
-      await run(process.execPath,
+      completed = await run(process.execPath,
         [path.join(__dirname, 'remove-background-worker.js'), input, output],
         { timeout, killSignal: 'SIGKILL', maxBuffer: 64 * 1024, encoding: 'utf8' });
     } catch (error) { throw workerFailure(error); }
+    return workerResult(completed?.stdout);
   };
 }
 
 const BACKGROUND_MESSAGES = Object.freeze({
+  BACKGROUND_EMPTY: 'Não encontrei uma pessoa ou objeto em destaque nessa foto. Tente uma imagem em que o assunto apareça inteiro e bem separado do fundo.',
   BACKGROUND_DEPENDENCY_MISSING: 'A biblioteca de remoção não está instalada completamente. O responsável pela hospedagem deve executar npm ci.',
   BACKGROUND_ASSET_MISSING: 'Os arquivos do modelo de remoção estão ausentes ou incompletos. Reinstale as dependências com npm ci.',
   BACKGROUND_NATIVE_UNAVAILABLE: 'O motor de remoção não conseguiu executar nesta hospedagem. Confira a compatibilidade da imagem Linux e do processador.',
@@ -65,4 +88,4 @@ function mediaFailure(error, stage) {
   return { code: 'MEDIA_PROCESSING_FAILED', stage, message: 'Não foi possível processar esta mídia. Consulte o código no console da hospedagem.' };
 }
 
-module.exports = { createBackgroundRemover, workerFailure, mediaFailure };
+module.exports = { createBackgroundRemover, workerFailure, workerResult, mediaFailure, BACKGROUND_MESSAGES };

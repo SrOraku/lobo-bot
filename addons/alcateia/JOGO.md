@@ -162,7 +162,7 @@ O ranking considera somente os dados do chat atual. A posição mostrada em `!pe
 
 ## Administração do jogo
 
-Somente as contas **`5543996375955`** e **`5543920030769`** podem usar `!admin`. Os telefones são confirmados pela identidade do WhatsApp; nome do perfil, texto da mensagem ou uma identificação interna sem telefone verificado não concedem esse acesso.
+Somente a conta **`5543996375955`** e a do criador do bot (veja `!criador`) podem usar `!admin`. Os telefones são confirmados pela identidade do WhatsApp; nome do perfil, texto da mensagem ou uma identificação interna sem telefone verificado não concedem esse acesso.
 
 Esses donos são fixos no jogo. Alterar `OWNER_NUMBER` configura o dono dos comandos antigos de administração do bot e não modifica a lista de donos do jogo. Ser administrador de um grupo também não concede acesso a `!admin`.
 

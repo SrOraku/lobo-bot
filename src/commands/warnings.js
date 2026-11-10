@@ -13,7 +13,7 @@ function createWarningCommand(action, { store, resolveActor } = {}) {
     if(!resolveActor&&action!=='status'&&action!=='reset')await require('../security/groups/service').security().permissions.guardCommand(sock,ctx,'warn');
     const metadata = await sock.groupMetadata(ctx.jid);
     const { IdentityResolver } = await import('../../addons/alcateia/src/identity.js');
-    const resolver = new IdentityResolver(sock, '5543920030769@s.whatsapp.net', metadata);
+    const resolver = new IdentityResolver(sock, String(require('../config').get('BOT_OWNER')).replace(/\D/g, '') + '@s.whatsapp.net', metadata);
     const member = await resolver.member(target);
     if (!member?.phoneNumber) return reply(frameNotice('⚠️ IDENTIDADE NÃO RESOLVIDA', ['Não foi possível validar o número do participante.']));
     if (!member.inGroup)

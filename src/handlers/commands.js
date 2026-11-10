@@ -86,7 +86,7 @@ function loadAllCommands() {
   r({name:'spotify',  aliases:['spot'],        description:'Buscar Spotify',      category:'midia',  usage:'!spotify [nome]',                       example:'!spotify Blinding Lights',    handler:media.spotify});
 
   // Figurinhas
-  r({name:'sticker',  aliases:['s'],           description:'Criar figurinha',     category:'midia',  usage:'!sticker [pack]',                       example:'!sticker',                    handler:stick.criarSticker});
+  r({name:'sticker',  aliases:['s'],           description:'Criar figurinha',     category:'midia',  usage:'!sticker [pacote | autor]',              example:'!sticker',                    handler:stick.criarSticker});
   r({name:'stickeranim',aliases:['sanim'],     description:'Sticker animado',     category:'midia',  usage:'!stickeranim',                          example:'!stickeranim',                handler:stick.criarStickerAnimado});
   r({name:'toimg',    aliases:['stickertoimg'],description:'Sticker → imagem',    category:'midia',  usage:'!toimg',                                example:'!toimg',                      handler:stick.stickerParaImagem});
 
@@ -130,6 +130,7 @@ function loadAllCommands() {
     ['resetadvertencias',['resetadv'],'reset','Zerar advertências do participante neste grupo'],
   ]) r({name,aliases,description,category:'adm',groupOnly:true,minLevel:LEVELS.USER,usage:'!'+name+' @usuário',handler:warningCommands.createWarningCommand(action)});
   r({name:'setores',description:'Catálogo informativo dos setores e permissões',category:'info',menuShortcut:true,handler:require('../commands/sectors').sectors});
+  r({name:'criador',aliases:['desenvolvedor','criadorbot'],description:'Quem criou o bot, contato e código-fonte',category:'info',usage:'!criador',handler:require('../commands/creator').creator});
   r({name:'donos',description:'Cadastrar e consultar donos autorizados',category:'dono',minLevel:LEVELS.OWNER,usage:'!donos [lista|adicionar número|remover número]',handler:require('../commands/owners').owners});
   r({name:'fotomenu',description:'Definir foto ou GIF da capa dos menus',category:'dono',minLevel:LEVELS.OWNER,usage:'!fotomenu [ver|remover]',handler:require('../commands/menu-photo').menuPhoto});
   r({name:'doarwok',aliases:['doacaowok'],description:'Doar WoK coin com autorização e histórico',category:'dono',minLevel:LEVELS.OWNER,usage:'!doarwok @usuário quantidade',handler:require('../commands/wok-donation').donate});
