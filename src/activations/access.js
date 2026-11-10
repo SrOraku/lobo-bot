@@ -1,7 +1,7 @@
 'use strict';
 const config = require('../config');
 async function resolveActor(sock, ctx) {
-  const { IdentityResolver, normalizeJid } = await import('../../addons/alcateia/src/identity.js');
+  const { IdentityResolver, normalizeJid, verifiedMember } = await import('../../addons/alcateia/src/identity.js');
   const key = ctx.msg?.key;
   if (!key?.remoteJid) return { owner: false, admin: false, phone: null };
   const group = key.remoteJid.endsWith('@g.us');
@@ -16,25 +16,24 @@ async function resolveActor(sock, ctx) {
   const sender = normalizeJid(key.fromMe ? sock.user?.id : group ? key.participant : key.remoteJid);
   const alt = key.fromMe ? sock.user?.lid : group ? key.participantAlt : key.remoteJidAlt;
   const owner = String(config.get('BOT_OWNER')).replace(/\D/g, '');
-  const actor = await new IdentityResolver(sock, owner + '@s.whatsapp.net', metadata).member(
-    sender,
-    alt,
-  );
+  const actor = await verifiedMember(new IdentityResolver(sock, owner + '@s.whatsapp.net', metadata), sender, alt);
   const bot = await new IdentityResolver(sock, owner + '@s.whatsapp.net', metadata).member(
     sock.user?.id,
   );
   let securityLevel=0,securityMember=null;
   if(group)try{securityMember=(await require('../security/groups/service').security().permissions.context(sock,key.remoteJid,sender,alt,{meta:metadata||undefined})).actor;securityLevel=securityMember.level;}catch{securityLevel=0;}
+  const conflict = !actor || securityMember?.conflict === true;
+  const phone = conflict ? null : securityMember?.known ? securityMember.canonical : actor.phoneNumber || null;
+  const configuredOwner = require('../utils/owners').ownerNumbers(config).includes(phone?.split('@')[0]);
   const result={
+    conflict,
     securityLevel,
     jid: sender,
     groupName: metadata?.subject || key.remoteJid,
     botAdmin: bot?.isAdmin === true,
-    owner: group?(securityMember?.globalOwner===true || actor?.isOwner===true):require('../utils/owners')
-      .ownerNumbers(config)
-      .includes(actor?.phoneNumber?.split('@')[0]),
-    admin: group?securityMember?.isAdmin===true:actor?.isAdmin===true,
-    phone: group?(securityMember?.known?securityMember.canonical:null):actor?.phoneNumber||null,
+    owner: !conflict && (configuredOwner || (group && securityMember?.globalOwner===true)),
+    admin: !conflict && (group?securityMember?.isAdmin===true:actor?.isAdmin===true),
+    phone,
   };
   Object.defineProperty(result,'securityContext',{value:{sock,metadata}});
   return result;
