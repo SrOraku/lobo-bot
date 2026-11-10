@@ -88,7 +88,9 @@ Identidade padrão: **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑**. Desenv
 !alcateia menu
 ```
 
-Aguarde pelo menos 1 segundo entre comandos dos jogos. As lojas novas estão em `!rploja` e `!lojaalcateia`; ambas gastam WOK Coin. Os comandos antigos `!perfil`, `!loja`, `!comprar` e o Gold original são preservados. Use `!perfilalcateia` e `!compraralcateia 1` para o novo jogo. **Gold legado não foi convertido em WOK Coin.**
+Aguarde pelo menos 1 segundo entre comandos dos jogos. `!loja`, `!rploja` e `!lojaalcateia` usam a carteira compartilhada de WoK coin deste chat; outros grupos e o privado têm saldos independentes. Os comandos antigos `!perfil`, `!loja` e `!comprar` são preservados. Use `!perfilalcateia` e `!compraralcateia 1` para a Alcateia.
+
+As lojas agora têm **16 itens da Matilha, 12 da Alcateia e 50 do RP**, mantendo os IDs e preços antigos. Há curas de HP, novos boosts e títulos, alimentos e presentes, equipamentos de profissão e upgrades de moradia/veículo. `!rploja equipamentos` mostra ferramentas para equipar com `!usar ITEM`; `!descansar` recupera energia e saúde RP na própria moradia. Veja [o guia das lojas e seus efeitos](addons/alcateia/LOJAS.md).
 
 Leia [a integração e atualização](addons/alcateia/INTEGRACAO.md), [as profissões e famílias RP](addons/alcateia/RP.md) e [as regras da alcateia](addons/alcateia/JOGO.md). O nome técnico do pacote é `lobo-bot`; o nome exibido mantém os símbolos. Para personalizar uma instalação com `.env` já existente, confira `BOT_NAME` e `BOT_DESCRIPTION`; a atualização preserva esses valores configurados.
 

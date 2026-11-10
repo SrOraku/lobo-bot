@@ -70,7 +70,7 @@ export function gameMenu(config) {
       `🧠 ${p}formacao A/D/C qtd — estratégia`, `⚔️ ${p}ataque @user — batalha PVP`, `🏆 ${p}rank — top 10 jogadores`,
     ] },
     { title: '💰 TESOURO WOK COIN', lines: [
-      `🛍️ ${p}loja — itens e boosts`, `💳 ${p}comprar 1/2/3/4 — adquirir item`, `🌕 ${p}evento — recompensa lunar`,
+      `🛍️ ${p}loja [página] — curas, itens e boosts`, `💳 ${p}comprar ID — adquirir item`, `🌕 ${p}evento — recompensa lunar`,
       '💎 Uma carteira para lobisomens e RP.',
     ] },
     { title: '🏰 CLÃS E LIDERANÇA', lines: [
@@ -81,15 +81,39 @@ export function gameMenu(config) {
   return `${game}\n${rpMenu(config)}`;
 }
 
-function shopText(items, config) {
+function shopText(result, config) {
+  const { items } = result;
+  const page = result.page || 1, totalPages = result.totalPages || 1;
+  const shopDuration = milliseconds => milliseconds % 3_600_000 === 0
+    ? `${milliseconds / 3_600_000} ${milliseconds === 3_600_000 ? 'hora' : 'horas'}`
+    : `${Math.ceil(milliseconds / 60_000)} min`;
   return formatMenu({ title: 'LOJA DA ALCATEIA', botName: config.botName, botDescription: config.botDescription,
     ownerNumber: config.ownerNumber, prefix: config.prefix,
     subtitle: '💰 Tesouros e vantagens de batalha', signature: '',
     sections: [{ title: '🛍️ ARSENAL LUNAR', lines: items.map(item => {
-    const effect = item.type === 'training' ? 'um treino extra imediato' :
-      `${BOOST_NAMES[item.type] || line(item.type)} +${Math.round(item.value * 100)}% por 1 hora`;
-    return `💎 ${mono(item.id)}. *${line(item.name)}*\n💰 ${item.price} WoK coin\n⭐ ${effect}`;
-  }) }, { title: '💳 ORDEM DE COMPRA', lines: [`💰 Compre com ${config.prefix}comprar 1/2/3/4.`] }] });
+    const effect = item.type === 'training' ? `${item.value || 1} crédito(s) de treino extra` :
+      item.type === 'healing' ? `Recupera até ${item.value} HP da Alcateia, máximo 100` :
+        item.type === 'ritual' ? `Ataque +20%, defesa +20% e contra-ataque +30% por ${shopDuration(item.duration)}` :
+          `${BOOST_NAMES[item.type] || line(item.type)} +${Math.round(item.value * 100)}% por ${shopDuration(item.duration || 3_600_000)}`;
+    return `💎 ${mono(item.id)}. *${line(item.name)}*\n💰 ${item.price} WoK coin\n⭐ ${effect}${item.description ? '\n🌙 _' + line(item.description) + '_' : ''}`;
+  }) }, { title: '💳 ORDEM DE COMPRA', lines: [
+    `📖 Página ${page}/${totalPages}`,
+    ...(page < totalPages ? [`🐺 Próxima: ${config.prefix}loja ${page + 1}`] : []),
+    `💰 Compre com ${config.prefix}comprar ID.`,
+    `🏙️ Vida na cidade: ${config.prefix}rploja.`,
+  ] }] });
+}
+
+function purchaseText(result, prefix, at) {
+  const boosts = result.boosts?.length ? result.boosts : result.boost ? [result.boost] : [];
+  return frame('COMPRA CONCLUÍDA', [
+    `⭐ ${line(result.item.name)} adquirido.`,
+    result.message ? `🌙 _${line(result.message)}_` : undefined,
+    `💰 Custo: ${result.item.price} WoK coin • Saldo: ${result.player.coins} WoK coin`,
+    result.healthRecovered > 0 ? `💚 +${result.healthRecovered} HP da Alcateia • HP atual: ${result.player.hp}/100 ${progress(result.player.hp)}` : undefined,
+    result.item.type === 'training' ? `🐺 ${result.item.value || 1} crédito(s) adicionado(s). Use *${prefix}treino* durante o cooldown. Treinos extras: ${result.extraTraining ?? result.player.extraTraining ?? 0}.` : undefined,
+    ...boosts.map(boost => `⏳ ${boostLabel(boost, at)}`),
+  ].filter(Boolean));
 }
 
 function rankingText(players) {
@@ -196,14 +220,10 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
           await ctx.reply(rankingText(result.players));
           break;
         case 'shop':
-          await ctx.reply(shopText(result.items, ctx.config));
+          await ctx.reply(shopText(result, ctx.config));
           break;
         case 'purchase':
-          await ctx.reply(frame('COMPRA CONCLUÍDA', [
-            `⭐ ${line(result.item.name)} adquirido.`, `💰 Saldo: ${result.player.coins} WoK coin`,
-            result.item.type === 'training' ? `🐺 Use *${prefix}treino* para consumir um treino extra durante o cooldown.` :
-              `⏳ Boost ativo por 1 hora: ${BOOST_NAMES[result.boost?.type || result.item.type]} +${Math.round((result.boost?.value ?? result.item.value) * 100)}%.`,
-          ]));
+          await ctx.reply(purchaseText(result, prefix, at));
           break;
         case 'clan':
           await ctx.reply(frame('CLÃ DA ALCATEIA', [

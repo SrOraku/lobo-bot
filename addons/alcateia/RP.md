@@ -169,9 +169,9 @@ O valor de XP é o mínimo para escolher a carreira. O pagamento abaixo é por e
 
 ## Loja RP e inventário
 
-A loja RP tem catálogo próprio, acessado por `!rploja`; a loja da alcateia continua em `!loja`. Ambas descontam da mesma carteira WOK Coin. O catálogo RP é paginado em 10 itens por página.
+A loja RP tem catálogo próprio com 50 itens, acessado por `!rploja [categoria] [página]`; a loja da alcateia usa `!loja` no addon independente ou `!lojaalcateia` no bot integrado. Ambas descontam da mesma carteira WoK coin. O catálogo RP é paginado em 10 itens por página; `!rploja 2` continua válido. Categorias: `comidas`, `bebidas`, `saude`, `presentes`, `moradias`, `veiculos` e `equipamentos`. Consulte [as novidades das lojas](LOJAS.md).
 
-Compras de itens de inventário aceitam de 1 a 100 unidades por comando e até 999 unidades acumuladas de cada tipo. Usar um item consome uma unidade. Atributos de saúde, energia e saciedade ficam no máximo em 100; quando nenhum efeito poderia aumentar um atributo, o uso é recusado sem consumir o item.
+Compras de itens de inventário aceitam de 1 a 100 unidades por comando e até 999 unidades acumuladas de cada tipo. Usar um consumível gasta uma unidade. Ferramentas são equipadas com `!usar ITEM` e permanecem no inventário; apenas uma fica ativa por vez. Atributos de saúde, energia e saciedade ficam no máximo em 100; quando nenhum efeito poderia aumentar um atributo, o uso é recusado sem consumir o item. `!inventario [página]` permite consultar todos os itens.
 
 | ID | Item | Preço em WOK Coin | Efeito |
 | --- | --- | --- | --- |
@@ -197,7 +197,7 @@ Compras de itens de inventário aceitam de 1 a 100 unidades por comando e até 9
 
 Alimentos, bebidas e remédios são usados no próprio personagem. A aliança fica reservada para o pedido de casamento e é consumida somente quando o destinatário aceita.
 
-Moradias e veículos são registrados no perfil ao comprar, uma unidade por vez. Cada personagem mantém uma moradia e um veículo. Se já possuir um, a próxima compra dessa categoria precisa ser um nível superior e cobra o preço integral do novo bem. A aquisição substitui o registro anterior; o catálogo não oferece revenda. Esses bens registram a posse no RP.
+Moradias e veículos são registrados no perfil ao comprar, uma unidade por vez. Cada personagem mantém uma moradia e um veículo. Se já possuir um, a próxima compra dessa categoria precisa ser um nível superior e cobra o preço integral do novo bem. A aquisição substitui o registro anterior; o catálogo não oferece revenda. Moradias permitem `!descansar`, com recuperação maior conforme o nível e intervalo de 30 minutos, salvo após reiniciar. Veículos reduzem o custo de energia de `!trabalhar`, com piso de 4 por expediente. Ferramentas compatíveis com a profissão acrescentam 10% do salário-base (máximo de 20 WoK coin) e 2 XP por expediente; equipá-las não concede recompensas por si só.
 
 ## Família com consentimento
 

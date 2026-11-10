@@ -3,7 +3,7 @@ import { ensurePlayer, requirePlayer } from '../game/players.js';
 import { transfer } from '../game/wallet.js';
 import { ensureRP, ensureRPWorld } from './state.js';
 import { JOBS, listJobs, getJob, chooseJob, work, performJobAction } from './jobs.js';
-import { RP_ITEMS, buyRPItem, useRPItem } from './shop.js';
+import { RP_ITEMS, RP_SHOP_CATEGORIES, buyRPItem, useRPItem, equippedRPItem, restRP } from './shop.js';
 import { createFamily, inviteFamily, proposeMarriage, respondFamilyInvite, leaveFamily,
   familyProfile, depositFamily, withdrawFamily, pruneFamilyInvites } from './family.js';
 
@@ -48,9 +48,19 @@ export function dispatchRP(game, request, { now, rng }) {
     return { type: 'rp-jobs', jobs: paging.selected, page: paging.page, totalPages: paging.totalPages, category };
   }
   if (command === 'rploja') {
-    if (args.length > 1) throw new GameError('Use !rploja [página].');
-    const paging = paginate(RP_ITEMS, args[0] || 1);
-    return { type: 'rp-shop', items: paging.selected, page: paging.page, totalPages: paging.totalPages };
+    if (args.length > 2) throw new GameError('Use !rploja [categoria] [página].');
+    let category = '', page = args[0] || 1;
+    if (args[0] && !/^\d+$/.test(args[0])) {
+      category = args[0].normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+      if (category === 'todos') category = '';
+      else if (!Object.hasOwn(RP_SHOP_CATEGORIES, category)) {
+        throw new GameError('Categoria inválida. Use comidas, bebidas, saude, presentes, moradias, veiculos ou equipamentos.');
+      }
+      page = args[1] || 1;
+    } else if (args.length > 1) throw new GameError('Use !rploja [categoria] [página].');
+    const items = category ? RP_ITEMS.filter(item => RP_SHOP_CATEGORIES[category].includes(item.type)) : RP_ITEMS;
+    const paging = paginate(items, page);
+    return { type: 'rp-shop', items: paging.selected, category, categories: Object.keys(RP_SHOP_CATEGORIES), page: paging.page, totalPages: paging.totalPages };
   }
   if (command === 'carteira') {
     usage(args, 0, '!carteira');
@@ -78,7 +88,7 @@ export function dispatchRP(game, request, { now, rng }) {
       usage(args, 1, '!rp perfil');
       if (args[0]?.toLowerCase() !== 'perfil') throw new GameError('Use !rp iniciar, !rp perfil ou !rp menu.');
       const family = rp.familyId ? familyProfile(game, player) : null;
-      return { type: 'rp-profile', player, rp, job: rp.jobId ? getJob(rp.jobId) : null, family };
+      return { type: 'rp-profile', player, rp, job: rp.jobId ? getJob(rp.jobId) : null, family, equipment: equippedRPItem(player) };
     }
     case 'profissao': {
       if (!argText.trim()) throw new GameError('Use !profissao ID. Consulte !profissoes para escolher sua carreira.');
@@ -134,9 +144,19 @@ export function dispatchRP(game, request, { now, rng }) {
       response = { type: 'rp-use', player, result };
       break;
     }
-    case 'inventario':
-      usage(args, 0, '!inventario');
-      return { type: 'rp-inventory', player, rp };
+    case 'descansar': {
+      usage(args, 0, '!descansar');
+      response = { type: 'rp-rest', player, result: restRP(player, { now }) };
+      break;
+    }
+    case 'inventario': {
+      if (args.length > 1) throw new GameError('Use !inventario [página].');
+      const entries = Object.entries(rp.inventory).filter(([, count]) => count > 0);
+      const paging = paginate(entries, args[0] || 1);
+      return { type: 'rp-inventory', player, rp, page: paging.page, totalPages: paging.totalPages,
+        equipment: equippedRPItem(player),
+        items: paging.selected.map(([id, count]) => ({ id, count, name: RP_ITEMS.find(item => item.id === id)?.name || id })) };
+    }
     case 'familia': {
       const action = args[0]?.toLowerCase() || 'perfil';
       const name = argText.replace(/^\S+\s*/, '').trim();

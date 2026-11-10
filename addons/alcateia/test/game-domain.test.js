@@ -170,12 +170,12 @@ test('ranking uses wins, coins, wolves, fewer losses and excludes banned players
 });
 
 test('shop exposes the specified prices and charges only successful purchases', () => {
-  assert.deepEqual(SHOP_ITEMS.map(item => item.price), [100, 100, 150, 200]);
+  assert.deepEqual(SHOP_ITEMS.slice(0, 4).map(item => item.price), [100, 100, 150, 200]);
   const p = player();
   const before = structuredClone(p);
   assert.throws(() => buyItem(p, '3', { now: 100 }), /saldo|moedas/i);
   assert.deepEqual(p, before);
-  assert.throws(() => buyItem(p, '9', { now: 100 }), /item/i);
+  assert.throws(() => buyItem(p, '999', { now: 100 }), /item/i);
   assert.deepEqual(p, before);
   buyItem(p, '2', { now: 100 });
   assert.equal(p.coins, 0);

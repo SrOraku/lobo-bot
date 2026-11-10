@@ -58,7 +58,7 @@ const ADDON = {
   ataque: ['alcateia', '@jogador', 'Batalha imediata'],
   rank: ['alcateia', '', 'Top 10'],
   lojaalcateia: ['alcateia', '', 'Loja de boosts • WoK coin'],
-  compraralcateia: ['alcateia', '1/2/3/4', 'Comprar boost ou treino'],
+  compraralcateia: ['alcateia', 'ID', 'Comprar cura, boost ou treino'],
   clan: ['alcateia', 'criar Nome | entrar Nome | perfil', 'Clãs e liderança'],
   evento: ['alcateia', '', 'Evento lunar diário'],
   admin: [
@@ -73,10 +73,11 @@ const ADDON = {
   acao: ['rp', '[@jogador]', 'Exercer profissão'],
   carteira: ['economia', '', 'Saldo universal de WoK coin'],
   transferir: ['economia', '@jogador quantidade', 'Transferir WoK coin'],
-  rploja: ['economia', '[página]', 'Loja RP; alimentos, casas e veículos'],
+  rploja: ['economia', '[categoria] [página]', 'Loja RP; alimentos, equipamentos, casas e veículos'],
   rpcomprar: ['economia', 'ITEM [quantidade]', 'Comprar na loja RP'],
   usar: ['rp', 'ITEM [@destinatário]', 'Usar item ou entregar presente'],
-  inventario: ['rp', '', 'Pertences RP'],
+  inventario: ['rp', '[página]', 'Pertences RP e equipamento ativo'],
+  descansar: ['rp', '', 'Descansar e recuperar forças na própria moradia'],
   familia: [
     'rp',
     'criar | convidar | casar | aceitar | recusar | perfil | sair | divorciar | depositar | retirar',

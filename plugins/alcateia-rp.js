@@ -7,7 +7,7 @@ const { pathToFileURL } = require('node:url');
 const DIRECT_COMMANDS = Object.freeze([
   'start', 'treino', 'formacao', 'ataque', 'rank', 'clan', 'evento', 'admin',
   'rp', 'profissoes', 'profissao', 'trabalhar', 'acao', 'carteira', 'transferir',
-  'rploja', 'rpcomprar', 'usar', 'inventario', 'familia',
+  'rploja', 'rpcomprar', 'usar', 'inventario', 'familia', 'descansar',
 ]);
 const DISTINCT_ALIASES = Object.freeze({
   perfilalcateia: 'perfil', lojaalcateia: 'loja', compraralcateia: 'comprar',
