@@ -35,13 +35,34 @@ async function getGroupMeta(sock, jid) {
 }
 
 // Resolver nível do usuário
-async function resolveLevel(sock, senderJid, groupJid) {
-  const {IdentityResolver}=await import('../../addons/alcateia/src/identity.js');
+async function resolveLevel(sock, senderJid, groupJid, message = null) {
+  const {IdentityResolver,normalizeJid,verifiedMember}=await import('../../addons/alcateia/src/identity.js');
+  let alternative = null;
+  const key = message?.key;
+  if (key?.remoteJid) {
+    const group = key.remoteJid.endsWith('@g.us');
+    const authenticated = normalizeJid(key.fromMe ? sock.user?.id : group ? key.participant : key.remoteJid);
+    // Use somente a identidade alternativa da própria mensagem recebida.
+    // ctx.senderNumber e o destinatário de mensagens fromMe não provam autoria.
+    if (!authenticated || authenticated !== normalizeJid(senderJid) ||
+        (group ? key.remoteJid !== groupJid : !!groupJid)) return LEVELS.USER;
+    alternative = key.fromMe ? sock.user?.lid : group ? key.participantAlt : key.remoteJidAlt;
+  }
   const meta=groupJid?await getGroupMeta(sock,groupJid):null;
-  const actor=await new IdentityResolver(sock,config.get('BOT_OWNER')+'@s.whatsapp.net',meta).member(senderJid);
+  const resolver = new IdentityResolver(sock,config.get('BOT_OWNER')+'@s.whatsapp.net',meta);
+  const actor = await verifiedMember(resolver,senderJid,alternative);
+  if (!actor) return LEVELS.USER;
+  let securityActor = null;
+  if(groupJid){
+    try {
+      const c=await require('../security/groups/service').security().permissions.context(sock,groupJid,senderJid,alternative,{force:false,meta:meta||undefined});
+      if(c.actor.conflict)return LEVELS.USER;
+      securityActor = c.actor;
+    } catch { /* A falha não concede níveis de segurança adicionais. */ }
+  }
   if(actor?.isOwner===true || require('../utils/owners').ownerNumbers(config).includes(actor?.phoneNumber?.split('@')[0]))return LEVELS.OWNER;
   if(db.isBotAdmin(senderJid)||actor?.phoneNumber&&db.isBotAdmin(actor.phoneNumber))return LEVELS.BOT_ADMIN;
-  if(groupJid){const c=await require('../security/groups/service').security().permissions.context(sock,groupJid,senderJid,null,{force:false,meta:meta||undefined});if(c.actor.level>=2)return LEVELS.BOT_ADMIN;}
+  if(securityActor?.level>=2)return LEVELS.BOT_ADMIN;
   if(actor?.isAdmin)return LEVELS.GROUP_ADMIN;
   return LEVELS.USER;
 }
@@ -55,7 +76,7 @@ async function botIsAdmin(sock, groupJid) {
 function requireLevel(minLevel) {
   return function(fn) {
     return async (sock, ctx) => {
-      const level = await resolveLevel(sock, ctx.sender, ctx.isGroup ? ctx.jid : null);
+      const level = await resolveLevel(sock, ctx.sender, ctx.isGroup ? ctx.jid : null, ctx.msg);
       ctx.senderLevel = level;
       ctx.senderLevelName = LEVEL_NAMES[level];
 

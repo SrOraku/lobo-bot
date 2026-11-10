@@ -107,7 +107,7 @@ async function executeCommand(commandName, sock, ctx) {
 
   // Nível de permissão
   const { resolveLevel, LEVEL_NAMES } = require('../middlewares/permissions');
-  const userLevel = await resolveLevel(sock, ctx.sender, ctx.isGroup ? ctx.jid : null);
+  const userLevel = await resolveLevel(sock, ctx.sender, ctx.isGroup ? ctx.jid : null, ctx.msg);
   ctx.senderLevel = userLevel;
 
   if (userLevel < Math.max(cmd.minLevel,cmd.ownerOnly?LEVELS.OWNER:cmd.adminOnly?LEVELS.GROUP_ADMIN:0)) {

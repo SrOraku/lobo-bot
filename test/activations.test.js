@@ -140,9 +140,9 @@ test('donos adicionais precisam estar configurados explicitamente', () => {
   );
 });
 test('conta logada só executa comandos próprios se for dona, sem loop de respostas', async () => {
-  const vm = require('node:vm');
-  const code = fs.readFileSync(path.join(__dirname, '../src/handlers/message.js'), 'utf8');
-  const loaded = { exports: {} },
+  const Module = require('node:module');
+  const filename = path.join(__dirname, '../src/handlers/message.js');
+  const loaded = new Module(filename, module),
     commands = [];
   const helper = {
     PREFIX: '!',
@@ -151,9 +151,9 @@ test('conta logada só executa comandos próprios se for dona, sem loop de respo
     getNumber: (j) => j.split('@')[0],
     logger: { error: () => {} },
   };
-  vm.runInNewContext(code, {
-    module: loaded,
-    require(id) {
+  loaded.filename = filename;
+  loaded.paths = Module._nodeModulePaths(path.dirname(filename));
+  loaded.require = (id) => {
       if (id === '../automation/anti-pv') return {createAntiPV:()=>({handle:async()=>false})};
       if (id === '../services/universal-currency') return {linkMessageWallet:async()=>{}};
       if (id === 'dotenv') return { config: () => {} };
@@ -165,8 +165,8 @@ test('conta logada só executa comandos próprios se for dona, sem loop de respo
       if (id === '../core/commandRegistry')
         return { execute: async (name, sock, ctx) => commands.push([name, ctx.sender]) };
       return {};
-    },
-  });
+  };
+  loaded._compile(fs.readFileSync(filename, 'utf8'), filename);
   const make = (body) => ({
     key: { remoteJid: '5511999999999@s.whatsapp.net', fromMe: true },
     message: { conversation: body },

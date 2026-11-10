@@ -32,9 +32,27 @@ npm ci --omit=dev --no-audit --no-fund
 6. Se `BOT_OWNER` estiver vazio, o console solicita primeiro o número do dono (DDI + DDD + número, de 10 a 15 dígitos, sem `+` ou espaços). O cadastro é salvo privadamente em `data/bot-owner.json` e reutilizado nos próximos inícios. Um `BOT_OWNER` preenchido no painel ou `.env` tem prioridade. Esse cadastro é separado do número que será conectado ao WhatsApp. Para trocar o dono, apague `data/bot-owner.json` e reinicie (ou altere `BOT_OWNER`).
 
    O criador do Lobo-bot (veja `!criador`) é **dono absoluto** em qualquer instalação, além do dono configurado: acessa os comandos de dono, os jogos e o `!atualizar`, e é dono global na segurança dos grupos (não pode ser punido). Ele nunca vira o dono principal sozinho; o principal continua sendo o `BOT_OWNER`.
+
+   Em instalações comerciais, cada comprador cadastra seu próprio número no console ou em `BOT_OWNER`, sem solicitar autorização ao criador. Esse dono principal tem os comandos de dono da instalação, incluindo gerenciar outros donos, administradores, atualizações, jogos e configurações. O cadastro do comprador e a autoridade permanente do criador coexistem. As atualizações de código preservam o cadastro privado e os dados já existentes.
 7. Depois, siga o pareamento pelo console. Nos próximos inícios os pacotes existentes são reutilizados. Não digite comandos de sistema no console de um processo Node em execução.
 
 Se aparecer `Variável obrigatória ausente: BOT_OWNER`, atualize o código e mantenha o startup `node src/index.js` (ou `npm start`). O supervisor aguarda o cadastro antes de iniciar o processo WhatsApp. Em hospedagens sem entrada de console, configure `BOT_OWNER` diretamente no painel ou `.env`. O processo interno `src/runtime.js` deve ser iniciado pelo supervisor.
+
+### Comandos de dono negam acesso
+
+O número de dono deve ser o WhatsApp que envia os comandos, com DDI e somente dígitos. `BOT_OWNER` no painel ou `.env` tem prioridade sobre `data/bot-owner.json`; quando a variável está vazia, o cadastro privado é reutilizado. Depois de corrigir a configuração local, reinicie com `npm start`. A conta conectada ao bot não recebe autoridade automaticamente.
+
+O WhatsApp também identifica participantes por LID, que não é um telefone. Os comandos usam o telefone confirmado na mensagem, nos metadados do grupo ou no mapeamento do WhatsApp. Um LID sem confirmação continua sem permissão de dono.
+
+Para atualizar quando o comando `!atualizar bot` estiver bloqueado, pare o bot e use o terminal de sistema da hospedagem, na raiz de uma instalação clonada pelo Git:
+
+```bash
+git pull --ff-only origin main
+npm ci --omit=dev --no-audit --no-fund
+npm start
+```
+
+Instalações recebidas por ZIP não têm o histórico `.git` necessário para `git pull`. Preserve `.env`, `data/`, `sessions/` e `storage/` ao atualizar. O console de um bot Node em execução recebe mensagens de pareamento; comandos de sistema devem ser executados no terminal de sistema.
 
 Se já houve `MODULE_NOT_FOUND` na linha que carrega `dotenv`, atualize os arquivos pelo GitHub ou ZIP, mantenha o startup `node src/index.js` e reinicie. Preserve `.env`, `sessions/`, `data/` e `storage/alcateia/` da instalação existente.
 

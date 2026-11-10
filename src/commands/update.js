@@ -4,16 +4,22 @@ const { frameNotice } = require('../menus/render');
 const { mono, command } = require('../ui/text');
 
 async function verifiedOwner(sock, ctx, ownerNumber) {
-  const owner = String(ownerNumber || '').replace(/\D/g, '');
+  const owners = new Set([ownerNumber].flat().map(number => String(number || '').replace(/\D/g, '')).filter(Boolean));
   const key = ctx.msg?.key;
-  if (!owner || !key?.remoteJid || key.remoteJid === 'status@broadcast') return false;
-  const { IdentityResolver, normalizeJid } = await import('../../addons/alcateia/src/identity.js');
+  if (!owners.size || !key?.remoteJid || key.remoteJid === 'status@broadcast') return false;
+  const { IdentityResolver, normalizeJid, verifiedMember } = await import('../../addons/alcateia/src/identity.js');
   const group = key.remoteJid.endsWith('@g.us');
   const sender = normalizeJid(key.fromMe ? sock.user?.id : group ? key.participant : key.remoteJid);
   if (!sender) return false;
   const alternate = key.fromMe ? sock.user?.lid : group ? key.participantAlt : key.remoteJidAlt;
-  const resolver = new IdentityResolver(sock, `${owner}@s.whatsapp.net`);
-  return (await resolver.member(sender, alternate))?.isOwner === true;
+  let metadata = null;
+  if (group) {
+    try { metadata = await sock.groupMetadata(key.remoteJid); }
+    catch { /* Sem metadados, somente telefone ou mapeamento confirmado autoriza. */ }
+  }
+  const resolver = new IdentityResolver(sock, '', metadata);
+  const actor = await verifiedMember(resolver, sender, alternate);
+  return !!actor?.phoneNumber && owners.has(actor.phoneNumber.split('@')[0]);
 }
 
 function createUpdateHandler({ service, config = require('../config'), logger = require('../config/logger').logger, restart = require('../updater/supervisor'), notifyTimeoutMs = 5000 } = {}) {
@@ -51,9 +57,7 @@ function createUpdateHandler({ service, config = require('../config'), logger = 
     }
     let owner = false;
     try {
-      for (const number of require('../utils/owners').ownerNumbers(config)) {
-        if (await verifiedOwner(sock, ctx, number)) { owner = true; break; }
-      }
+      owner = await verifiedOwner(sock, ctx, require('../utils/owners').ownerNumbers(config));
     } catch {}
     if (!owner) return reply('ACESSO DO DONO', ['🐺 Este comando é exclusivo do dono do bot.']);
     const args = ctx.args || [];

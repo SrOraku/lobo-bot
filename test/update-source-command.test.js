@@ -38,6 +38,74 @@ test('only trusted owner PN or mapped LID can request an update; forged role fie
   f.ctx.args = ['bot']; await f.handler(f.sock, f.ctx); assert.deepEqual(f.calls, ['bot']); assert.match(f.replies.at(-1), /npm start/);
 });
 
+test('owner LID confirmed by group metadata can update without an alternate PN or mapping', async () => {
+  const f = commandFixture({ sender: '700000@lid' });
+  let metadataCalls = 0;
+  f.sock.groupMetadata = async jid => {
+    assert.equal(jid, f.ctx.jid);
+    metadataCalls++;
+    return { id: jid, participants: [{ id: '700000@lid', phoneNumber: `${OWNER}@s.whatsapp.net` }] };
+  };
+  f.ctx.args = ['status'];
+  await f.handler(f.sock, f.ctx);
+  assert.deepEqual(f.calls, ['status']);
+  assert.equal(metadataCalls, 1);
+});
+
+test('creator resolved from group metadata is checked once with a different configured owner', async () => {
+  const f = commandFixture({ sender: '700000@lid' });
+  let metadataCalls = 0, mappingCalls = 0;
+  f.sock.groupMetadata = async () => {
+    metadataCalls++;
+    return { participants: [{ id: '700000@lid', phoneNumber: `${OWNER}@s.whatsapp.net` }] };
+  };
+  f.sock.signalRepository.lidMapping.getPNForLID = async () => { mappingCalls++; return null; };
+  const handler = createUpdateHandler({ service: f.service, config: { ...config, BOT_OWNER: '5511888888888' } });
+  f.ctx.args = ['status'];
+  await handler(f.sock, f.ctx);
+  assert.deepEqual(f.calls, ['status']);
+  assert.equal(metadataCalls, 1);
+  assert.equal(mappingCalls, 0);
+});
+
+test('failed metadata and LID mapping never authorize forged owner fields', async () => {
+  const f = commandFixture({ sender: `${OWNER}@lid` });
+  f.sock.groupMetadata = async () => { throw Error('metadata unavailable'); };
+  f.sock.signalRepository.lidMapping.getPNForLID = async () => { throw Error('mapping unavailable'); };
+  f.ctx.args = ['bot'];
+  await f.handler(f.sock, f.ctx);
+  assert.deepEqual(f.calls, []);
+  assert.match(f.replies[0], /exclusivo do dono/);
+});
+
+test('conflicting alternate phone and trusted group identity never authorize updates', async () => {
+  for (const [known, alternate] of [[`${OWNER}@s.whatsapp.net`, '5511777777777@s.whatsapp.net'], ['5511777777777@s.whatsapp.net', `${OWNER}@s.whatsapp.net`]]) {
+    const f = commandFixture({ sender: '700000@lid' });
+    f.sock.groupMetadata = async () => ({ participants: [{ id: '700000@lid', phoneNumber: known }] });
+    f.ctx.msg.key.participantAlt = alternate;
+    f.ctx.args = ['status'];
+    await f.handler(f.sock, f.ctx);
+    assert.deepEqual(f.calls, []);
+    assert.match(f.replies[0], /exclusivo do dono/);
+  }
+});
+
+test('fromMe update authorization uses the connected account rather than a forged participant', async () => {
+  const denied = commandFixture();
+  denied.ctx.msg.key.fromMe = true;
+  denied.ctx.args = ['status'];
+  await denied.handler(denied.sock, denied.ctx);
+  assert.deepEqual(denied.calls, []);
+  assert.match(denied.replies[0], /exclusivo do dono/);
+
+  const allowed = commandFixture({ sender: '5511777777777@s.whatsapp.net' });
+  allowed.sock.user.id = `${OWNER}:7@s.whatsapp.net`;
+  allowed.ctx.msg.key.fromMe = true;
+  allowed.ctx.args = ['status'];
+  await allowed.handler(allowed.sock, allowed.ctx);
+  assert.deepEqual(allowed.calls, ['status']);
+});
+
 test('status is owner-only and exposes versions and pending restart without invoking installation', async () => {
   const f = commandFixture(); f.ctx.args = ['status']; await f.handler(f.sock, f.ctx);
   assert.deepEqual(f.calls, ['status']); assert.match(f.replies[0], /22.23.3/); assert.match(f.replies[0], /7.0.0-rc14/);

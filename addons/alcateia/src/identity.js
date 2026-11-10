@@ -10,6 +10,17 @@ export function phoneJid(value) {
   return jid?.endsWith('@s.whatsapp.net') ? jid : null;
 }
 
+// Uma alternativa recebida não pode contradizer metadados ou um mapeamento
+// já confirmado pelo WhatsApp. Sem vínculo prévio, a alternativa pode resolvê-lo.
+export async function verifiedMember(resolver, value, alternative = null) {
+  const alternate = phoneJid(alternative);
+  if (alternate) {
+    const known = await resolver.phone(value);
+    if (known && known !== alternate) return null;
+  }
+  return resolver.member(value, alternative);
+}
+
 export class IdentityResolver {
   constructor(sock, ownerJid, metadata = null) {
     this.sock = sock;

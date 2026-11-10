@@ -8,9 +8,9 @@ const scheduledJobs = new Map();
 
 function requireOwner(fn) {
   return async (sock, ctx) => {
-    const isOwner = require('../utils/owners').ownerNumbers().includes(String(ctx.senderNumber || ctx.sender || '').split('@')[0].replace(/:\\d+$/, '').replace(/\\D/g, ''));
-    const isBotAdm = db.isBotAdmin(ctx.sender) || db.isBotAdmin(ctx.senderNumber);
-    if (!isOwner && !isBotAdm) {
+    const actor = await require('../activations/access').resolveActor(sock, ctx);
+    const isBotAdm = !actor.conflict && [actor.phone, actor.jid].filter(Boolean).some(jid => db.isBotAdmin(jid));
+    if (actor.conflict || !actor.owner && !isBotAdm) {
       return sock.sendMessage(ctx.jid, {
         text: '❌ *Ação inválida!* _Apenas o dono do bot pode usar este comando._'
       }, { quoted: ctx.msg });

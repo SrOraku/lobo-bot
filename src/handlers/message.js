@@ -12,8 +12,9 @@ async function processMessage(sock, msg) {
   try {
     if (!msg.message) return;
     if (msg.key.fromMe) {
-      const connected=String(sock.user?.id||'').split('@')[0].split(':')[0];
-      if (!require('../utils/owners').ownerNumbers().includes(connected)) return;
+      const { IdentityResolver, verifiedMember } = await import('../../addons/alcateia/src/identity.js');
+      const actor = await verifiedMember(new IdentityResolver(sock, ''), sock.user?.id, sock.user?.lid);
+      if (!actor?.phoneNumber || !require('../utils/owners').ownerNumbers().includes(actor.phoneNumber.split('@')[0])) return;
     }
     const jid = msg.key.remoteJid;
     if (!jid || jid === 'status@broadcast') return;
