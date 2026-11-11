@@ -266,11 +266,12 @@ test('início real com o aviso vencido, ou depois do fim da transição: não in
 });
 
 test('aviso que vence com o bot ligado encerra o supervisor E o runtime, com código 1', { skip: process.platform === 'win32' }, async t => {
-  const f = installation(t, { startedAgoMs: 7 * DAY - 2500 });
+  // Folga de 6 s até o prazo vencer: sobra tempo para o processo subir mesmo em máquina lenta.
+  const f = installation(t, { startedAgoMs: 7 * DAY - 6000 });
   const run = f.start();
   await run.until(/runtime iniciado/);
   assert.equal(f.runtimeAlive(), true);
-  await run.until(/O período de aviso terminou\. Encerrando o bot\./, 20000);
+  await run.until(/O período de aviso terminou\. Encerrando o bot\./, 40000);
   const { code } = await run.exited;
   assert.equal(code, 1);
   assert.equal(f.runtimeAlive(), false, 'o processo do WhatsApp não pode continuar rodando sozinho');

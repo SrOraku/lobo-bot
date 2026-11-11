@@ -277,7 +277,7 @@
     "test/keyed-queue.test.js": "edc39341a0a9051b4d868fd8e0f378cd4394ca3116e6837c524e702f4511c70d",
     "test/legacy-menu-visual.test.js": "0489b100b5a66ee766b4e12305c23a5a9098a11d606c7d2bffc57ea240bec55e",
     "test/legacy-ping.test.js": "fba6e6a6ae5d13995a2ddca723e6c02a5e2545380733de50c47aef0f0cd8666a",
-    "test/license-guard.test.js": "01ec5206ff242211f48eb7f68b9df7f4d1f0ee78ff3ba9fa3d8b6a01bbba3578",
+    "test/license-guard.test.js": "e25352a0bf123d31032b58843dab157420e4f55d58cfe3d5f1953419ad34e817",
     "test/license-hub-client.test.js": "2066943e9c668d7ba58dd8228e9edf393d3c03000125b10bc36adc656e6a87eb",
     "test/lobo-security.test.js": "5d9ba4d35c939d994865d5673758043a37b23d25434b23294cfce37c70eb6d81",
     "test/local-media.test.js": "eb63bd19c19edfd30805bf9b11a59e23e1c780c93c25009525c0ab0428066265",
