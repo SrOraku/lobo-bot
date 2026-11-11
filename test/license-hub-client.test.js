@@ -25,7 +25,7 @@ test('license client requires HTTPS when configured', () => {
   }
 });
 
-test('licensing remains opt-in when environment variables are absent', () => {
+test('without a key the client sends nothing; the guard, not the client, makes the license mandatory', async () => {
   const oldUrl = process.env.LOBO_API_URL;
   const oldKey = process.env.LOBO_LICENSE_KEY;
   try {
@@ -34,6 +34,9 @@ test('licensing remains opt-in when environment variables are absent', () => {
     const client = loadFreshClient();
     assert.equal(client.configured(), false);
     assert.deepEqual(client.validateConfig(), false);
+    assert.deepEqual(await client.request('validate'), { disabled: true });
+    // A instalação sem chave cai no período de aviso do guardião (test/license-guard.test.js).
+    assert.equal(typeof require('../src/licensing/licenseGuard').noticePeriod, 'function');
   } finally {
     if (oldUrl !== undefined) process.env.LOBO_API_URL = oldUrl;
     if (oldKey !== undefined) process.env.LOBO_LICENSE_KEY = oldKey;

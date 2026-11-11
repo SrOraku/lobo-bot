@@ -74,6 +74,10 @@ A atualização prepara e verifica os arquivos antes de substituir o código, ma
 - **Dono absoluto:** o criador do Lobo-bot (veja `!criador`) é dono em qualquer instalação, além do dono configurado: tem acesso aos comandos de dono, aos jogos, ao `!atualizar` e é dono global na segurança dos grupos — nenhum admin consegue banir, silenciar, advertir, remover ou rebaixar o criador. Ele nunca vira o dono principal sozinho: o principal continua sendo o `BOT_OWNER`. O `!donos` pode ser gerenciado pelo principal ou pelo criador; o criador não precisa ser cadastrado e não pode ser removido.
 - **Contato do criador:** somente pelo comando `!criador` (e na lista do `!donos`, que só os donos veem). O número não aparece nos menus.
 
+## 🔑 Licença
+
+Cada instalação precisa de uma chave do LOBO-BOT LICENSE em `LOBO_LICENSE_KEY`. Sem chave, o bot avisa por 7 dias (no console e no WhatsApp do dono) e depois não inicia mais; com a chave recusada pelo painel, ele não inicia e mostra o motivo. O bot confere a licença ao iniciar e a cada 15 minutos. Veja [como funciona, o que cada mensagem significa e os limites](docs/LOBO-LICENSE-BASE44.md).
+
 ## RP e WOK Coin
 
 O bot existente continua com seus comandos, sessão e banco de dados. O plugin adiciona **64 profissões, família, 19 itens e uma carteira WOK Coin compartilhada entre o novo RP e o novo 100 Lobisomens Estratégia**. Os duelos foram retirados; o ataque direto continua.

@@ -2,6 +2,12 @@
 const { ensureDependencies } = require('./bootstrap');
 if (!ensureDependencies()) process.exit(1);
 require('dotenv').config();
+// O runtime só roda sob o supervisor (node src/index.js), que confere a licença
+// antes de iniciá-lo. Iniciado direto, ele pularia essa verificação.
+if (process.env.LOBO_SUPERVISED !== '1' || typeof process.send !== 'function') {
+  console.error('❌ Inicie o bot com "node src/index.js" (ou "npm start"). O runtime não é iniciado diretamente.');
+  process.exit(1);
+}
 const terminal = require('./utils/quiet-console').installQuietConsole();
 
 // ============================================================
@@ -58,7 +64,7 @@ fs.mkdirSync(SESSION_DIR, { recursive: true });
 
 const { hasSavedSession, resetIncompletePairing, createLifecycle } = require('./connection/lifecycle');
 const { logConnection, baileysLogger } = require('./config/logger');
-let commonReady = null, pairingNumberPromise = null, shuttingDown = false;
+let commonReady = null, pairingNumberPromise = null, shuttingDown = false, licenseNoticeSent = false;
 const configuredReconnect = config.getNumber('MAX_RECONNECT');
 const MAX_RECONNECT = Number.isInteger(configuredReconnect) ? Math.max(0, Math.min(100, configuredReconnect)) : 10;
 const lifecycle = createLifecycle({
@@ -159,6 +165,12 @@ async function startBot() {
     require('./utils/file-log').record('bot', { result: 'runtime_ready' });
     const ownerJid = config.get('BOT_OWNER');
     if (ownerJid) await currentSocket.sendMessage(`${ownerJid}@s.whatsapp.net`, { text: require('./menus/render').connectionNotice() }).catch(() => {});
+    // Instalação sem chave, no período de aviso: o dono é avisado uma vez por início.
+    const licenseDeadline = Number(process.env.LOBO_LICENSE_NOTICE);
+    if (ownerJid && licenseDeadline > 0 && !licenseNoticeSent) {
+      licenseNoticeSent = true;
+      await currentSocket.sendMessage(`${ownerJid}@s.whatsapp.net`, { text: require('./licensing/messages').ownerNotice(licenseDeadline, { prefix: config.get('PREFIX') }) }).catch(() => {});
+    }
   } });
   store.bind(currentSocket.ev);
 
@@ -261,6 +273,9 @@ async function shutdown(signal) {
 }
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
+// Sem o supervisor não há quem confira a licença nem reinicie o bot: o runtime
+// encerra junto, em vez de continuar rodando sozinho.
+process.on('disconnect', () => shutdown('SUPERVISOR_DISCONNECTED'));
 
 // ============================================================
 // INICIAR
