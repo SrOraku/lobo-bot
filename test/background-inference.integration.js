@@ -5,7 +5,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),sharp=require('sharp');
 const {createLocalMedia}=require('../src/commands/local-media');
 test('bundled CPU model removes a real background even when launched from another directory',async()=>{
- const input=fs.readFileSync(path.join(__dirname,'../src/assets/menu-principal.jpg'));
+ const input=fs.readFileSync(path.join(__dirname,'../src/assets/bem-vindo.jpg'));
  const execFile=require('node:util').promisify(require('node:child_process').execFile);
  const remove=require('../src/media/background').createBackgroundRemover({run:(file,args,options)=>execFile(file,args,{...options,cwd:require('node:os').tmpdir()})});
  const sent=[];await createLocalMedia({read:async()=>input,remove})('sfundo')({sendMessage:async(_,payload)=>sent.push(payload)},
@@ -36,7 +36,7 @@ test('bundled CPU model removes a real background even when launched from anothe
 });
 
 test('sfundo sticker performs real inference and sends the transparent sticker directly',async()=>{
- const input=fs.readFileSync(path.join(__dirname,'../src/assets/menu-principal.jpg'));
+ const input=fs.readFileSync(path.join(__dirname,'../src/assets/bem-vindo.jpg'));
  const sent=[];await createLocalMedia({read:async()=>input})('sfundo')({sendMessage:async(_,payload)=>sent.push(payload)},
   {jid:'120000@g.us',args:['sticker'],msg:{key:{id:'direct-background-sticker'},message:{extendedTextMessage:{text:'!sfundo sticker',contextInfo:{quotedMessage:{imageMessage:{mimetype:'image/jpeg'}}}}}}});
  const result=sent.find(payload=>payload.sticker);assert.ok(result,'The command must deliver a sticker directly');

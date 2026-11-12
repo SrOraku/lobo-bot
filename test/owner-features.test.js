@@ -77,3 +77,19 @@ test('menus enviam capa de foto/GIF com texto e fazem fallback sem apagar comand
   await sendMenu(sock,ctx,'!menu jogos',{directory,getMedia:()=>({type:'image',file:'missing.jpg'})});
   assert.equal(messages.at(-1).text,'!menu jogos');
 });
+
+test('restaurar capa padrão exige dono e reativa animação após capa removida ou personalizada',async()=>{
+  const settings=new Map([['menu-media',{type:'image',file:'abc.jpg'}],['menu-default-disabled',true]]);
+  let owner=false;const sent=[];
+  const file=require('node:path').join(__dirname,'../src/commands/menu-photo.js');
+  const native=require('node:module').createRequire(file),loaded={exports:{}};
+  const mocks={'../activations/access':{resolveActor:async()=>({owner,phone:'5511999999999@s.whatsapp.net'})},
+    '../security/settings':{set:(key,value)=>settings.set(key,value)},'../config':{get:()=>'$'}};
+  require('node:vm').runInNewContext(require('node:fs').readFileSync(file,'utf8'),{module:loaded,require:id=>mocks[id]||native(id)});
+  const sock={sendMessage:async(_,content)=>sent.push(content.text)},ctx={jid:'test',args:['padrao'],msg:{}};
+  await loaded.exports.menuPhoto(sock,ctx);
+  assert.equal(settings.get('menu-media').file,'abc.jpg');assert.equal(settings.get('menu-default-disabled'),true);
+  owner=true;await loaded.exports.menuPhoto(sock,ctx);
+  assert.equal(settings.get('menu-media'),null);assert.equal(settings.get('menu-default-disabled'),false);
+  assert.match(sent.at(-1),/restaurada/);assert.match(sent.at(-1),/\$menu/);
+});

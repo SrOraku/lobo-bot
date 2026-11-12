@@ -1,6 +1,5 @@
 'use strict';
 const config = require('../config');
-const path = require('node:path');
 const { CATEGORIES, CATEGORY_ALIASES, buildCatalog } = require('../menus/catalog');
 const { IDENTITY, frameMenu, clean, uptime } = require('../menus/render');
 const { version } = require('../../package.json');
@@ -84,11 +83,7 @@ function createMenu({
       sections = [`${center('_' + greeting(instant) + ', lobo(a)!_')}\n👤 *Usuário:* ${clean(ctx.pushName || 'Lobo')}\n${[ctx.senderLevelName || ['Membro', 'Admin do grupo', 'Admin do bot', 'Dono'][ctx.senderLevel], ctx.user?.level !== undefined ? '*Nível:* ' + mono(ctx.user.level) : null, ctx.user?.gold !== undefined ? '*WoK coin:* ' + mono(ctx.user.gold) : null, ctx.user?.xp !== undefined ? '*XP:* ' + mono(ctx.user.xp) : null].filter(Boolean).join(' • ')}\n🕒 *Hora:* ${mono(clock(instant))}${ctx.ping !== undefined ? ' • *Ping:* ' + mono(ctx.ping + ' ms') : ''}`, block('COMANDOS', sections), `> 📖 _Volte à matilha com_ ${command(p + 'menu')}.`];
     }
     const menuText = frameMenu(title,sections);
-    const mediaOptions = !category ? { defaultParts: [
-      path.join(__dirname, '../assets/menu-cover/part-00'),
-      path.join(__dirname, '../assets/menu-cover/part-01'),
-    ] } : {};
-    return require('../menus/media').sendMenu(sock,ctx,menuText,mediaOptions);
+    return require('../menus/media').sendMenu(sock,ctx,menuText);
   };
 }
 const menu = createMenu();
