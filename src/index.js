@@ -43,7 +43,17 @@ if (isRender || configuredPort) {
 require('dotenv').config();
 const licenseGuard = require('./licensing/licenseGuard');
 (async () => {
-  let phase = 'LICENÇA';
+  let phase = 'LICENÇA', supervisor = null, licenseStopped = false;
+  const explain = error => {
+    try { for (const line of require('./licensing/messages').failureLines(error)) console.error('[LICENÇA] ' + line); } catch { /* A explicação é opcional; o código do erro já foi mostrado. */ }
+  };
+  // Encerra o bot inteiro. Sair só do supervisor deixaria o processo do WhatsApp rodando sozinho.
+  const stopBot = () => {
+    licenseStopped = true;
+    if (!supervisor?.stop) process.exit(1);
+    supervisor.stop();
+    setTimeout(() => process.exit(1), 20000).unref();
+  };
   try {
     const license = await licenseGuard.authorizeStartup();
     if (license.enabled) {
@@ -51,19 +61,33 @@ const licenseGuard = require('./licensing/licenseGuard');
       else console.log('[LICENÇA] Instalação autorizada pelo LOBO-BOT LICENSE.');
       licenseGuard.startHeartbeat({
         log: code => console.error('[LICENÇA] Verificação periódica falhou:', code),
-        onDenied: reason => {
+        onDenied: (reason, error) => {
           console.error('[LICENÇA] Autorização negada. Encerrando o bot:', String(reason).slice(0, 80));
-          process.exit(1);
+          explain(error);
+          stopBot();
+        },
+      });
+    } else if (license.notice) {
+      // Sem chave: período de aviso. O bot inicia, avisa aqui e avisa o dono pelo WhatsApp.
+      for (const line of require('./licensing/messages').noticeLines(license.notice.deadline)) console.warn('[LICENÇA] ' + line);
+      process.env.LOBO_LICENSE_NOTICE = String(license.notice.deadline);
+      licenseGuard.watchNotice({
+        deadline: license.notice.deadline,
+        onExpired: error => {
+          console.error('[LICENÇA] O período de aviso terminou. Encerrando o bot.');
+          explain(error);
+          stopBot();
         },
       });
     }
     phase = 'CONFIG';
     await require('./config/owner-setup').ensureOwner();
     phase = 'INICIALIZAÇÃO';
-    require('./updater/supervisor').start();
+    supervisor = require('./updater/supervisor').start({ exit: code => process.exit(licenseStopped ? 1 : code) });
   } catch (error) {
     console.error(`[${phase}] Inicialização bloqueada:`, error.code || 'STARTUP_FAILED');
     if (phase === 'CONFIG') console.error(error.message);
+    if (phase === 'LICENÇA') explain(error);
     process.exit(1);
   }
 })();
