@@ -125,7 +125,7 @@ test('child process errors are not exposed as logs or secrets in a WhatsApp repl
 
 test('managed paths exclude runtime state, personal directories, traversal and symlinks by scope', () => {
   for (const name of ['.env', '.ssh/key', 'sessions/a.json', 'storage/alcateia/database.json', 'src/../.env', '/src/x.js', 'src\\x.js', 'src/node_modules/a.js', 'plugins/data/config.json', 'updates/state.json']) assert.equal(managedPath(name), false, name);
-  for (const name of ['package.json', 'package-lock.json', '.env.example', 'src/index.js', 'addons/alcateia/src/game/service.js', 'scripts/check-startup.js']) assert.equal(managedPath(name), true, name);
+  for (const name of ['package.json', 'package-lock.json', '.env.example', 'src/index.js', 'addons/alcateia/src/game/service.js', 'scripts/check-startup.js', 'src/assets/menu-geral.mp4']) assert.equal(managedPath(name), true, name);
 });
 
 function sourceFixture({ corrupt = false, truncated = false } = {}) {

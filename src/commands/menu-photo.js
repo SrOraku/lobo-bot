@@ -12,6 +12,7 @@ async function menuPhoto(sock,ctx) {
   const reply = text => sock.sendMessage(ctx.jid,{text:frameNotice('🖼️ CAPA DOS MENUS',[text])},{quoted:ctx.msg});
   if (!actor.owner) return reply('Somente donos cadastrados podem alterar a capa.');
   const settings = require('../security/settings'), p = require('../config').get('PREFIX');
+  if (ctx.args[0] === 'padrao' || ctx.args[0] === 'padrão') {settings.set('menu-media',null,actor.phone);settings.set('menu-default-disabled',false,actor.phone);return reply('✅ Nova capa animada padrão restaurada! Use ' + command(p + 'menu') + ' para visualizar.');}
   if (ctx.args[0] === 'remover') {settings.set('menu-media',null,actor.phone);settings.set('menu-default-disabled',true,actor.phone);return reply('✅ Capa removida. Os menus continuam em texto.');}
   if (ctx.args[0] === 'ver') return require('../menus/media').sendMenu(sock,{...ctx,args:[]},'🖼️ Prévia da capa configurada.');
   const direct = require('../activations/message-rules').inspect(ctx.msg.message).message;
@@ -22,7 +23,7 @@ async function menuPhoto(sock,ctx) {
   const sourceKind = message.imageMessage ? 'image' : message.videoMessage ? 'video' : document && ['image/gif','image/jpeg','image/png','image/webp','video/mp4'].includes(documentType) ? 'document' : null;
   const mime = sourceKind ? message[sourceKind+'Message'].mimetype : '';
   const kind = mime === 'image/gif' || mime === 'video/mp4' || sourceKind === 'video' ? 'video' : sourceKind ? 'image' : null;
-  if (!kind) return reply(`Envie uma foto ou GIF/vídeo com a legenda ${command(p + 'fotomenu')}, ou responda à mídia com esse comando.\n${command(p + 'fotomenu ver')} • ${command(p + 'fotomenu remover')}\n> Limite: ${mono('8 MB')}. Animações são convertidas em clipes de até ${mono('12 segundos')}.`);
+  if (!kind) return reply(`Envie uma foto ou GIF/vídeo com a legenda ${command(p + 'fotomenu')}, ou responda à mídia com esse comando.\n${command(p + 'fotomenu ver')} • ${command(p + 'fotomenu padrao')} • ${command(p + 'fotomenu remover')}\n> Limite: ${mono('8 MB')}. Animações são convertidas em clipes de até ${mono('12 segundos')}.`);
   if(processing) return reply('Aguarde a conversão da capa que já está em andamento.');
   const directory = path.join(__dirname,'../../data/menu');await fs.mkdir(directory,{recursive:true});
   const id = randomUUID(), input = path.join(directory,id+'.input'), output = path.join(directory,id+(kind === 'image'?'.jpg':'.mp4'));
