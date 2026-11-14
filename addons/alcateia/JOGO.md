@@ -47,6 +47,9 @@ Os exemplos deste manual usam o prefixo padrão `!`. Se ele for alterado em `.en
 | `!clan criar Lua Vermelha` | Cria um clã por 300 WOK Coins. |
 | `!clan entrar Lua Vermelha` | Entra em um clã existente. |
 | `!clan perfil` | Mostra o perfil do seu clã. |
+| `!guerra` | Mapa e placar da [Guerra de Alcateias](#guerra-de-alcateias). |
+| `!guerra atacar 1` | Ataca um território pela sua alcateia. |
+| `!guerra defender 1` | Reforça um território da sua alcateia. |
 | `!evento` | Participa do evento lunar a cada 24 horas. |
 
 Para `!ataque`, use **exatamente uma menção real** ao jogador pelo seletor de contatos do WhatsApp. Os dois participantes precisam estar registrados, sem banimento, com HP acima de zero e fora do tempo de espera de batalha. Atacar a si mesmo é recusado.
@@ -143,6 +146,44 @@ Os dois primeiros exemplos representam alternativas: quem já está em um clã n
 As estatísticas do clã acumulam os resultados das batalhas dos membros enquanto eles pertencem ao clã. Vitórias e derrotas são somadas. O indicador de WOK Coins acumula **somente créditos positivos das batalhas**: +50 por vitória e +10 por empate de cada membro; perdas e compras individuais não o reduzem. Essa pontuação não é um saldo coletivo disponível para compras.
 
 O ranking de clãs considera, nesta ordem: mais vitórias, mais WOK Coins acumuladas, mais membros e menos derrotas. O nome normalizado resolve a ordenação restante.
+
+## Guerra de Alcateias
+
+As alcateias (clãs) de um mesmo grupo disputam sete territórios durante a semana. Há sempre uma adversária a mais: a **Alcateia Sombria**, controlada pelo bot, que ataca todos os dias. Cada grupo tem a sua própria guerra.
+
+```text
+!guerra                 mapa, placar e tempo restante
+!guerra atacar 1        ataca o território 1 (número, id ou nome)
+!guerra defender 1      reforça um território da sua alcateia
+!guerra placar          classificação da semana e resultado da anterior
+!guerra regras          resumo das regras
+!guerra avisos on/off   liga ou desliga os avisos no grupo (administradores)
+```
+
+**Territórios.** Vale da Lua, Floresta Negra, Pico do Uivo, Ruínas Antigas, Pântano Sombrio, Caverna de Cristal e Colina dos Ancestrais. No começo da semana, três pertencem à Alcateia Sombria (defesa 60) e quatro estão livres (defesa 40). A defesa vai de 0 a 100.
+
+**Ações.** É preciso estar em uma alcateia (`!clan criar Nome` ou `!clan entrar Nome`). Cada jogador faz uma ação de guerra a cada 20 minutos, à escolha:
+
+- **Atacar** um território que não é da sua alcateia. O dano é `ataque × 1,2 + contra-ataque × 0,5`, com variação de 80% a 120%. Ao zerar a defesa, o território passa para a sua alcateia com defesa 35.
+- **Defender** um território da sua alcateia. O reforço é `defesa + contra-ataque × 0,5`, com a mesma variação, até o limite de 100.
+
+Boosts ativos da loja contam. A guerra não usa HP nem o tempo de espera das batalhas entre jogadores, e uma ação recusada não gasta a vez.
+
+**Pontos.** Dano causado vale ponto a ponto; cada conquista dá +50; reforçar rende metade do valor reforçado; cada território mantido no fechamento da semana dá +30.
+
+**Alcateia Sombria.** Ataca às 9h, 12h, 15h, 18h e 21h (horário de Brasília). A força dela é 70% da força média dos jogadores que estão em alcateias — fácil, mas nem tanto: um grupo que joga um pouco vence, um grupo parado perde território. Em 65% das vezes ela mira o território mais fraco de quem lidera o placar. Os territórios dela recuperam 6 de defesa por turno, até 70. Ela só começa a atacar depois que alguém do grupo faz uma ação de guerra, e para se ninguém jogar por 7 dias.
+
+**Avisos no grupo.** Quando a Alcateia Sombria ataca ou toma um território de jogadores, o bot avisa o grupo; ataques a territórios livres são silenciosos. O fechamento da semana também é anunciado. Administradores podem desligar com `!guerra avisos off`; a guerra continua normalmente. Grupos com o bot pausado não recebem avisos.
+
+**Fechamento e prêmio.** Toda segunda-feira, 00h de Brasília, o placar fecha, o prêmio é pago e o mapa recomeça. As três alcateias de jogadores mais bem colocadas recebem WoK coin **para cada membro que fez ao menos uma ação na semana**, até 10 membros por alcateia:
+
+| Colocação | Prêmio por membro |
+| --- | --- |
+| 1º | 300 WoK coin |
+| 2º | 150 WoK coin |
+| 3º | 75 WoK coin |
+
+A Alcateia Sombria aparece na classificação, mas não ocupa vaga de prêmio. Quem saiu da alcateia ou está banido do jogo não recebe. O perfil do clã guarda os títulos, pódios e conquistas de todas as semanas.
 
 ## Evento lunar
 

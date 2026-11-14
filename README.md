@@ -76,6 +76,8 @@ A atualização prepara e verifica os arquivos antes de substituir o código, ma
 
 ## RP e WOK Coin
 
+> **Guerra de Alcateias:** `!guerra` abre a disputa semanal de territórios entre os clãs do grupo, com a Alcateia Sombria (controlada pelo bot) atacando todos os dias e prêmio em WoK coin para as três melhores. [Regras](addons/alcateia/JOGO.md#guerra-de-alcateias).
+
 O bot existente continua com seus comandos, sessão e banco de dados. O plugin adiciona **64 profissões, família, 19 itens e uma carteira WOK Coin compartilhada entre o novo RP e o novo 100 Lobisomens Estratégia**. Os duelos foram retirados; o ataque direto continua.
 
 Identidade padrão: **🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶🐺̑**. Desenvolvedor: **🌹♆̽Ø᩺Ɍͬ₳Ꮶび᭄🐺**. Contato do criador: comando `!criador`. Em instalações com `.env` existente, confira `BOT_NAME`, `DEVELOPER_NAME` e `BOT_OWNER`. Os pacotes de download usam a pasta `Lobo-bot-v1`.
