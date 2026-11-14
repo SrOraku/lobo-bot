@@ -5,7 +5,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 const DIRECT_COMMANDS = Object.freeze([
-  'start', 'treino', 'formacao', 'ataque', 'rank', 'clan', 'evento', 'admin',
+  'start', 'treino', 'formacao', 'ataque', 'rank', 'clan', 'guerra', 'evento', 'admin',
   'rp', 'profissoes', 'profissao', 'trabalhar', 'acao', 'carteira', 'transferir',
   'rploja', 'rpcomprar', 'usar', 'inventario', 'familia', 'descansar',
 ]);
@@ -126,6 +126,7 @@ async function defaultLoadModules(root) {
   const imported = await Promise.all([
     'store.js', 'game/service.js', 'game/commands.js', 'identity.js', 'messages.js',
     'game/backup.js', 'game/validation.js', 'game/rate-limit.js', 'game/players.js',
+    'game/war.js', 'game/war-messages.js',
   ].map(file => import(pathToFileURL(path.join(base, file)).href)));
   return Object.assign({}, ...imported);
 }
@@ -140,11 +141,56 @@ function defaultLoadUpstream() {
 }
 
 /** Dependency injection keeps adapter tests independent of SQLite and Baileys. */
+// A cada 10 minutos a guerra de cada grupo é posta em dia: ataques da Alcateia
+// Sombria que venceram e o fechamento da semana. O que houver para avisar sai
+// em uma única mensagem por grupo.
+const WAR_TICK_MS = 10 * 60_000;
+
+// Avisos espontâneos só saem onde o bot está ativo; na dúvida, não envia.
+function defaultWarAllowed(upstream, chat) {
+  try {
+    if (require('../src/activations/store').getStore().get(chat).bot === false) return false;
+    const group = require('../src/isolation/context').run(chat, () => upstream.db.getGroup?.(chat)) || {};
+    return group.enabled !== false && group.enabled !== 0;
+  } catch { return false; }
+}
+
 function createPlugin({ root = path.join(__dirname, '..'), loadModules = defaultLoadModules,
-  loadUpstream = defaultLoadUpstream, now = () => Date.now() } = {}) {
+  loadUpstream = defaultLoadUpstream, now = () => Date.now(), random = Math.random,
+  warInterval = WAR_TICK_MS, warAllowed = defaultWarAllowed } = {}) {
   let initialization;
   const startedAt = now();
   const background = new Set();
+  let currentSock = null, warTimer = null, warRunning = false;
+
+  async function warTick() {
+    if (warRunning || !currentSock) return 0;
+    warRunning = true;
+    let sent = 0;
+    try {
+      const state = await initialize();
+      if (typeof state.modules.advanceWar !== 'function') return 0;
+      const prefix = getConfig(state.upstream.config, 'PREFIX') || '!';
+      const games = typeof state.store.snapshot === 'function' ? state.store.snapshot().games : state.store.data.games;
+      for (const [chat, game] of Object.entries(games || {})) {
+        // Só grupos em que alguém já abriu a guerra e que têm alcateias.
+        if (!chat.endsWith('@g.us') || !game?.war || !Object.keys(game.clans || {}).length) continue;
+        try {
+          if (!warAllowed(state.upstream, chat)) continue;
+          const events = await state.store.scoped(chat).transactionGame(draft => {
+            state.modules.advanceWar(draft, now(), random);
+            return state.modules.drainWarOutbox(draft);
+          });
+          const text = events.length ? state.modules.warAnnouncement(events, prefix) : null;
+          const sock = currentSock;
+          if (text && sock) { await sock.sendMessage(chat, { text: rewrittenText(text, prefix) }); sent++; }
+        } catch (error) {
+          state.logger.warn({ error: error.message }, 'Falha ao atualizar a guerra de alcateias de um grupo.');
+        }
+      }
+    } finally { warRunning = false; }
+    return sent;
+  }
 
   async function initialize() {
     if (!initialization) initialization = (async () => {
@@ -188,7 +234,7 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
     if(!ctx.msg?.key?.remoteJid)return;
     const scopedChat=state.modules.normalizeJid(ctx.msg.key.remoteJid)||ctx.msg.key.remoteJid;
     const scopedStore=state.store.scoped(scopedChat);
-    const scopedService=new state.modules.GameService({store:scopedStore,now,isOwner:jid=>require('../src/utils/owners').ownerNumbers(state.upstream.config).includes(jid.split('@')[0])});
+    const scopedService=new state.modules.GameService({store:scopedStore,now,rng:random,isOwner:jid=>require('../src/utils/owners').ownerNumbers(state.upstream.config).includes(jid.split('@')[0])});
     const scopedHandler=state.modules.createGameCommandHandler({service:scopedService,backupManager:state.backupManager,logger:state.logger,now});
     const adapted = await state.adapter(sock, ctx, request);
     if (!adapted) return;
@@ -264,8 +310,15 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
         return result;
       });
     },
-    async onLoad() {
+    warTick,
+    async onLoad(sock) {
       const state = await initialize();
+      // Cada reconexão entrega o socket novo; o relógio da guerra é um só.
+      currentSock = sock || null;
+      if (!warTimer && warInterval > 0) {
+        warTimer = setInterval(() => { warTick().catch(error => state.logger.warn({ error: error.message }, 'Falha no relógio da guerra de alcateias.')); }, warInterval);
+        warTimer.unref?.();
+      }
       // Registered legacy names always win. A future upstream command can also
       // claim a direct alias; the namespaced !alcateia route remains available.
       plugin.commands = routes();
@@ -275,6 +328,8 @@ function createPlugin({ root = path.join(__dirname, '..'), loadModules = default
       state.backupManager.start();
     },
     async onUnload() {
+      if (warTimer) { clearInterval(warTimer); warTimer = null; }
+      currentSock = null;
       if (initialization) {
         const state = await initialization;
         state.backupManager.stop();

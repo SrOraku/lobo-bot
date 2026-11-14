@@ -11,6 +11,7 @@ import { consumeCommand } from './rate-limit.js';
 import { isRPCommand } from '../rp/commands.js';
 import { dispatchRP } from '../rp/service.js';
 import { credit, debit } from './wallet.js';
+import { warCommand } from './war.js';
 
 function exactArgs(args, count, usage) {
   if (args.length !== count) throw new GameError(`Use ${usage}.`);
@@ -151,6 +152,8 @@ export class GameService {
         const clan = clanProfile(game, player);
         return { type: 'clan', clan, rank: clan.ranking };
       }
+      case 'guerra':
+        return warCommand(game, player, request, { now, rng: this.rng });
       case 'evento':
         exactArgs(args, 0, '!evento');
         return { type: 'event', player, reward: runEvent(player, { now, rng: this.rng, day:game.universalModifiers?.[actor.jid]?.day }) };

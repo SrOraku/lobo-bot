@@ -60,6 +60,7 @@ const ADDON = {
   lojaalcateia: ['alcateia', '', 'Loja de boosts • WoK coin'],
   compraralcateia: ['alcateia', 'ID', 'Comprar cura, boost ou treino'],
   clan: ['alcateia', 'criar Nome | entrar Nome | perfil', 'Clãs e liderança'],
+  guerra: ['alcateia', 'atacar N | defender N | placar | regras', 'Guerra semanal de alcateias por territórios; prêmio em WoK coin'],
   evento: ['alcateia', '', 'Evento lunar diário'],
   admin: [
     'dono',
@@ -111,6 +112,7 @@ const DETAILS = {
     'retirar quantidade',
   ],
   clan: ['criar Nome', 'entrar Nome', 'perfil'],
+  guerra: ['mapa', 'atacar N', 'defender N', 'placar', 'regras', 'avisos on/off'],
   rp: ['iniciar', 'perfil', 'menu'],
 };
 function categoryOf(command) {

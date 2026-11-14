@@ -5,10 +5,11 @@ import { generateBattleMessage } from './battle.js';
 import { isRPCommand, rpMenu, handleRPResponse } from '../rp/commands.js';
 import { formatMenu } from '../menu-style.js';
 import { panel, mono, progress, notice } from '../presentation.js';
+import { warText } from './war-messages.js';
 
 const COMMANDS = new Set([
   'start', 'perfil', 'treino', 'formacao', 'ataque', 'rank', 'loja', 'comprar',
-  'clan', 'evento', 'admin',
+  'clan', 'evento', 'admin', 'guerra',
 ]);
 const BOOST_NAMES = { attack: 'Ataque', defense: 'Defesa', counter: 'Contra-ataque' };
 const ADMIN_ACTIONS = {
@@ -74,7 +75,8 @@ export function gameMenu(config) {
       '💎 Uma carteira para lobisomens e RP.',
     ] },
     { title: '🏰 CLÃS E LIDERANÇA', lines: [
-      `🌹 ${p}clan criar/entrar/perfil`, `👑 ${p}admin status — painel do jogo`,
+      `🌹 ${p}clan criar/entrar/perfil`, `⚔️ ${p}guerra — territórios, placar semanal e prêmio em WoK coin`,
+      `👑 ${p}admin status — painel do jogo`,
       '🐾 Estratégia, honra e força da alcateia.',
     ] },
   ] });
@@ -181,7 +183,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
         number: ctx.senderPhone?.endsWith('@s.whatsapp.net') ? ctx.senderPhone.split('@')[0] : null };
       const result = await service.execute({ command, args, argText: ctx.argText || '',
         actor, target, mentionCount: contextOf(ctx.msg).mentionedJid?.length || 0,
-        chatId: ctx.chatId, isGroup: ctx.isGroup, now: started });
+        chatId: ctx.chatId, isGroup: ctx.isGroup, isAdmin: ctx.isAdmin === true || ctx.isOwner === true, now: started });
       const at = now();
       const prefix = ctx.config.prefix;
 
@@ -230,10 +232,14 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
             `🌹 Nome: ${line(result.clan.name)}`, `👑 Líder: +${result.clan.leader.split('@')[0]}`,
             `🐺 Membros: ${result.clan.members.length}`, `🏆 Vitórias: ${result.clan.wins} • Derrotas: ${result.clan.losses}`,
             `💰 Pontuação WoK coin: ${result.clan.coins} • ⭐ Ranking: ${result.rank ?? result.clan.ranking ?? '—'}`,
+            `⚔️ Guerra: ${result.clan.warTitles || 0} título(s) • ${result.clan.warPodiums || 0} pódio(s) • ${result.clan.warConquests || 0} território(s) conquistado(s)`,
           ]));
           break;
         case 'event':
           await ctx.reply(eventText(result.reward));
+          break;
+        case 'war':
+          await ctx.reply(warText(result, prefix));
           break;
         case 'admin-status': {
           const uptime = Math.max(0, at - ctx.startedAt);
