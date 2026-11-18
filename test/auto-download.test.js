@@ -16,14 +16,14 @@ test('detects supported social networks by exact hostname without pretending to 
 });
 function fixture() {
  let clock=0,on=new Set(['123@g.us','456@g.us']),active=true,configured=true;const calls=[];
- const service=createAutoDownload({now:()=>clock,enabled:jid=>on.has(jid),active:()=>active,configured:()=>configured,prefix:()=> '!',dispatch:async(sock,ctx,def)=>calls.push({ctx,def})});
+ const service=createAutoDownload({now:()=>clock,enabled:jid=>on.has(jid),active:()=>active,configured:()=>configured,prefix:()=> '!',dispatch:async(sock,ctx,def)=>{calls.push({ctx,def});return {ok:true,mediaCount:1};}});
  const ctx={jid:'123@g.us',sender:'1@s.whatsapp.net',isGroup:true,body:links[0][0],user:{}};
  const msg=id=>({key:{id}});return {service,calls,ctx,msg,setClock:value=>clock=value,setOn:value=>on=value,setActive:value=>active=value,setConfigured:value=>configured=value};
 }
 test('automatic download needs active group setting and API key and ignores own, muted and command messages',async()=>{
  const f=fixture(),run=(id,ctx=f.ctx,msg=f.msg(id))=>f.service.handle({},msg,ctx);
  f.setOn(new Set());assert.equal(await run('off'),false);f.setOn(new Set([f.ctx.jid]));
- f.setConfigured(false);assert.equal(await run('key'),false);f.setConfigured(true);
+ f.setConfigured(false);assert.equal(await run('key'),true);assert.equal(f.calls.length,0);f.setConfigured(true);
  f.setActive(false);assert.equal(await run('paused'),false);f.setActive(true);
  assert.equal(await run('muted',{...f.ctx,user:{muted:1}}),false);
  assert.equal(await run('command',{...f.ctx,body:'!play '+links[0][0]}),false);
@@ -32,9 +32,9 @@ test('automatic download needs active group setting and API key and ignores own,
  assert.equal(await run('ok'),true);assert.equal(f.calls.length,1);assert.deepEqual(f.calls[0].ctx.args,[links[0][0]]);
 });
 test('dedup, limits and group isolation avoid repeated API usage',async()=>{
- const f=fixture();await f.service.handle({},f.msg('a'),f.ctx);assert.equal(await f.service.handle({},f.msg('b'),f.ctx),false);
+ const f=fixture();await f.service.handle({},f.msg('a'),f.ctx);assert.equal(await f.service.handle({},f.msg('b'),f.ctx),true);assert.equal(f.calls.length,1);
  assert.equal(await f.service.handle({},f.msg('a'),{...f.ctx,jid:'456@g.us'}),true);
- f.setClock(31000);assert.equal(await f.service.handle({},f.msg('a'),f.ctx),false);
+ f.setClock(31000);assert.equal(await f.service.handle({},f.msg('a'),f.ctx),true);assert.equal(f.calls.length,2);
  assert.equal(await f.service.handle({},f.msg('c'),f.ctx),true);assert.equal(f.calls.length,3);
  f.setClock(16*60000);await f.service.handle({},f.msg('d'),f.ctx);assert.ok(f.service.entries.size<=3);
 });
@@ -66,6 +66,8 @@ test('message pipeline applies protection before automatic downloads and keeps p
   './autoReply':{handleAutoReply:async()=>calls.push('reply')},'./xp':{handleXP:async()=>{}},
   './autoDownload':{handleAutoDownload:async()=>{calls.push('download');return true;}},
   '../isolation/context':{run:(jid,callback)=>callback()},
+  // Cache de nomes vazio: o nome do grupo vem do banco ('Grupo de teste').
+  '../utils/group-names':{groupNames:{nameOf:()=>null,lookup(){}}},
  };
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../src/handlers/message.js'),'utf8'),{module,require:name=>{if(!replacements[name])throw Error(name);return replacements[name];}});
  const msg={key:{remoteJid:'123@g.us',participant:'1@s.whatsapp.net',id:'msg'},message:{conversation:links[0][0]}};

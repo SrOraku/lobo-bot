@@ -1,7 +1,8 @@
 'use strict';
 const config = require('../config');
 const { frameMenu, clean } = require('../menus/render');
-const { mono, command, block, badge, progress, DIVIDER, center } = require('../ui/text');
+const { mono, command, badge } = require('../ui/text');
+const { renderPanel } = require('../activations/panel');
 const response = require('../core/response');
 const registry = require('../activations/registry');
 const { change } = require('../activations/policy');
@@ -24,6 +25,11 @@ function createActivationHandler({
       return reply(response.warn('Sem permissão', '_Somente o dono e os administradores do grupo podem abrir este painel._'));
     const repository = store || require('../activations/store').getStore(),
       manager = createManager(repository,store?{}:{security:()=>require('../security/groups/service').security().engine});
+    const interactiveReply = async text => {
+      const sent = await reply(text);
+      (interaction || require('../activations/interaction').interaction()).attachPanel?.(ctx, sent?.key);
+      return sent;
+    };
     const args = (ctx.args || []).map(String),
       group = clean(actor.groupName || ctx.jid);
     try {
@@ -50,7 +56,7 @@ function createActivationHandler({
       if (!forcedAction && !featureId && args.length === 1 && registry.feature(args[0])?.source !== 'sector' && registry.feature(args[0])) {
         const feature = registry.feature(args[0]);
         const text = (interaction || require('../activations/interaction').interaction()).requestFeature(ctx, feature.id, manager.isEnabled(ctx.jid, feature.id));
-        return reply(require('../menus/render').frameNotice('🌹 CONFIRMAÇÃO DA FUNÇÃO 🐺', [text]));
+        return interactiveReply(require('../menus/render').frameNotice('🌹 CONFIRMAÇÃO DA FUNÇÃO 🐺', [text]));
       }
       let result;
       if(forcedAction&&args[0]?.toLowerCase()==='antipv')return reply('🛡️ *Anti-PV global*\n_Exclusivo do dono._\n> Use '+command(p+'antipv status')+' no privado; o WhatsApp não informa conversas privadas entre membros de um grupo.');
@@ -75,7 +81,7 @@ function createActivationHandler({
         if (args.length) throw Error('Argumentos extras inválidos.');
         if (registry.feature(name)?.id === 'antiinatividade' && value && !Object.hasOwn(options, 'inactivity_days')) {
           (interaction || require('../activations/interaction').interaction()).requestDays(ctx, manager.isEnabled(ctx.jid, 'antiinatividade'));
-          return reply(require('../menus/render').frameNotice('📅 PRAZO DE INATIVIDADE', ['Digite somente o número de dias, de `1` a `90`.', 'Exemplo: `15`.', '> A função será ativada após salvar o prazo. Responda em até `2 minutos`.']));
+          return interactiveReply(require('../menus/render').frameNotice('📅 PRAZO DE INATIVIDADE', ['Digite somente o número de dias, de `1` a `90`.', 'Exemplo: `15`.', '> A função será ativada após salvar o prazo. Responda em até `2 minutos`.']));
         }
         const context = { actor, botAdmin: actor.botAdmin, options };
         result =
@@ -113,36 +119,11 @@ function createActivationHandler({
             }),
           );
       } else if (args.length > 1) throw Error('Use apenas status.');
-      const policy = repository.get(ctx.jid),
-        categories = new Map();
-      let number = 0, enabled = 0, pending = 0;
-      for (const item of manager.getGroupFeatures(ctx.jid)) {
-        number++;
-        const state = item.enabled
-          ? ((item.botAdminRequired || item.security) && !actor.botAdmin) ||
-            (item.isConfigured && !item.isConfigured()) ||
-            item.dependencies?.some((id) => !manager.isEnabled(ctx.jid, id))
-            ? '⚠️'
-            : '🟢'
-          : '🔴';
-        const lines = categories.get(item.category) || [];
-        const available = item.enabled && state === '🟢' && policy.bot && typeof item.handler === 'function';
-        if (available) enabled++;
-        if (item.enabled && !available) pending++;
-        lines.push(`  ${mono(number)} 🛡️ *${item.name}:* ${badge(available)}${item.enabled && !available ? ' ⚠️ pendente' : ''}${item.mode ? ' • ' + mono(item.mode) : ''}\n     ▸ ${command(p + 'ativacoes ' + item.id)}`);
-        categories.set(item.category, lines);
-      }
-      const sections = [
-        `${center('_Segurança & Funções do Grupo_')}\n👥 *Grupo:* ${group}\n🤖 *Bot:* ${badge(policy.bot)}\n_⚠️ Pendências exigem permissão, dependência ou configuração._`,
-      ];
-      for (const [category, lines] of categories)
-        sections.push(block(category.toUpperCase(), lines));
-      const percent = number ? Math.round(enabled / number * 100) : 0;
-      sections.push(DIVIDER, `📊 *Proteção:* ${mono(progress(enabled, number) + ' ' + percent + '%')}\n*Funções ativas:* ${mono(enabled)} / ${mono(number)} • *Pendentes:* ${mono(pending)}\n📅 *Inatividade:* ${mono(policy.options.inactivity_days)} dias.`,
-        `${center('*Como configurar:*')}\n_Envie o número da função ou use o comando abaixo dela._\n🟢 Digite ${mono(1)} para *SIM / Confirmar*\n🔴 Digite ${mono(2)} para *NÃO / Cancelar*\n⏳ Confirmação válida por ${mono('2 minutos')}.`,
-        '> 🌹 _A barra conta funções disponíveis; não garante segurança absoluta. Permissões e proteção contra abuso continuam obrigatórias._');
-      (interaction || require('../activations/interaction').interaction()).open(ctx);
-      return reply(frameMenu('PAINEL DE ATIVAÇÕES', sections));
+      const ui = interaction || require('../activations/interaction').interaction();
+      ui.open(ctx);
+      const sent = await reply(renderPanel({ repository, actor, ctx, prefix: p }));
+      ui.attachPanel?.(ctx, sent?.key);
+      return sent;
     } catch (error) {
       require('../utils/helpers').logger.warn(
         { code: error.code || 'ACTIVATION', reason: error.message },

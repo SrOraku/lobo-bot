@@ -182,6 +182,8 @@ No !ativacoes, cada função exibe somente `〔 🟢 〕` ou `〔 🔴 〕` no i
 
 Envie o número exibido antes da função para abrir a confirmação. !ativacoes antilink (ou outra função do registro) também funciona. Responda `1` para SIM/confirmar ou `2` para NÃO/cancelar. Nada é salvo antes da confirmação; permissões e estado são revalidados. A escolha numérica antiga continua compatível. Inatividade continua pedindo de 1 a 90 dias, sem sufixo. Valores de dias, IDs e respostas dos jogos mantêm suas regras próprias: não são confundidos com confirmações. Comandos diretos continuam aceitando on/off, 1/0 e também 2 como desativar.
 
+Depois de confirmar ou cancelar, o bot edita o painel para mostrar novamente a lista completa com os estados atualizados. Você já pode enviar o número de outra função, sem repetir `!ativacoes`. A confirmação e o pedido de dias reutilizam a mensagem do painel; se o WhatsApp recusar a edição, o bot envia uma nova mensagem utilizável. A sessão continua exclusiva da pessoa e do grupo que abriram o painel, com dois minutos para a próxima escolha. Reenvios de respostas antigas não repetem mudanças, e perda de permissão encerra a interação.
+
 A saudação e o relógio usam o horário de São Paulo. Nome, cargo, nível, saldo e XP do menu vêm do contexto existente, sem consultar novamente o banco. Ping só aparece quando há medição disponível; !ping continua mostrando suas métricas reais. Não há valores de latência ou saldos inventados.
 
 As reações são opcionais para a execução: alternam 🌹/🐺 e contexto, depois marcam o fim do processamento com ✅. Falha ou demora na reação não impede o comando. Frases de batalha variadas usam aleatoriedade separada dos jogos e não mudam recompensas, cálculos ou estado.

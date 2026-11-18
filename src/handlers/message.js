@@ -71,7 +71,12 @@ async function processMessage(sock, msg) {
     const parts   = body.slice(PREFIX.length).trim().split(/\s+/);
     const command = parts.shift().toLowerCase();
 
-    const ctx = { jid, sender, senderNumber, pushName, groupName: isGroup ? db.getGroup(jid)?.name : null, isGroup, args: parts, body, command, msg, msgType, user, BOT_NAME, PREFIX };
+    // Nome do grupo para o console: cache em memória, depois o banco; se ainda for
+    // desconhecido, uma consulta em segundo plano resolve para as próximas linhas.
+    const { groupNames } = require('../utils/group-names');
+    const groupName = isGroup ? groupNames.nameOf(jid) || db.getGroup(jid)?.name || null : null;
+    if (isGroup && !groupName) groupNames.lookup(sock, jid);
+    const ctx = { jid, sender, senderNumber, pushName, groupName, isGroup, args: parts, body, command, msg, msgType, user, BOT_NAME, PREFIX };
     await execute(command, sock, ctx);
     try {
       const progress=require('../progression/service').progression();
