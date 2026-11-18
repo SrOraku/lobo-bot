@@ -1,6 +1,5 @@
 'use strict';
 const db = require('../utils/database');
-const { BOT_NAME } = require('../utils/helpers');
 
 async function handleAutoReply(sock, msg, { jid, sender, body }) {
   try {

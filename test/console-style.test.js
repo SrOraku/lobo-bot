@@ -71,7 +71,6 @@ test('texto vindo do WhatsApp não controla o terminal nem forja linhas', () => 
     assert.equal(lines.length, 2);
     const text = lines.join('\n');
     assert.equal(text.split('\n').length, 2, 'nenhuma linha extra');
-    // eslint-disable-next-line no-control-regex
     assert.equal(text.replace(/\x1b\[[0-9;]+m/g, '').search(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f\u2028\u2029\u200b\u202a-\u202e]/), -1, 'só sobram as cores do próprio bot');
   }
   assert.equal(ui.clean('  a \t\n b  '), 'a b'); assert.equal(ui.clean('', 'x'), 'x'); assert.equal(ui.clean(null, 'x'), 'x');

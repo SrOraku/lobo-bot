@@ -25,7 +25,7 @@ function loadBaileys() {
 }
 
 // ── Utils & Config ──────────────────────────────────────────
-const { printBanner, logger, BOT_NAME, OWNER, sleep } = require('./utils/helpers');
+const { printBanner, logger, sleep } = require('./utils/helpers');
 const config    = require('./config');
 require('./config/expansion').load();
 require('./utils/temp-files').start();

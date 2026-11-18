@@ -1,7 +1,6 @@
 'use strict';
 const db = require('../utils/database');
-const { BOT_NAME, wolvesBar, validateStrategy, calculateBattle, cleanJid, getNumber, formatDate, sleep } = require('../utils/helpers');
-const cache = require('../utils/cache');
+const { validateStrategy, calculateBattle, cleanJid, getNumber, sleep } = require('../utils/helpers');
 const { mono, progress, command, numericText, card, block, flavor } = require('../ui/text');
 
 const wolfHud = alive => `🐺 *Lobos vivos:* ${mono(`${alive}/100`)}\n${progress(alive, 100)}`;
@@ -127,7 +126,7 @@ function getTacticLabel(atk, def, ctr) {
 const activeBattles = new Set();
 
 async function atacar(sock, ctx) {
-  const { jid, sender, msg, pushName, args } = ctx;
+  const { jid, sender, msg } = ctx;
   if (!ctx.isGroup) {
     return sock.sendMessage(jid, { text: `❌ *Ação Inválida!* _Este comando só pode ser usado em grupos._` }, { quoted: msg });
   }
@@ -152,7 +151,6 @@ async function atacar(sock, ctx) {
     return sock.sendMessage(jid,{text:'⏳ *Aguarde um instante!* _Este participante está protegido por um escudo ativo._'},{quoted:msg});
 
   // Anti-cooldown de batalha (30s entre batalhas)
-  const battleKey = `battle_${sender}`;
   const battleChat=require('../isolation/context').current() || jid;
   const persisted=db.db.prepare('SELECT expires_at FROM persistent_cooldowns WHERE chat_jid=? AND user_jid=? AND action=?').get(battleChat,sender,'battle');
   const lastBattle = persisted?.expires_at > Date.now() ? persisted.expires_at-BATTLE_TIMEOUT*1000 : null;
@@ -367,7 +365,7 @@ async function curarLobos(sock, ctx) {
 // RESETAR LOBOS (dono)
 // ============================
 async function resetarLobos(sock, ctx) {
-  const { jid, sender, msg, args } = ctx;
+  const { jid, sender, msg } = ctx;
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
   const target = mentioned ? cleanJid(mentioned) : sender;
 

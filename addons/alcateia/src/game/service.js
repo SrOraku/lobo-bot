@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { COOLDOWNS, LIMITS, OWNER_NUMBER } from './constants.js';
-import { GameError, assertGameOwner, isGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
+import { GameError, isGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
   integer, quantity, formatRemaining, validatePlayer } from './validation.js';
 import { registerPlayer, requirePlayer, ensurePlayer, addWolves, trainPlayer, setFormation, rankPlayers } from './players.js';
 import { SHOP_ITEMS, buyItem } from './shop.js';
@@ -90,7 +90,7 @@ export class GameService {
   }
 
   dispatch(game, request, now) {
-    const { command, actor, chatId } = request;
+    const { command, actor } = request;
     const args = request.args || [];
     const argText = request.argText || '';
     // Old invitations have no effect after duels were removed.

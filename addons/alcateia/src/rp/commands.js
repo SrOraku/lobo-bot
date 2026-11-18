@@ -72,7 +72,7 @@ function pageFooter(command, result, prefix) {
   return [`📖 Página ${page}/${total}`, page < total ? `🐺 Próxima: ${prefix}${command} ${filter}${page + 1}` : undefined];
 }
 
-export function isRPCommand(command, args = []) {
+export function isRPCommand(command) {
   return COMMANDS.has(String(command || '').toLowerCase());
 }
 

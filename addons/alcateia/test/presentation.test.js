@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { displayWidth, panelHeader, sectionHeading, numericText, progress, panel, commandLine, contentLine } from '../src/presentation.js';
 
-const plain = value => value.replace(/[*_`]/g, '');
 
 test('long headings preserve every grapheme while all structural rows fit 26 display columns', () => {
   for (const title of ['BATALHA DA ALCATEIA', '👨‍👩‍👧‍👦 PROFISSÕES E INFLUÊNCIA DA ALCATEIA', 'PALAVRAMUITOLONGASEMESPACOSMAISDELIMITES', '龍龍龍龍龍龍龍龍龍龍龍龍龍龍龍龍龍龍']) {

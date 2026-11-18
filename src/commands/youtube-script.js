@@ -25,7 +25,7 @@ function evaluatePlayer(data) {
       clearTimeout(timer);
       reject(error);
     });
-    worker.once('exit', (code) => {
+    worker.once('exit', () => {
       clearTimeout(timer);
       if (!finished) reject(Error('PLAYER_SCRIPT_FAILED'));
     });

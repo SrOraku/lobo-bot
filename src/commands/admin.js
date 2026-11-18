@@ -1,7 +1,7 @@
 'use strict';
 const db = require('../utils/database');
 const { card, mono, command } = require('../ui/text');
-const { BOT_NAME, OWNER, cleanJid, getNumber, sleep } = require('../utils/helpers');
+const { cleanJid, getNumber, sleep } = require('../utils/helpers');
 
 
 function requireOwner(fn) {
@@ -186,7 +186,6 @@ async function uptime(sock, ctx) {
 async function plugins(sock, ctx) {
   const { jid, msg } = ctx;
   const { listPlugins } = require('../core/pluginLoader');
-  const { BOT_NAME, DEV_NAME, DEV_TEL } = require('../utils/helpers');
   const list = listPlugins();
 
   if (!list.length) {

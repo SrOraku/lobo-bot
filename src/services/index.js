@@ -6,7 +6,6 @@
 const db     = require('../utils/database');
 const cache  = require('../utils/cache');
 const { bus, EVENTS } = require('../core/eventBus');
-const { logError } = require('../config/logger');
 const config = require('../config');
 
 // ============================================================

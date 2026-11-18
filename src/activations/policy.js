@@ -15,7 +15,7 @@ function normalizeMode(value) {
     value
   );
 }
-function change(current, { action, target, value, owner, admin }) {
+function change(current, { action, target, value, owner }) {
   const next = structuredClone(current),
     key = sector(target),
     mode = normalizeMode(String(value || '').toLowerCase());

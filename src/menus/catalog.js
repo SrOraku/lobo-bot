@@ -29,8 +29,6 @@ const CATEGORY_ALIASES = {
   mod: 'adm',
   geral: 'info',
   lobos: 'alcateia',
-  lobo: 'alcateia',
-  mod: 'adm',
   moderacao: 'adm',
   media: 'midia',
   fun: 'diversao',

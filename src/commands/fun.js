@@ -1,5 +1,4 @@
 'use strict';
-const { BOT_NAME, shuffle } = require('../utils/helpers');
 const { card, mono, progress, command } = require('../ui/text');
 
 const PIADAS = [

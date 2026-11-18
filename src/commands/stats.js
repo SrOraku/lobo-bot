@@ -1,13 +1,13 @@
 'use strict';
 const db = require('../utils/database');
 const { card, mono, command, progress } = require('../ui/text');
-const { BOT_NAME, formatNumber, progressBar, cleanJid, getNumber, formatDate } = require('../utils/helpers');
+const { formatNumber, progressBar, cleanJid, getNumber, formatDate } = require('../utils/helpers');
 
 // ============================
 // VER LEVEL
 // ============================
 async function verLevel(sock, ctx) {
-  const { jid, sender, msg, pushName } = ctx;
+  const { jid, sender, msg } = ctx;
   let target = sender;
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
   if (mentioned) target = cleanJid(mentioned);

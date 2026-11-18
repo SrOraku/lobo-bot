@@ -5,7 +5,7 @@ const { card, mono } = require('../ui/text');
 const config = require('../config');
 
 
-async function handleXP(sock, msg, { jid, sender, body, user }) {
+async function handleXP(sock, msg, { jid, sender }) {
   try {
     const features=require('../activations/manager').manager;
     const xpEnabled=features.isEnabled(jid,'xp');
