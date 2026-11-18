@@ -45,7 +45,7 @@ async function processGroupParticipantsUpdate(sock, update) {
             await sock.sendMessage(id, {
               image: fs.readFileSync(welcomeImage), caption, mentions: [jid]
             });
-          } catch (error) {
+          } catch {
             logger.warn('Não foi possível enviar a imagem de boas-vindas; enviando texto.');
             await sock.sendMessage(id, { text: caption, mentions: [jid] });
           }
@@ -55,7 +55,7 @@ async function processGroupParticipantsUpdate(sock, update) {
         if (require('../activations/manager').manager.isEnabled(id,'despedida')) {
           try {
             await sock.sendMessage(id, {image: fs.readFileSync(goodbyeImage), caption: GOODBYE, mentions: [jid]});
-          } catch (error) {
+          } catch {
             logger.warn('Não foi possível enviar a imagem de despedida; enviando texto.');
             await sock.sendMessage(id, {text: GOODBYE, mentions: [jid]});
           }

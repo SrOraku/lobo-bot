@@ -12,7 +12,6 @@ function createActivationHandler({
   resolveActor,
   forcedAction,
   featureId,
-  legacyToggle = false,
   interaction,
 } = {}) {
   return async (sock, ctx) => {

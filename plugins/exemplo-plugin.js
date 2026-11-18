@@ -20,6 +20,6 @@ module.exports = {
     },
   },
 
-  onLoad:   async (sock) => { console.log('🔌 Plugin "exemplo" carregado!'); },
+  onLoad:   async (_sock) => { console.log('🔌 Plugin "exemplo" carregado!'); },
   onUnload: async ()     => { console.log('🔌 Plugin "exemplo" descarregado!'); },
 };

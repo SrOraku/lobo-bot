@@ -35,7 +35,7 @@ async function sendMenu(sock, ctx, text, {
           : { image: buffer, caption: text, mimetype: 'image/jpeg' },
         { quoted: ctx.msg }
       );
-    } catch (_) {}
+    } catch {}
   }
 
   if (!media && !ctx.args?.length && useDefault()) {
@@ -49,7 +49,7 @@ async function sendMenu(sock, ctx, text, {
         mimetype: 'video/mp4',
         caption: text
       }, { quoted: ctx.msg });
-    } catch (_) {
+    } catch {
       // Usa a mensagem em texto como alternativa.
     }
   }

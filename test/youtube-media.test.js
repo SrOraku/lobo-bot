@@ -6,7 +6,6 @@ const os = require('node:os');
 const path = require('node:path');
 const {
   createMediaHandler,
-  resolveVideo,
   limiter,
   MAX_BYTES,
 } = require('../src/commands/youtube-media');
