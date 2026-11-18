@@ -224,6 +224,11 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
     INSERT INTO group_activations(group_jid,policy,updated_by) SELECT group_jid,'{"features":{"antiroubo":true,"lockname":true,"lockdesc":true}}','security-migration' FROM group_guard WHERE enabled=1
       ON CONFLICT(group_jid) DO UPDATE SET policy=json_set(group_activations.policy,'$.features.antiroubo',json('true'),'$.features.lockname',json('true'),'$.features.lockdesc',json('true'));
   `},
+  // Bônus de boas-vindas: uma entrega por pessoa em cada grupo. Sair e voltar
+  // não paga de novo. Fica fora do isolamento por chat porque já guarda o chat.
+  {version:15,name:'entry_bonus_once',up:`
+    CREATE TABLE entry_bonus(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,granted_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,user_jid));
+  `},
 ];
 
 function runMigrations(db) {
