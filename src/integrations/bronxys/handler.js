@@ -19,6 +19,26 @@ function formatJSON(value,key='',depth=0) {
  return Object.entries(value).filter(([name])=>!['apikey','api_key','token','key','cookie','cookies'].includes(name.toLowerCase())).map(([name,item])=>formatJSON(item,name,depth+1)).filter(Boolean).join('\n');
 }
 function safeText(text,key) {return String(text).replace(/([?&](?:apikey|api_key|token)=)[^\s&]+/gi,'$1[protegido]').split(key||'\u0000').join('[chave protegida]').slice(0,12000);}
+// Some social posts contain photos even on endpoints normally used for video.
+// CDN responses can also omit a useful content type; inspect common containers
+// before selecting the WhatsApp payload instead of labelling every file MP4.
+function socialMediaType(mime,bytes) {
+ const type=String(mime||'').split(';')[0].trim().toLowerCase();
+ if(type.startsWith('image/')||type.startsWith('video/'))return type;
+ if(type&& !['application/octet-stream','binary/octet-stream','application/binary'].includes(type))throw Error('BRONXYS_MEDIA');
+ if(bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff)return 'image/jpeg';
+ if(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))return 'image/png';
+ if(/^GIF8[79]a$/.test(bytes.subarray(0,6).toString()))return 'image/gif';
+ if(bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP')return 'image/webp';
+ if(bytes.subarray(4,8).toString()==='ftyp'&&['isom','iso2','mp41','mp42','avc1','M4V ','MSNV'].includes(bytes.subarray(8,12).toString()))return 'video/mp4';
+ throw Error('BRONXYS_MEDIA');
+}
+function instagramMediaKind(item) {
+ const type=String(item?.type||item?.mimetype||item?.mime_type||'').toLowerCase();
+ if(type==='mp3'||type==='audio'||type.startsWith('audio/'))return 'audio';
+ if(type==='mp4'||type==='video'||type.startsWith('video/'))return 'video';
+ return 'image';
+}
 async function incoming(ctx,signal) {
  const {inspect}=require('../../activations/message-rules');const direct=inspect(ctx.msg.message).message;
  const quoted=Object.values(direct).find(value=>value?.contextInfo?.quotedMessage)?.contextInfo.quotedMessage;
@@ -37,11 +57,12 @@ async function incoming(ctx,signal) {
 function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=incoming,convert,metadata=require('../../commands/media-info').lookupMedia}={}) {
  return async function handle(sock,ctx) {
   const reply=text=>sock.sendMessage(ctx.jid,{text},{quoted:ctx.msg});
+  const reject=async(text,code)=>{await reply(text);return {ok:false,code,mediaCount:0};};
   const query=(ctx.args||[]).join(' ').trim();
-  if(def.parameter&&!query)return reply(`❌ *Ação inválida!* _Informe ${def.parameter==='url'?'um link':'texto ou pesquisa'}._\n> 💡 *Use assim:* ${command(`${require('../../config').get('PREFIX')}${def.name} ${def.parameter==='url'?'link':'texto ou pesquisa'}`)}`);
-  if(query.length>2000)return reply('❌ *Ação inválida!* _Pesquisa ou texto muito longo._');
-  if(!client.configured())return reply('⏳ *Aguarde um instante!* _'+errors.BRONXYS_KEY+'_');
-  let directory;
+  if(def.parameter&&!query)return reject(`❌ *Ação inválida!* _Informe ${def.parameter==='url'?'um link':'texto ou pesquisa'}._\n> 💡 *Use assim:* ${command(`${require('../../config').get('PREFIX')}${def.name} ${def.parameter==='url'?'link':'texto ou pesquisa'}`)}`,'BRONXYS_INPUT');
+  if(query.length>2000)return reject('❌ *Ação inválida!* _Pesquisa ou texto muito longo._','BRONXYS_INPUT');
+  if(!client.configured())return reject('⏳ *Aguarde um instante!* _'+errors.BRONXYS_KEY+'_','BRONXYS_KEY');
+  let directory,mediaCount=0;
   const controller=new AbortController(),signal=controller.signal,timer=setTimeout(()=>controller.abort(),180000);
   const params=def.parameter?{[def.parameter]:query}:{};
   try {
@@ -57,14 +78,20 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
    if(def.name.endsWith('_video'))params.type='video';
    directory=await fs.mkdtemp(path.join(tempRoot,'lobo-bronxys-'));
    let mediaInfo;
-   if(def.parameter==='nome_url') {
+   if(def.parameter==='nome_url'&&!ctx.autoDownload) {
     mediaInfo=await metadata(query);
     if(mediaInfo?.url)params.nome_url=mediaInfo.url;
    }
    const title=filename(mediaInfo?.title||query||def.name,'').replace(/\.$/,'');let counter=0;
    async function sendFile(url,kind='image',name=title,mime) {
     const file=path.join(directory,'media-'+counter++);
-    const received=await client.download(url,file,{signal});let output=file;
+    const received=await client.download(url,file,{signal});let output=file,mediaMime;
+    if(kind==='image'||kind==='video') {
+     const handle=await fs.open(file,'r');
+     try {const head=Buffer.alloc(16),{bytesRead}=await handle.read(head,0,head.length,0);mediaMime=socialMediaType(received,head.subarray(0,bytesRead));}
+     finally {await handle.close();}
+     kind=mediaMime.startsWith('video/')?'video':'image';
+    }
     if(kind==='audio'||kind==='audio-document') {
      output=file+'.mp3';
      if(convert)await convert(file,output,signal);
@@ -74,9 +101,10 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
     }
     const size=(await fs.stat(output)).size;if(!size||size>MAX_BYTES)throw Error('BRONXYS_MEDIA');
     const buffer=await fs.readFile(output);
-    const payload=kind==='audio-document'?{document:buffer,mimetype:'audio/mpeg',fileName:filename(name,'mp3')}:kind==='audio'?{audio:buffer,mimetype:'audio/mpeg',fileName:filename(name,'mp3'),ptt:false}:kind==='video'?{video:buffer,mimetype:'video/mp4',fileName:filename(name,'mp4')}:kind==='document'?{document:buffer,mimetype:mime||received||'application/octet-stream',fileName:filename(name,'').replace(/\.$/,'')}:{[kind]:buffer,...(kind==='image'?{mimetype:received||'image/jpeg'}:{})};
+    const payload=kind==='audio-document'?{document:buffer,mimetype:'audio/mpeg',fileName:filename(name,'mp3')}:kind==='audio'?{audio:buffer,mimetype:'audio/mpeg',fileName:filename(name,'mp3'),ptt:false}:kind==='video'?{video:buffer,mimetype:mediaMime,fileName:filename(name,mediaMime==='video/mp4'?'mp4':mediaMime==='video/webm'?'webm':'video')}:kind==='document'?{document:buffer,mimetype:mime||received||'application/octet-stream',fileName:filename(name,'').replace(/\.$/,'')}:{[kind]:buffer,...(kind==='image'?{mimetype:mediaMime}:{})};
     await sock.sendMessage(ctx.jid,payload,{quoted:ctx.msg});
-    if(def.parameter==='nome_url')await require('../../commands/media-info').sendMediaInfo(reply,mediaInfo||{});
+    mediaCount++;
+    if(def.parameter==='nome_url'&&!ctx.autoDownload)await require('../../commands/media-info').sendMediaInfo(reply,mediaInfo||{});
    }
    const json=()=>client.json(def.endpoint,params,{signal});
    if(['upload','transcribe','montage'].includes(def.format)) {
@@ -88,7 +116,7 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
     const result=await json();const text=safeText(formatJSON(result),require('./key').getKey());if(!text.trim())throw Error('BRONXYS_RESPONSE');for(let i=0;i<text.length;i+=3500)await reply(text.slice(i,i+3500));
    } else {
     const data=await json();
-    if(def.format==='instagram'||def.format==='instagram-audio') {if(!Array.isArray(data.msg)||!data.msg.length)throw Error('BRONXYS_RESPONSE');for(const item of data.msg.slice(0,5))await sendFile(item.url,def.format==='instagram-audio'?'audio':item.type==='mp4'?'video':item.type==='mp3'?'audio':'image');}
+    if(def.format==='instagram'||def.format==='instagram-audio') {if(!Array.isArray(data.msg)||!data.msg.length)throw Error('BRONXYS_RESPONSE');for(const item of data.msg.slice(0,5))await sendFile(item.url,def.format==='instagram-audio'?'audio':instagramMediaKind(item));}
     else if(def.format==='mediafire'){const item=data.resultado?.[0];if(!item?.link)throw Error('BRONXYS_RESPONSE');await sendFile(item.link,'document',item.nama);}
     else if(def.format==='aptoide') {if(!data.link)throw Error('BRONXYS_RESPONSE');await sendFile(data.link,'document',data.titulo,'application/vnd.android.package-archive');}
     else if(def.format==='logo')await sendFile(typeof data.resultado==='string'?data.resultado:data.resultado?.imageUrl);
@@ -99,12 +127,14 @@ function createHandler(def,{client=createClient(),tempRoot=os.tmpdir(),receive=i
     else if(def.format==='news'){if(data[0]?.img)await sendFile(data[0].img);await reply(safeText(formatJSON(data),require('./key').getKey()));}
     else throw Error('BRONXYS_RESPONSE');
    }
+   return {ok:true,mediaCount};
   } catch(error) {
    // Never log Axios errors/URLs: they can contain the API key.
    const known=errors[error.message] || (/^BRONXYS_|SIZE_LIMIT|abort|ENOENT|Command failed/i.test(error.message)?'A API não entregou o resultado esperado. Tente novamente mais tarde.':/^(Informe|Responda|Limite)/.test(error.message)?error.message:'Não foi possível processar a mídia ou a resposta da API.');
-   await reply('⏳ *Aguarde um instante!* _'+numericText(known)+'_');
+   try {await reply('⏳ *Aguarde um instante!* _'+numericText(known)+'_');}catch{}
+   return {ok:false,mediaCount,code:Object.hasOwn(errors,error.message)||error.message==='BRONXYS_RESPONSE'?error.message:signal.aborted?'BRONXYS_TIMEOUT':'BRONXYS_MEDIA'};
   } finally {clearTimeout(timer);controller.abort();if(directory)await fs.rm(directory,{recursive:true,force:true});}
  };
 }
-function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,async()=>{if(options?.shouldRun&&!await options.shouldRun(ctx))return;return handler(sock,ctx);}).catch(()=>sock.sendMessage(ctx.jid,{text:'⏳ *Aguarde um instante!* _Há downloads pendentes neste chat._'},{quoted:ctx.msg}));}
+function queuedHandler(def,options) {const handler=createHandler(def,options);return (sock,ctx)=>queue.run(ctx.jid,async()=>{if(options?.shouldRun&&!await options.shouldRun(ctx))return {ok:false,code:'BRONXYS_SKIPPED',mediaCount:0};return handler(sock,ctx);}).catch(async()=>{try{await sock.sendMessage(ctx.jid,{text:'⏳ *Aguarde um instante!* _Há downloads pendentes neste chat._'},{quoted:ctx.msg});}catch{}return {ok:false,code:'BRONXYS_QUEUE',mediaCount:0};});}
 module.exports={incoming,createHandler,queuedHandler,definitions,formatJSON,safeText};
