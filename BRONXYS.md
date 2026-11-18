@@ -6,6 +6,8 @@ Integração modular própria baseada no catálogo CASES.js fornecido pelo usuá
 
 O código público não inclui chave de API. O bot lê `BRONXYS_API_KEY` do ambiente ou, se vazia, o arquivo privado `data/bronxys-api-key`. Esse arquivo é ignorado pelo Git e preservado pelo atualizador. A variável de ambiente tem prioridade.
 
+O arquivo privado é lido automaticamente em cada início, inclusive após reconectar ou trocar a conta do WhatsApp. Configure uma vez e preserve `data/` ao atualizar por Git. Se recebeu um pacote privado de configuração, extraia-o na raiz do bot (junto de `package.json`); ele coloca a chave em `data/bronxys-api-key`. Esse pacote não deve ser publicado. Uma `BRONXYS_API_KEY` preenchida no painel ou `.env` tem prioridade sobre o arquivo; um valor composto somente de espaços é tratado como vazio.
+
 No privado do bot, um dono cadastrado pode usar:
 
 - `!apibronxys status` — informa se há configuração, sem mostrar a chave nem consumir a API.
@@ -73,9 +75,15 @@ Ao receber um link público suportado em texto ou legenda, envia mídia pelo mes
 
 Proteções executam antes do automático: link apagado/bloqueado pelo AntiLink não é baixado. Bot pausado, remetente silenciado/banido, mensagens do próprio bot e comandos com prefixo não disparam downloads automáticos. Não há processamento de histórico (o runtime recebe apenas eventos notify).
 
-Limites automáticos: primeiro link suportado por mensagem, intervalo de 30 segundos por usuário e 10 segundos por grupo, deduplicação do ID da mensagem durante 15 minutos e memória limitada. Mensagens descartadas por esses limites não entram em uma fila para execução posterior. A função é revalidada ao iniciar um download que aguardava na fila. Uma operação já em andamento pode terminar após desligar a opção.
+Limites automáticos: primeiro link suportado por mensagem, intervalo de 30 segundos por usuário e 10 segundos por grupo, deduplicação do ID da mensagem durante 15 minutos e memória limitada. Mensagens limitadas recebem uma orientação para reenviar o link após a espera, no máximo um aviso desse tipo por minuto/grupo; não entram em uma fila para execução posterior. Falhas sem nenhuma mídia entregue permitem repetir o mesmo ID após uma espera curta, respeitando também os intervalos. Carrosséis parcialmente entregues continuam deduplicados para evitar repetir as mídias já enviadas. A função é revalidada ao iniciar um download que aguardava na fila. Uma operação já em andamento pode terminar após desligar a opção.
 
-Sem chave configurada não consome a API nem baixa; use `!apibronxys status` para conferir a configuração local. As falhas do provedor são tratadas pelo baixador. URLs privadas, perfis sem postagem e domínios que apenas imitam uma rede conhecida não são tratados como posts suportados.
+Sem chave configurada não consome a API nem baixa; agora explica a falta de configuração no grupo, com no máximo um aviso por minuto. Use `!apibronxys status` no privado para conferir. As falhas do provedor são tratadas pelo baixador sem expor a chave. URLs privadas, perfis sem postagem e domínios que apenas imitam uma rede conhecida não são tratados como posts suportados.
+
+Links compartilhados do Instagram (`/share/reel/` e `/share/p/`) e links curtos `spotify.link` são reconhecidos. Asteriscos/sublinhados de formatação ao redor do link e caracteres invisíveis acrescentados pelo WhatsApp são removidos antes da chamada. A disponibilidade desses links depende de o provedor conseguir resolvê-los e de o conteúdo ser público.
+
+O bot reage com ⏳ ao iniciar, ✅ após a mídia ser enviada e ⚠️ quando o download falha. Fotos retornadas por endpoints de vídeo são enviadas como imagens; carrosséis do Instagram respeitam o tipo recebido e o limite de cinco itens. O automático do YouTube usa o link exato, sem uma segunda busca de metadados.
+
+Na correção de novembro de 2026, uma chave configurada no arquivo privado foi aceita pela consulta real de teste e o fluxo automático baixou um vídeo público do YouTube: MP4 de 1.133.426 bytes, H.264/AAC, conferido com FFprobe. O envio usou transporte simulado; não houve acesso ao WhatsApp ou ao servidor da hospedagem. As outras redes e situações de falha foram verificadas com respostas controladas; isso não garante a disponibilidade de todos os endpoints externos.
 
 Testes adicionais: reconhecimento das dez redes, domínios falsos, comandos/privado/silenciados/pausa/chave ausente, deduplicação, limites, isolamento entre grupos, um link por mensagem, confirmação numérica, persistência e ordenação de AntiLink antes do download.
 
