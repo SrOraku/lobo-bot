@@ -58,7 +58,14 @@ fs.mkdirSync(SESSION_DIR, { recursive: true });
 
 const { hasSavedSession, resetIncompletePairing, createLifecycle } = require('./connection/lifecycle');
 const { logConnection, baileysLogger } = require('./config/logger');
+const { groupNames } = require('./utils/group-names');
 let commonReady = null, pairingNumberPromise = null, shuttingDown = false;
+
+// Cabeçalho do console na primeira conexão; uma linha nas reconexões.
+const announceOnline = require('./connection/online-notice').createOnlineNotice({
+  print: text => terminal.interactive(text), logConnection, groupNames, config,
+  commandsCount: () => require('./commands/menu').getCatalog().length,
+});
 const configuredReconnect = config.getNumber('MAX_RECONNECT');
 const MAX_RECONNECT = Number.isInteger(configuredReconnect) ? Math.max(0, Math.min(100, configuredReconnect)) : 10;
 const lifecycle = createLifecycle({
@@ -153,10 +160,10 @@ async function startBot() {
     }
     if (!session.isActive()) return;
     bus.emit(EVENTS.BOT_READY, { user });
-    logConnection('ONLINE — WhatsApp conectado. Acompanhando os comandos dos grupos.');
-    terminal.interactive(require('./menus/render').connectionNotice());
     if (process.connected) process.send({ type: 'lobo:ready' });
     require('./utils/file-log').record('bot', { result: 'runtime_ready' });
+    await announceOnline(currentSocket, user);
+    if (!session.isActive()) return;
     const ownerJid = config.get('BOT_OWNER');
     if (ownerJid) await currentSocket.sendMessage(`${ownerJid}@s.whatsapp.net`, { text: require('./menus/render').connectionNotice() }).catch(() => {});
   } });
@@ -191,10 +198,14 @@ async function startBot() {
 
   // ── Grupos atualizados ───────────────────────────────────────
   session.listen('groups.update', async (updates) => {
+    for (const update of updates || []) if (update?.subject) groupNames.remember(update.id, update.subject);
     setImmediate(() =>
       session.isActive() && handleGroupsUpdate(currentSocket, updates).catch(err => logger.error({ err }, '❌ groupsUpdate'))
     );
   });
+
+  // Grupo novo (o bot foi adicionado): o nome já fica disponível para o console.
+  session.listen('groups.upsert', groups => { for (const group of groups || []) groupNames.remember(group?.id, group?.subject); });
 
   pluginsReady = loadAllPlugins(currentSocket);
   await pluginsReady;

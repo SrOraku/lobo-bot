@@ -1,19 +1,20 @@
 'use strict';
 const pino = require('pino');
+const { createConsoleStyle, colorEnabled } = require('../ui/console');
 const clean = (value, size = 100) => String(value ?? '').replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ').slice(0, size);
 function createActivityLogger({ stdout = process.stdout, stderr = process.stderr, file, errorFile,
-  level = 'info', commands = () => true, prefix = () => '!' } = {}) {
+  level = 'info', commands = () => true, prefix = () => '!', color = () => colorEnabled(process.env, stdout) } = {}) {
+  // O desenho das linhas fica em src/ui/console.js; aqui só se decide o que aparece.
+  const styles = { true: createConsoleStyle({ color: true }), false: createConsoleStyle({ color: false }) };
+  const style = () => styles[(typeof color === 'function' ? color() : color) === true];
+  const print = (stream, lines) => stream.write(lines.join('\n') + '\n');
   const consoleStream = { write(line) {
     for (const entry of String(line).trim().split('\n')) {
       let record; try { record = JSON.parse(entry); } catch { continue; }
-      const time = new Date(record.time).toLocaleTimeString('pt-BR', { hour12: false });
-      if (record.type === 'command' && commands()) {
-        stdout.write(`[${time}] 🐺 CMD ${clean(record.prefix, 8)}${clean(record.command, 50)} | ${record.group ? 'Grupo: ' + clean(record.groupName || record.group) : 'Privado'} | Usuário: ${clean(record.userName || record.sender)}\n`);
-      } else if (record.type === 'connection') {
-        stdout.write(`[${time}] 📡 ${clean(record.msg, 200)}\n`);
-      } else if (record.level >= 50) {
-        stderr.write(`[${time}] ❌ ${clean(record.msg, 200)}${record.code || record.error?.code || record.err?.code ? ' | Código: ' + clean(record.code || record.error?.code || record.err?.code, 50) : ''}\n`);
-      }
+      if (record.type === 'command' && commands()) print(stdout, style().commandLines(record));
+      // Um aviso marcado como silencioso vai só para o arquivo (o console já mostrou o cabeçalho).
+      else if (record.type === 'connection') { if (!record.silent) print(stdout, style().connectionLines(record)); }
+      else if (record.level >= 50) print(stderr, style().errorLines(record));
     }
   } };
   const streams = [{ level: 'info', stream: consoleStream }];
@@ -30,7 +31,7 @@ function createActivityLogger({ stdout = process.stdout, stderr = process.stderr
     activity.info({ type: 'command', sender, command, group: group || null, userName, groupName, prefix: customPrefix || prefix() }, 'Comando recebido');
   }
   function logConnection(message, data = {}) {
-    activity.info({ type: 'connection', code: data.code, attempt: data.attempt }, clean(message, 200));
+    activity.info({ type: 'connection', code: data.code, attempt: data.attempt, ...(data.silent === true ? { silent: true } : {}) }, clean(message, 200));
   }
   function baileysLogger() {
     return pino({ level: 'error' }, { write(line) {

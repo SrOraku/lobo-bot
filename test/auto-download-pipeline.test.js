@@ -61,6 +61,8 @@ function fixture(prefix = '$$') {
     '../games/gartic': { gartic: () => ({ guess: async () => null }) },
     '../progression/service': { progression: () => ({ touch() {}, refresh: () => [] }) },
     '../isolation/context': { run: (chat, callback) => callback() },
+    // Cache de nomes vazio: o nome do grupo vem do banco ('Grupo de teste').
+    '../utils/group-names': { groupNames: { nameOf: () => null, lookup() {} } },
   };
   const module = { exports: {} };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/handlers/message.js'), 'utf8'), {
