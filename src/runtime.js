@@ -157,6 +157,9 @@ async function startBot() {
     terminal.interactive(require('./menus/render').connectionNotice());
     if (process.connected) process.send({ type: 'lobo:ready' });
     require('./utils/file-log').record('bot', { result: 'runtime_ready' });
+    // Agendamentos usam sempre o socket atual; a carga do banco acontece uma vez por processo.
+    try { const scheduler = require('./scheduler/service').scheduler(); scheduler.attach(currentSocket); scheduler.start(); }
+    catch (error) { logger.error({ component: 'scheduler', code: error.code || 'SCHEDULER_START_FAILED' }, 'Falha ao carregar os agendamentos.'); }
     const ownerJid = config.get('BOT_OWNER');
     if (ownerJid) await currentSocket.sendMessage(`${ownerJid}@s.whatsapp.net`, { text: require('./menus/render').connectionNotice() }).catch(() => {});
   } });

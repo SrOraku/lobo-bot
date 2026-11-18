@@ -43,7 +43,6 @@ function fixture({ sender = LID, alternative, mapping = null, registered = [], c
       removeBotAdmin: jid => effects.push(['remove', jid]),
       db: { prepare(sql) { return {
         all() { assert.match(sql, /SELECT jid FROM groups/); effects.push(['broadcast']); return []; },
-        run(...args) { assert.match(sql, /INSERT INTO scheduled_messages/); effects.push(['schedule', ...args]); },
       }; } },
     },
     '../utils/helpers': {
@@ -51,7 +50,11 @@ function fixture({ sender = LID, alternative, mapping = null, registered = [], c
       sleep: async () => assert.fail('nenhum grupo real deve receber broadcast'),
     },
     '../ui/text': { card: (title, lines) => [title, ...lines].join('\n'), mono: String, command: String },
-    cron: { CronJob: class { constructor(expression) { effects.push(['cron', expression]); } } },
+    // Agendador central de verdade para interpretar o horário; só a gravação é simulada.
+    '../scheduler/service': { ...require('../src/scheduler/service'), scheduler: () => ({ add(item) {
+      effects.push(['schedule', item.chat, item.text, item.cron, item.kind]);
+      return { id: 7, cron_expr: item.cron, payload: item.text, next: Date.now() + 60_000 };
+    } }) },
     './ping': { ping() {} },
   });
   const context = args => ({
@@ -73,7 +76,7 @@ for (const [role, number] of [['comprador', BUYER], ['criador', CREATOR.number]]
       await f.admin.broadcast(f.sock, f.context(['Aviso de teste']));
       await f.admin.agendarMensagem(f.sock, f.context(['0 8 * * *', 'Bom dia']));
       assert.deepEqual(f.effects, [['add', TARGET], ['remove', TARGET], ['broadcast'],
-        ['cron', '0 8 * * *'], ['schedule', GROUP, 'Bom dia', '0 8 * * *']]);
+        ['schedule', GROUP, 'Bom dia', '0 8 * * *', 'mensagem']]);
       assert.ok(f.replies.every(text => !text.includes('Apenas o dono')));
     });
   }

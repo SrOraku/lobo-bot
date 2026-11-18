@@ -2,9 +2,7 @@
 const db = require('../utils/database');
 const { card, mono, command } = require('../ui/text');
 const { BOT_NAME, OWNER, cleanJid, getNumber, sleep } = require('../utils/helpers');
-const { CronJob } = require('cron');
 
-const scheduledJobs = new Map();
 
 function requireOwner(fn) {
   return async (sock, ctx) => {
@@ -87,39 +85,35 @@ const broadcast = requireOwner(async (sock, ctx) => {
 // AGENDAR MENSAGEM
 // ============================
 const agendarMensagem = requireOwner(async (sock, ctx) => {
-  const { jid, msg, args } = ctx;
-  // Uso: !agendarmensagem [cron] [mensagem]
-  // Ex: !agendarmensagem "0 8 * * *" Bom dia matilha!
-  const cronExpr = args[0];
-  const message = args.slice(1).join(' ');
-
-  if (!cronExpr || !message) {
+  const { jid, msg } = ctx;
+  // Uso: !agendarmensagem diario 08:00 Bom dia | segunda 20:00 Reunião | "0 8 * * *" Bom dia
+  const { scheduler, parseRepeat, describeCron, brt } = require('../scheduler/service');
+  const p = require('../config').get('PREFIX') || '!';
+  const usage = [
+    `▸ ${mono('diario 08:00')} — _Todo dia às ${mono('8h')}_`,
+    `▸ ${mono('segunda 20:00')} — _Toda segunda às ${mono('20h')}_`,
+    `▸ ${mono('"0 */6 * * *"')} — _Cron: a cada ${mono(6)} horas_`,
+  ];
+  const input = String(ctx.argText ?? (ctx.args || []).join(' ')).trim();
+  if (!input) {
     return sock.sendMessage(jid, {
-      text: card('⏰ AGENDAR MENSAGEM', [
-        `❌ *Ação inválida!* _Informe o cron e a mensagem._`,
-        `▸ ${mono('0 8 * * *')} — _Todo dia às ${mono('8h')}_`,
-        `▸ ${mono('0 */6 * * *')} — _A cada ${mono(6)} horas_`,
-        `▸ ${mono('0 20 * * 1')} — _Segunda às ${mono('20h')}_`,
-      ], { tip: `💡 *Use assim:* ${command('!agendarmensagem "cron" mensagem')}` })
+      text: card('⏰ AGENDAR MENSAGEM', [`❌ *Ação inválida!* _Informe quando e a mensagem._`, ...usage],
+        { tip: `💡 *Use assim:* ${command(p + 'agendarmensagem diario 08:00 Bom dia, matilha!')}` })
     }, { quoted: msg });
   }
 
   try {
-    const jobId = `job_${jid}_${Date.now()}`;
-    const job = new CronJob(cronExpr, async () => {
-      await sock.sendMessage(jid, {
-        text: card('⏰ MENSAGEM AGENDADA', [message], { formatNumbers: false })
-      });
-    }, null, true, 'America/Sao_Paulo');
-
-    scheduledJobs.set(jobId, job);
-    db.db.prepare(`INSERT INTO scheduled_messages (group_id, message, cron_expr) VALUES (?, ?, ?)`).run(jid, message, cronExpr);
-
+    // O agendador central guarda no banco e recarrega a cada início: a mensagem
+    // não some mais quando o bot reinicia ou reconecta.
+    const { cron, text } = parseRepeat(input);
+    const item = scheduler().add({ chat: jid, kind: 'mensagem', cron, text, createdBy: ctx.sender });
     await sock.sendMessage(jid, {
-      text: card('✅ MENSAGEM AGENDADA', [`📅 *Cron:* ${mono(cronExpr)}`, `💬 *Mensagem:* ${message}`, `🆔 *ID:* ${mono(jobId)}`], { formatNumbers: false })
+      text: card('✅ MENSAGEM AGENDADA', [`🔁 *Repete:* ${describeCron(item.cron_expr)}`, `⏭️ *Próxima:* ${brt(item.next)}`, `💬 *Mensagem:* ${item.payload}`, `🆔 *Número:* #${item.id}`],
+        { formatNumbers: false, tip: `❌ Cancelar: ${command(p + 'desagendar ' + item.id)}` })
     }, { quoted: msg });
   } catch (err) {
-    await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Cron inválido: ${err.message}_` }, { quoted: msg });
+    if (!String(err?.code || '').startsWith('SCHEDULE_')) throw err;
+    await sock.sendMessage(jid, { text: card('⏰ AGENDAR MENSAGEM', [`❌ *Ação inválida!* _${err.message}_`, ...usage]) }, { quoted: msg });
   }
 });
 

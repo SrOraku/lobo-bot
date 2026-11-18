@@ -229,6 +229,15 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
   {version:15,name:'entry_bonus_once',up:`
     CREATE TABLE entry_bonus(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,granted_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,user_jid));
   `},
+  // Agendador central: lembretes (uma vez, run_at) e mensagens repetidas
+  // (cron_expr). Recarregado a cada início; também fora do isolamento por chat.
+  {version:16,name:'central_scheduler',up:`
+    CREATE TABLE schedules(id INTEGER PRIMARY KEY AUTOINCREMENT,chat_jid TEXT NOT NULL,kind TEXT NOT NULL CHECK(kind IN ('lembrete','mensagem')),
+      cron_expr TEXT,run_at INTEGER,payload TEXT NOT NULL,created_by TEXT,created_at INTEGER NOT NULL,
+      active INTEGER NOT NULL DEFAULT 1,last_run_at INTEGER,result TEXT,
+      CHECK((kind='lembrete' AND run_at IS NOT NULL) OR (kind='mensagem' AND cron_expr IS NOT NULL)));
+    CREATE INDEX schedules_active ON schedules(active,chat_jid);
+  `},
 ];
 
 function runMigrations(db) {
