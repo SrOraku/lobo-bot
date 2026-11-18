@@ -66,6 +66,8 @@ test('message pipeline applies protection before automatic downloads and keeps p
   './autoReply':{handleAutoReply:async()=>calls.push('reply')},'./xp':{handleXP:async()=>{}},
   './autoDownload':{handleAutoDownload:async()=>{calls.push('download');return true;}},
   '../isolation/context':{run:(jid,callback)=>callback()},
+  // Cache de nomes vazio: o nome do grupo vem do banco ('Grupo de teste').
+  '../utils/group-names':{groupNames:{nameOf:()=>null,lookup(){}}},
  };
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../src/handlers/message.js'),'utf8'),{module,require:name=>{if(!replacements[name])throw Error(name);return replacements[name];}});
  const msg={key:{remoteJid:'123@g.us',participant:'1@s.whatsapp.net',id:'msg'},message:{conversation:links[0][0]}};
