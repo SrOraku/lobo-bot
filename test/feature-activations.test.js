@@ -281,7 +281,7 @@ test('bem-vindo/despedida usam o mesmo estado central e aceitam participantes do
     sent = [];
   let gold = 0;
   const replaces = {
-    '../utils/database': { upsertUser: () => {}, addGold: () => gold++, getStrategy: () => ({}) },
+    '../utils/database': { upsertUser: () => {}, grantEntryBonus: () => gold++, getStrategy: () => ({}) },
     '../utils/helpers': {
       BOT_NAME: 'Lobo',
       cleanJid: (j) => j,

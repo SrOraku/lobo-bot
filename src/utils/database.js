@@ -43,6 +43,8 @@ const stmts = {
   addAutoR:      db.prepare(`INSERT INTO auto_replies(group_id,trigger,response)VALUES(?,?,?)`),
   delAutoR:      db.prepare(`DELETE FROM auto_replies WHERE id=? AND group_id=?`),
   logGold:       db.prepare(`INSERT INTO gold_transactions(from_jid,to_jid,amount,reason)VALUES(?,?,?,?)`),
+  entryBonusSeen:db.prepare(`SELECT 1 FROM entry_bonus WHERE chat_jid=? AND user_jid=?`),
+  entryBonusMark:db.prepare(`INSERT OR IGNORE INTO entry_bonus(chat_jid,user_jid,granted_at)VALUES(?,?,?)`),
   logBattle:     db.prepare(`INSERT INTO battle_log(attacker,defender,attacker_wolves_before,defender_wolves_before,attacker_wolves_after,defender_wolves_after,result,group_id)VALUES(?,?,?,?,?,?,?,?)`),
   isAdmin:       db.prepare(`SELECT * FROM admins WHERE jid=?`),
   addAdmin:      db.prepare(`INSERT OR REPLACE INTO admins(jid,level)VALUES(?,?)`),
@@ -100,6 +102,20 @@ module.exports = {
   addAutoReply:     (g,t,r)=>stmts.addAutoR.run(g,t,r),
   removeAutoReply:  (i,g)=>stmts.delAutoR.run(i,g),
   logGoldTransaction:(f,t,a,r)=>stmts.logGold.run(f,t,a,r),
+  // Bônus de entrada: no máximo uma vez por pessoa em cada grupo. `identities`
+  // traz todos os identificadores conhecidos da pessoa (telefone e LID), para
+  // que voltar com outro identificador também não pague de novo. Confere,
+  // marca, credita e registra na mesma transação.
+  grantEntryBonus:(chat,identities,recipient,amount)=>db.transaction(()=>{
+    const keys=[...new Set((identities||[]).filter(value=>typeof value==='string'&&value))];
+    if(!keys.length||!recipient||!Number.isSafeInteger(amount)||amount<=0)return false;
+    if(keys.some(key=>stmts.entryBonusSeen.get(chat,key)))return false;
+    const at=Date.now();
+    for(const key of keys)stmts.entryBonusMark.run(chat,key,at);
+    stmts.updateGold.run(amount,recipient);
+    stmts.logGold.run('bonus_entrada',recipient,amount,'Bônus de entrada no grupo');
+    return true;
+  })(),
   isBotAdmin:    j=>!!stmts.isAdmin.get(j),
   addBotAdmin:   (j,l)=>stmts.addAdmin.run(j,l||1),
   removeBotAdmin:j=>stmts.removeAdmin.run(j),

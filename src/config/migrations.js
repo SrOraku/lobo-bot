@@ -224,6 +224,20 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
     INSERT INTO group_activations(group_jid,policy,updated_by) SELECT group_jid,'{"features":{"antiroubo":true,"lockname":true,"lockdesc":true}}','security-migration' FROM group_guard WHERE enabled=1
       ON CONFLICT(group_jid) DO UPDATE SET policy=json_set(group_activations.policy,'$.features.antiroubo',json('true'),'$.features.lockname',json('true'),'$.features.lockdesc',json('true'));
   `},
+  // Bônus de boas-vindas: uma entrega por pessoa em cada grupo. Sair e voltar
+  // não paga de novo. Fica fora do isolamento por chat porque já guarda o chat.
+  {version:15,name:'entry_bonus_once',up:`
+    CREATE TABLE entry_bonus(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,granted_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,user_jid));
+  `},
+  // Agendador central: lembretes (uma vez, run_at) e mensagens repetidas
+  // (cron_expr). Recarregado a cada início; também fora do isolamento por chat.
+  {version:16,name:'central_scheduler',up:`
+    CREATE TABLE schedules(id INTEGER PRIMARY KEY AUTOINCREMENT,chat_jid TEXT NOT NULL,kind TEXT NOT NULL CHECK(kind IN ('lembrete','mensagem')),
+      cron_expr TEXT,run_at INTEGER,payload TEXT NOT NULL,created_by TEXT,created_at INTEGER NOT NULL,
+      active INTEGER NOT NULL DEFAULT 1,last_run_at INTEGER,result TEXT,
+      CHECK((kind='lembrete' AND run_at IS NOT NULL) OR (kind='mensagem' AND cron_expr IS NOT NULL)));
+    CREATE INDEX schedules_active ON schedules(active,chat_jid);
+  `},
 ];
 
 function runMigrations(db) {

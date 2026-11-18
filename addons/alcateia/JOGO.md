@@ -47,6 +47,9 @@ Os exemplos deste manual usam o prefixo padrão `!`. Se ele for alterado em `.en
 | `!clan criar Lua Vermelha` | Cria um clã por 300 WOK Coins. |
 | `!clan entrar Lua Vermelha` | Entra em um clã existente. |
 | `!clan perfil` | Mostra o perfil do seu clã. |
+| `!clan sair` | Sai do clã (espera de 24 h para entrar em outro). |
+| `!clan expulsar @membro` | O líder remove um membro. |
+| `!clan lider @membro` | O líder passa a liderança. |
 | `!guerra` | Mapa e placar da [Guerra de Alcateias](#guerra-de-alcateias). |
 | `!guerra atacar 1` | Ataca um território pela sua alcateia. |
 | `!guerra defender 1` | Reforça um território da sua alcateia. |
@@ -141,7 +144,9 @@ O nome deve ter de 2 a 32 caracteres e pode conter letras, números, espaços, `
 !clan perfil
 ```
 
-Os dois primeiros exemplos representam alternativas: quem já está em um clã não consegue criar ou entrar em outro. O perfil mostra nome, líder, quantidade de membros, vitórias, derrotas, WOK Coins e posição no ranking de clãs.
+Os dois primeiros exemplos representam alternativas: quem já está em um clã não consegue criar ou entrar em outro.
+
+**Sair, expulsar e liderança.** `!clan sair` tira você do clã. Se o líder sai, a liderança passa ao membro mais antigo; se não sobrar ninguém, o clã é desfeito e os territórios dele na Guerra de Alcateias ficam livres. Quem sai por conta própria espera **24 horas** para criar ou entrar em outro clã. O líder usa `!clan expulsar @membro` para remover alguém (quem é removido pode entrar em outro clã na hora, e um membro banido do jogo também pode ser removido) e `!clan lider @membro` para passar a liderança. Cada clã tem no máximo **15 membros**. Quem não está no clã no fechamento da semana não recebe o prêmio da guerra. O perfil mostra nome, líder, quantidade de membros, vitórias, derrotas, WOK Coins e posição no ranking de clãs.
 
 As estatísticas do clã acumulam os resultados das batalhas dos membros enquanto eles pertencem ao clã. Vitórias e derrotas são somadas. O indicador de WOK Coins acumula **somente créditos positivos das batalhas**: +50 por vitória e +10 por empate de cada membro; perdas e compras individuais não o reduzem. Essa pontuação não é um saldo coletivo disponível para compras.
 
