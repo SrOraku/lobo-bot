@@ -8,7 +8,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "clean": "rm -rf sessions/*",
-    "test": "node --test test/*.test.js addons/alcateia/test/*.test.js",
+    "test": "node --test --require ./test/support/stdout-guard.js test/*.test.js addons/alcateia/test/*.test.js",
     "check:syntax": "node scripts/check-syntax.js",
     "check:startup": "node scripts/check-startup.js",
     "audit:commands": "node scripts/audit-commands.js",
@@ -18,7 +18,7 @@
     "docs": "node scripts/audit-commands.js",
     "release:manifest": "node scripts/build-manifest.js",
     "release:verify": "node scripts/check-manifest.js",
-    "test:background": "node --test test/background-inference.integration.js",
+    "test:background": "node --test --require ./test/support/stdout-guard.js test/background-inference.integration.js",
     "check:platform": "node scripts/check-platform.js"
   },
   "dependencies": {
