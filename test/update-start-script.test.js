@@ -40,3 +40,18 @@ for (const sameCommit of [false, true]) test(`fixed version startup ${sameCommit
  const snapshot=await require('../scripts/update-and-start').checkRelease({releaseRoot,snapshotSource:async()=>available});
  assert.equal(snapshot,sameCommit?null:available);
 });
+
+test('o aviso de atualização indisponível diz o motivo e só cita last-error.json quando ele existe', async () => {
+  const run = async extra => { const warnings = []; const f = options({ ...extra, log: { log() {}, warn: message => warnings.push(message) } }); const result = await boot(f.args); return { warnings, calls: f.calls, result }; };
+  const limited = await run({ check: async () => { throw Object.assign(new Error('Limite de consultas do GitHub atingido.'), { code: 'GITHUB_RATE_LIMIT', response: { status: 403 }, resetAt: Date.parse('2026-11-19T19:05:00Z') }); } });
+  assert.equal(limited.result.started, true);
+  assert.equal(limited.warnings[0], '⚠️ Atualização indisponível (GITHUB_RATE_LIMIT). O GitHub limitou as consultas deste servidor até 16:05 (Brasília); a próxima inicialização tenta de novo. Iniciando a versão local preservada.');
+  const offline = await run({ check: async () => { throw Object.assign(new Error('getaddrinfo'), { code: 'ENOTFOUND' }); } });
+  assert.equal(offline.warnings[0], '⚠️ Atualização indisponível (ENOTFOUND). Sem conexão com o GitHub. Iniciando a versão local preservada.');
+  const status = await run({ check: async () => { throw Object.assign(new Error('Request failed'), { response: { status: 404 } }); } });
+  assert.match(status.warnings[0], /\(HTTP_404\)/);
+  assert.doesNotMatch(status.warnings[0], /last-error/);
+  const failedApply = await run({ update: async () => { throw Object.assign(new Error('npm'), { code: 'ENOSPC' }); } });
+  assert.match(failedApply.warnings[0], /\(ENOSPC\).*Detalhes em updates\/last-error\.json\./);
+  assert.deepEqual(failedApply.calls, ['recover', 'prepare', 'recover', 'start']);
+});

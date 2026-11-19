@@ -39,31 +39,6 @@ if (isRender || configuredPort) {
   });
 }
 
-// A validação da licença acontece no processo supervisor, antes de iniciar o runtime WhatsApp.
+// Licença, cadastro do dono e supervisor: a mesma sequência do atualizar.sh (src/startup.js).
 require('dotenv').config();
-const licenseGuard = require('./licensing/licenseGuard');
-(async () => {
-  let phase = 'LICENÇA';
-  try {
-    const license = await licenseGuard.authorizeStartup();
-    if (license.enabled) {
-      if (license.grace) console.warn('[LICENÇA] API indisponível; inicialização permitida dentro da tolerância local de 24h.');
-      else console.log('[LICENÇA] Instalação autorizada pelo LOBO-BOT LICENSE.');
-      licenseGuard.startHeartbeat({
-        log: code => console.error('[LICENÇA] Verificação periódica falhou:', code),
-        onDenied: reason => {
-          console.error('[LICENÇA] Autorização negada. Encerrando o bot:', String(reason).slice(0, 80));
-          process.exit(1);
-        },
-      });
-    }
-    phase = 'CONFIG';
-    await require('./config/owner-setup').ensureOwner();
-    phase = 'INICIALIZAÇÃO';
-    require('./updater/supervisor').start();
-  } catch (error) {
-    console.error(`[${phase}] Inicialização bloqueada:`, error.code || 'STARTUP_FAILED');
-    if (phase === 'CONFIG') console.error(error.message);
-    process.exit(1);
-  }
-})();
+require('./startup').launch();
