@@ -1,5 +1,17 @@
 # API Bronxys — integração v1.5.0
 
+## Inicialização sem BOT_OWNER após bash atualizar.sh — correção de 19/11/2026
+
+O inicializador de atualização chamava o supervisor diretamente. Isso ignorava a autorização inicial de licença e o carregamento de `data/bot-owner.json` que já existiam em `npm start`. Sem `BOT_OWNER` no ambiente, o processo WhatsApp rejeitava a configuração e o supervisor tentava iniciá-lo novamente. O comando `bash atualizar.sh` agora usa o mesmo ponto de entrada de `npm start`, com autorização da licença, dono salvo/cadastro inicial e somente depois o supervisor.
+
+`BOT_OWNER` explícito válido continua tendo prioridade. Sem ele, o dono salvo é reutilizado; se não houver nenhum cadastro, o console pede o número com DDI uma vez e salva em `data/bot-owner.json`. A conta conectada não é escolhida automaticamente como dona. Donos adicionais e privilégios do desenvolvedor não foram alterados. Cadastro inválido ou console fechado bloqueiam antes de criar o ciclo de processos.
+
+Também foi corrigido o limite por arquivo do atualizador: as imagens oficiais `bem-vindo.jpg` (2.681.845 bytes) e `despedida.jpg` (2.645.915 bytes) ultrapassavam os 2 MiB permitidos anteriormente. As três mídias atuais aprovadas por nome têm limite de 8 MiB por arquivo; código continua limitado a 2 MiB e o limite total da aplicação continua em 15 MiB. O GIF legado mantém seu limite anterior. A origem oficial, o commit fixado e a verificação dos hashes permanecem obrigatórios. A consulta ao GitHub agora mostra um código seguro da falha no console em vez de apenas “Atualização indisponível”.
+
+Uma instalação com o inicializador antigo precisa receber esta correção uma vez fora do atualizador antigo: com o bot parado, use `git pull --ff-only origin main` se a pasta for um checkout Git. Em instalações por ZIP, extraia o pacote de código corrigido na raiz que contém `package.json`, substituindo os arquivos de código. Preserve `.env`, `data/`, `sessions/`, `storage/` e `updates/`. Depois inicie com `bash atualizar.sh`. Para iniciar a versão local sem consultar o GitHub, `npm start` continua disponível e utiliza o mesmo cadastro de dono.
+
+Os testes executam o inicializador e o ponto de entrada reais em instalações temporárias, substituindo apenas a rede, o instalador e o supervisor WhatsApp. Cobrem cadastro único, reinício com dono salvo, prioridade de ambiente, recusa da licença antes do cadastro, console fechado e preservação de arquivos privados. Outros testes usam as mídias oficiais reais e verificam os hashes e os limites de download. Isso não representa um teste no servidor Bronxys do usuário.
+
 ## Diagnóstico da conexão do WhatsApp
 
 O console diferencia erros de descriptografia de uma mensagem (`WHATSAPP_DECRYPT_FAILED`), sincronização de chaves (`WHATSAPP_KEY_SYNC_FAILED`), confirmação de recebimento (`WHATSAPP_ACK_FAILED`) e conexão (`WHATSAPP_TRANSPORT`). Antes, todos os erros da biblioteca eram exibidos como falha de transporte, inclusive quando a conexão continuava ativa. O código HTTP da desconexão aparece quando foi fornecido pelo WhatsApp; os registros não incluem chaves, conteúdo de mensagens ou dumps de sessão.

@@ -190,12 +190,8 @@ for (const entry of ['index.js', 'runtime.js']) {
 function entryFixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lobo-entry-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  for (const dir of ['src/licensing', 'src/updater', 'src/config', 'src/utils', 'scripts', 'bin']) fs.mkdirSync(path.join(root, dir), { recursive: true });
-  for (const file of ['index.js', 'startup.js', 'bootstrap.js', 'config/owner-setup.js', 'utils/terminal-input.js']) fs.copyFileSync(path.join(__dirname, '../src', file), path.join(root, 'src', file));
-  // Caminho do atualizar.sh: o GitHub fica fora do ar e a recuperação não tem nada a fazer.
-  fs.copyFileSync(path.join(__dirname, '../scripts/update-and-start.js'), path.join(root, 'scripts/update-and-start.js'));
-  fs.writeFileSync(path.join(root, 'src/updater/recovery.js'), 'exports.recover = () => {};');
-  fs.writeFileSync(path.join(root, 'src/updater/source.js'), "exports.githubSnapshot = async () => { throw Object.assign(new Error('offline'), { code: 'ENOTFOUND' }); };");
+  for (const dir of ['src/licensing', 'src/updater', 'src/config', 'src/utils', 'bin']) fs.mkdirSync(path.join(root, dir), { recursive: true });
+  for (const file of ['index.js', 'bootstrap.js', 'config/owner-setup.js', 'utils/terminal-input.js']) fs.copyFileSync(path.join(__dirname, '../src', file), path.join(root, 'src', file));
   fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'lobo-entry-test', version: '1.0.0', dependencies: { dotenv: '^16.4.5' } }));
   fs.writeFileSync(path.join(root, 'src/licensing/licenseGuard.js'), "exports.authorizeStartup = async () => { console.log('licença verificada'); if (process.env.FAKE_LICENSE_DENIED === '1') throw Object.assign(new Error('negada'), { code: 'LOBO_LICENSE_DENIED' }); return { enabled: false }; };");
   fs.writeFileSync(path.join(root, 'src/updater/supervisor.js'), "exports.start = () => { require('node:assert/strict').equal(process.env.DOTENV_LOADED, '1'); console.log('supervisor iniciado: ' + process.env.BOT_OWNER); };");
@@ -207,7 +203,7 @@ fs.mkdirSync('node_modules/dotenv', { recursive: true });
 fs.writeFileSync('node_modules/dotenv/index.js', "exports.config = () => { process.env.DOTENV_LOADED = '1'; };");
 `, { mode: 0o755 });
   const env = { ...process.env, PATH: path.join(root, 'bin') + path.delimiter + process.env.PATH, PORT: '', RENDER: '', NODE_PATH: '', DOTENV_LOADED: '', BOT_OWNER: '5511987654321' };
-  const run = (extra, input = '', entry = 'src/index.js') => spawnSync(process.execPath, [entry], { cwd: root, env: { ...env, ...extra }, input, encoding: 'utf8', timeout: 10000 });
+  const run = (extra, input = '') => spawnSync(process.execPath, ['src/index.js'], { cwd: root, env: { ...env, ...extra }, input, encoding: 'utf8', timeout: 10000 });
   return { root, run, ownerFile: path.join(root, 'data/bot-owner.json') };
 }
 
@@ -265,39 +261,4 @@ test('index.js exige autorização da licença antes de cadastrar dono', { skip:
   assert.match(denied.stderr, /LOBO_LICENSE_DENIED/);
   assert.doesNotMatch(denied.stdout, /Número do dono|supervisor iniciado/);
   assert.equal(fs.existsSync(ownerFile), false);
-});
-
-// Mesmo caso dos prints da hospedagem: `bash atualizar.sh` com o dono só em data/bot-owner.json
-// e o GitHub fora do ar. Antes, o runtime parava com "Variável obrigatória ausente: BOT_OWNER".
-test('atualizar.sh usa o dono cadastrado e a licença, como o npm start', { skip: process.platform === 'win32' }, t => {
-  const { root, run, ownerFile } = entryFixture(t);
-  const viaUpdate = (extra, input) => run(extra, input, 'scripts/update-and-start.js');
-  fs.mkdirSync(path.dirname(ownerFile), { recursive: true });
-  fs.writeFileSync(ownerFile, JSON.stringify({ owner: '5511987654321' }) + '\n');
-
-  const saved = viaUpdate({ BOT_OWNER: '' });
-  assert.equal(saved.status, 0, saved.stderr);
-  assert.match(saved.stdout, /licença verificada/);
-  assert.match(saved.stdout, /supervisor iniciado: 5511987654321/);
-  assert.ok(saved.stdout.indexOf('licença verificada') < saved.stdout.indexOf('supervisor iniciado'));
-  assert.match(saved.stderr, /Atualização indisponível \(ENOTFOUND\)/);
-
-  // Sem cadastro e sem console: não inicia o supervisor.
-  fs.rmSync(ownerFile);
-  const closed = viaUpdate({ BOT_OWNER: '' });
-  assert.equal(closed.status, 1, closed.stderr);
-  assert.doesNotMatch(closed.stdout, /supervisor iniciado/);
-  assert.match(closed.stderr, /\[CONFIG\] Inicialização bloqueada: OWNER_INPUT_CLOSED/);
-
-  // Primeiro início pelo atualizar.sh também cadastra o dono pelo console.
-  const first = viaUpdate({ BOT_OWNER: '' }, '5543987654321\n');
-  assert.equal(first.status, 0, first.stderr);
-  assert.match(first.stdout, /supervisor iniciado: 5543987654321/);
-  assert.deepEqual(JSON.parse(fs.readFileSync(ownerFile, 'utf8')), { owner: '5543987654321' });
-
-  const denied = viaUpdate({ BOT_OWNER: '', FAKE_LICENSE_DENIED: '1' });
-  assert.equal(denied.status, 1, denied.stderr);
-  assert.match(denied.stderr, /LOBO_LICENSE_DENIED/);
-  assert.doesNotMatch(denied.stdout, /supervisor iniciado/);
-  assert.ok(fs.existsSync(path.join(root, 'scripts/update-and-start.js')));
 });

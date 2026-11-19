@@ -15,7 +15,7 @@ class UpdateError extends Error {
 function describeFailure(error, stage) {
   stage = error.updateStage || stage;
   const text = String(error.stderr || '') + ' ' + String(error.message || '');
-  const code = ['EALLOWREMOTE', 'EALLOWGIT', 'ENOSPC', 'EACCES', 'EPERM', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'ENOMEM'].find(c => text.includes(c)) ||
+  const code = ['EALLOWREMOTE', 'EALLOWGIT', 'ENOSPC', 'EACCES', 'EPERM', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ENOMEM'].find(c => text.includes(c)) ||
     (/^[A-Z][A-Z0-9_]{1,48}$/.test(String(error.code || '')) ? error.code : null);
   const status = error.response?.status;
   let reason = 'Não consegui concluir esta etapa.';
@@ -41,7 +41,7 @@ function describeFailure(error, stage) {
   else if (status === 404) reason = 'O GitHub não encontrou um arquivo ou referência necessário à atualização.';
   else if ([408,500,502,503,504].includes(status)) reason = 'O GitHub ou a conexão da hospedagem ficou temporariamente indisponível, mesmo após novas tentativas.';
   else if (code === 'DOWNLOAD_FAILED') reason = 'Não consegui baixar o arquivo pelo endereço raw nem pela API oficial do GitHub.';
-  else if (['ENOTFOUND','EAI_AGAIN','ETIMEDOUT','ECONNRESET','ECONNABORTED','ERR_NETWORK'].includes(code)) reason = 'Falha de rede ao acessar o GitHub ou o registro npm.';
+  else if (['ENOTFOUND','EAI_AGAIN','ETIMEDOUT','ECONNRESET','ECONNREFUSED','ECONNABORTED','ERR_NETWORK'].includes(code)) reason = 'Falha de rede ao acessar o GitHub ou o registro npm.';
   else if (stage === 'instalação de dependências') reason = 'O npm não conseguiu instalar as dependências. Consulte o erro npm no console da hospedagem.';
   else if (stage === 'verificação de inicialização') reason = 'A versão preparada falhou na verificação de inicialização; ela não foi aplicada.';
   return { stage, code: code || (status ? 'HTTP_' + status : 'UPDATE_FAILED'), reason,
@@ -195,10 +195,10 @@ class UpdateService {
       this.needsRestart = true;
       return result;
     } catch (error) {
-      if (error instanceof UpdateError) throw error;
       const diagnostic = describeFailure(error, phase);
       this.logger.error?.(diagnostic, 'Falha na atualização do bot.');
       await atomicWrite(path.join(this.directory, 'last-error.json'), JSON.stringify({ ...diagnostic, at: new Date().toISOString() }), 0o600).catch(() => {});
+      if (error instanceof UpdateError) throw error;
       throw new UpdateError(`Etapa: ${diagnostic.stage}. Código: ${diagnostic.code}.${diagnostic.file ? ` Arquivo: ${diagnostic.file}.` : ''} ${diagnostic.reason} Os arquivos anteriores foram preservados.`, diagnostic.code);
     } finally {
       if (stage) await fs.rm(stage, { recursive: true, force: true }).catch(() => {});

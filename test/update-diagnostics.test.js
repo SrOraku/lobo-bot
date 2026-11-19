@@ -38,3 +38,11 @@ test('limite do GitHub explica o motivo e a hora de liberação no !atualizar', 
   assert.equal(d.code, 'GITHUB_RATE_LIMIT'); assert.equal(d.httpStatus, 403);
   assert.match(d.reason, /limitou as consultas deste servidor.*depois das 16:05 \(Brasília\)/);
 });
+
+test('conexão recusada ou DNS temporário contam como falha de rede', () => {
+  const { describeFailure } = require('../src/updater/service');
+  for (const code of ['ECONNREFUSED', 'EAI_AGAIN']) {
+    const d = describeFailure(Object.assign(new Error(`connect ${code} 127.0.0.1:9`), { code }), 'consulta ao GitHub');
+    assert.equal(d.code, code); assert.match(d.reason, /Falha de rede/);
+  }
+});

@@ -9,7 +9,13 @@ const ROOT_FILES = new Set(['.version','manifest.json','manifest.sig','EXPANSAO.
 const ROOT_DIRS = ['src', 'scripts', 'plugins', 'addons', 'test'];
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const MAX_MENU_GIF_SIZE = 64 * 1024 * 1024;
-function maxSizeFor(name) { return name === 'src/assets/Menu.gif' ? MAX_MENU_GIF_SIZE : MAX_FILE_SIZE; }
+const MEDIA_LIMITS = new Map([
+  ['src/assets/Menu.gif', MAX_MENU_GIF_SIZE],
+  ['src/assets/menu-geral.mp4', 8 * 1024 * 1024],
+  ['src/assets/bem-vindo.jpg', 8 * 1024 * 1024],
+  ['src/assets/despedida.jpg', 8 * 1024 * 1024],
+]);
+function maxSizeFor(name) { return MEDIA_LIMITS.get(name) || MAX_FILE_SIZE; }
 const BLOCKED = new Set(['.git', '.env', 'node_modules', 'data', 'sessions', 'auth', 'storage', 'logs', 'backups', 'updates']);
 
 function managedPath(name) {
@@ -34,9 +40,10 @@ function rateLimitError(error) {
 }
 
 async function request(url, binary = false) {
+  const name = binary ? decodeURIComponent(new URL(url).pathname.split('/').slice(4).join('/')) : '';
   try {
     const response = await require('axios').get(url, {
-      timeout: 30_000, maxContentLength: binary && url.includes('/src/assets/Menu.gif') ? MAX_MENU_GIF_SIZE : url.includes('/git/blobs/') ? 90 * 1024 * 1024 : 4 * 1024 * 1024,
+      timeout: 30_000, maxContentLength: binary ? maxSizeFor(name) : url.includes('/git/blobs/') ? 90 * 1024 * 1024 : 4 * 1024 * 1024,
       responseType: binary ? 'arraybuffer' : 'json',
       headers: { 'User-Agent': 'Lobo-bot-updater', Accept: 'application/vnd.github+json' },
     });
@@ -78,7 +85,9 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
     if (!['100644', '100755'].includes(item.mode) || item.type !== 'blob' || !/^[a-f0-9]{40}$/.test(item.sha || '')) {
       throw new Error('O código da atualização contém um arquivo não suportado.');
     }
-    if (!Number.isSafeInteger(item.size) || item.size < 0 || item.size > maxSizeFor(name)) throw new Error('Arquivo da atualização excede o limite.');
+    if (!Number.isSafeInteger(item.size) || item.size < 0 || item.size > maxSizeFor(name)) {
+      throw downloadError('Arquivo da atualização excede o limite.', 'DOWNLOAD_FILE_TOO_LARGE', { path: name });
+    }
     files.push({ path: name, sha: item.sha, mode: item.mode });
   };
   const validDirectory = item => item.mode === '040000' && /^[a-f0-9]{40}$/.test(item.sha || '');
