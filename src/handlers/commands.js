@@ -151,6 +151,7 @@ function loadAllCommands() {
   require('../commands/automation').register(r,commands);
   require('../commands/security').register(r,commands);
   require('../commands/local-media').register(r,commands);
+  require('../commands/wolf-strategies').register(r,commands);
   commandsLoaded=true;
 
 }

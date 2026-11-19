@@ -226,6 +226,16 @@ CREATE TABLE isolation_seed_scheduled_messages AS SELECT * FROM scheduled_messag
   `},
 ];
 
+// New expansions append isolated migrations instead of rewriting legacy schemas.
+// Every file is versioned and runs through the same SQLite transaction below.
+const expansionDirectory = require('node:path').join(__dirname, 'migrations');
+for (const file of require('node:fs').readdirSync(expansionDirectory).filter(name => /^\d{3}-[a-z0-9-]+\.js$/.test(name)).sort()) {
+  const migration = require(require('node:path').join(expansionDirectory, file));
+  if (!Number.isInteger(migration.version) || migration.version <= migrations.at(-1).version ||
+      typeof migration.name !== 'string' || typeof migration.up !== 'string') throw Error('Migration de expansão inválida: ' + file);
+  migrations.push(migration);
+}
+
 function runMigrations(db) {
   // Tabela de controle de versão
   db.exec(`
