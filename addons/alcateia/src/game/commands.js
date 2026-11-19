@@ -183,7 +183,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
         number: ctx.senderPhone?.endsWith('@s.whatsapp.net') ? ctx.senderPhone.split('@')[0] : null };
       const result = await service.execute({ command, args, argText: ctx.argText || '',
         actor, target, mentionCount: contextOf(ctx.msg).mentionedJid?.length || 0,
-        chatId: ctx.chatId, isGroup: ctx.isGroup, isAdmin: ctx.isAdmin === true || ctx.isOwner === true, now: started });
+        chatId: ctx.chatId, isGroup: ctx.isGroup, isAdmin: ctx.isAdmin === true || ctx.isOwner === true, eventId: ctx.msg?.key?.id, now: started });
       const at = now();
       const prefix = ctx.config.prefix;
 

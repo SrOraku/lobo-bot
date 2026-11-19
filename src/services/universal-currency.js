@@ -91,6 +91,10 @@ function attachUniversalStore(store,api) {
         }
         const result=callback(game);
         if(result&&typeof result.then==='function')throw Error('Transação do jogo deve ser síncrona.');
+        if(Array.isArray(result?.missionEvents)) {
+          for(const event of result.missionEvents)require('../missions/service').recordGameEvent(db,{...event,chat});
+          delete result.missionEvents;
+        }
         delete game.universalBalances;
         delete game.universalModifiers;
         const table=prefixFor(chat)+'users';

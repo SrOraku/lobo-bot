@@ -50,4 +50,16 @@ const ENDINGS = {
   expulso: ['🚪 O guardião percebeu o engano e encerrou sua passagem.', 5, false],
   armadilha: ['🪤 A porta ativou uma armadilha. Você escapou sem o mapa.', 5, false],
 };
-module.exports = { WORDS, QUIZ, ROUTES, ENDINGS };
+// Append-only catalogue: saved word indexes and the original adventure routes remain valid.
+const WORD_THEMES={
+  matilha:[0,1,2,4,7,9,11,14], natureza:[6,8,12,13,15], astronomia:[3,10], ciencia:[],cidade:[],fantasia:[],
+};
+for(const [theme,entries]of Object.entries({
+  natureza:[['cachoeira','Água que cai de uma grande altura'],['borboleta','Inseto que passa pela metamorfose'],['nuvem','Gotículas suspensas no céu'],['semente','Começo de uma nova planta'],['oceano','Grande extensão de água salgada'],['bambu','Planta de caule oco'],['orquidea','Flor conhecida por suas formas delicadas'],['biodiversidade','Variedade de seres vivos de uma região']],
+  astronomia:[['cometa','Corpo celeste que pode exibir uma cauda'],['galaxia','Sistema com estrelas, gás e poeira'],['eclipse','Ocultação de um astro por outro'],['orbita','Trajetória de um corpo ao redor de outro'],['nebulosa','Nuvem cósmica de gás e poeira'],['telescopio','Instrumento para observar astros distantes'],['gravidade','Força de atração entre massas'],['supernova','Explosão extremamente brilhante de uma estrela']],
+  ciencia:[['celula','Unidade básica da vida'],['atomo','Unidade formada por núcleo e elétrons'],['energia','Grandeza conservada em transformações físicas'],['molecula','Conjunto de átomos ligados'],['fossil','Vestígio preservado de um ser antigo'],['microscopio','Instrumento para observar estruturas muito pequenas'],['fotossintese','Produção de matéria orgânica utilizando luz'],['eletricidade','Fenômenos associados às cargas elétricas']],
+  cidade:[['escola','Lugar de aprendizagem coletiva'],['hospital','Unidade de atendimento à saúde'],['mercado','Lugar para comprar produtos'],['oficina','Local onde ferramentas e peças ganham uso'],['biblioteca','Acervo organizado de livros'],['armazem','Edifício para guardar mercadorias'],['transporte','Movimentação de pessoas ou cargas'],['engenharia','Área que aplica ciência para projetar soluções']],
+  fantasia:[['dragao','Criatura lendária frequentemente alada'],['cristal','Material de estrutura interna organizada'],['feitico','Efeito produzido por magia nas histórias'],['reliquia','Objeto antigo de grande importância'],['labirinto','Caminhos que desafiam a orientação'],['sentinela','Quem vigia e protege uma passagem'],['grimorio','Livro de conhecimentos mágicos'],['encantamento','Efeito mágico duradouro']],
+}))for(const entry of entries){WORD_THEMES[theme].push(WORDS.length);WORDS.push(entry);}
+WORD_THEMES.todos=WORDS.map((_,i)=>i);
+module.exports = { WORDS, WORD_THEMES, QUIZ, ROUTES, ENDINGS };

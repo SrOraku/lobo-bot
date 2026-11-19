@@ -76,6 +76,13 @@ export class GameService {
         const action = structuredClone(game);
         try {
           const response = this.dispatch(action, { ...request, actor: { ...request.actor, jid } }, now);
+          // Optional integration metadata is consumed by the SQLite adapter in
+          // the same transaction as the successful game action. The standalone
+          // JSON game remains independent of the host bot and its database.
+          const missionKind = response.type === 'training' ? 'training' : response.type === 'rp-work' ? 'rp_work' : null;
+          if (missionKind && typeof request.eventId === 'string' && request.eventId) {
+            response.missionEvents = [{ chat: request.chatId, user: jid, event: request.eventId, kind: missionKind, at: now }];
+          }
           for (const [key, value] of Object.entries(action)) game[key] = value;
           return response;
         } catch (error) {
