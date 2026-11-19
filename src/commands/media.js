@@ -3,7 +3,7 @@
 // 🌹ᵇᵒᵗঔৣ‌ʟᴏʙᴏ⟠̾♆̶ᚠ̴🐺̑⟟̾ — MÍDIA & DOWNLOADS
 // ============================================================
 
-const { BOT_NAME, PREFIX } = require('../utils/helpers');
+const { PREFIX } = require('../utils/helpers');
 const axios = require('axios');
 const {card,mono,command}=require('../ui/text');
 
@@ -148,7 +148,7 @@ async function instagram(sock, ctx) {
         { quoted: msg },
       );
     }
-  } catch (err) {
+  } catch {
     await sock.sendMessage(jid, { text: `❌ *Ação inválida!* _Erro ao baixar do Instagram._` }, { quoted: msg });
   }
 }

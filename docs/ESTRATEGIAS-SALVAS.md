@@ -48,6 +48,6 @@ Os pontos fortes e vulnerabilidades são sugestões baseadas na distribuição, 
 
 `!historicolobos` reaproveita o registro de batalhas já existente e apresenta cinco resultados por página, somente do próprio jogador e do chat atual. Mostra o papel na batalha, resultado, data e lobos antes/depois, sem revelar estratégias adversárias. Registros anteriores são mantidos.
 
-A migration aditiva **15, `saved_wolf_strategies`**, cria apenas `saved_wolf_strategies` e `wolf_strategy_operations`, com um índice para consulta por dono. Ela não altera nem limpa tabelas antigas. Uma volta ao código anterior mantém essas novas tabelas sem uso; não as apague enquanto quiser preservar as formações salvas.
+A migration aditiva **17, `saved_wolf_strategies`**, cria apenas `saved_wolf_strategies` e `wolf_strategy_operations`, com um índice para consulta por dono. Ela não altera nem limpa tabelas antigas. Uma volta ao código anterior mantém essas novas tabelas sem uso; não as apague enquanto quiser preservar as formações salvas.
 
 Especializações com bônus de combate não fazem parte desta entrega: a fórmula existente permanece a mesma.

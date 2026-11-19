@@ -1,7 +1,5 @@
 'use strict';
 
-const https = require('node:https');
-const http = require('node:http');
 
 const API_URL = process.env.LOBO_API_URL || '';
 const LICENSE_KEY = (process.env.LOBO_LICENSE_KEY || '').trim();

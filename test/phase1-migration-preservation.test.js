@@ -13,7 +13,7 @@ test('expansion migrations preserve populated legacy tables and remain idempoten
   const filename = path.join(directory, 'lobo.db');
   let db = new Database(filename);
   db.exec('CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY,name TEXT,applied_at TEXT DEFAULT(datetime(\'now\')))');
-  for (const migration of migrations.filter(item => item.version <= 14)) {
+  for (const migration of migrations.filter(item => item.version <= 16)) {
     db.exec(migration.up);
     db.prepare('INSERT INTO schema_migrations(version,name) VALUES(?,?)').run(migration.version, migration.name);
   }
@@ -30,7 +30,7 @@ test('expansion migrations preserve populated legacy tables and remain idempoten
   const snapshot = () => Object.fromEntries(tables.map(table => [table, db.prepare('SELECT * FROM ' + table).all()]));
   const before = snapshot();
   const added = runMigrations(db);
-  assert.equal(added, migrations.filter(item => item.version > 14).length);
+  assert.equal(added, migrations.filter(item => item.version > 16).length);
   assert.deepEqual(snapshot(), before);
   db.close(); db = new Database(filename); t.after(() => db.close());
   assert.equal(runMigrations(db), 0);

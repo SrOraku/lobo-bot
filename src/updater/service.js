@@ -121,7 +121,6 @@ class UpdateService {
         const source = await this.snapshot(); sha = source.sha;
         const bad=await readJSON(path.join(this.directory,'bad-releases.json'),[]);
         if(bad.some(item=>item.sha===sha))throw new UpdateError('Esta versão falhou no boot e está bloqueada. Aguarde uma versão corrigida.','BAD_RELEASE');
-        const previous = await readJSON(path.join(this.directory, 'state.json'));
         // Reaplicar o snapshot também repara arquivos locais alterados no mesmo commit.
         files = source.files;
         phase = 'download dos arquivos';

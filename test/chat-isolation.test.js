@@ -179,7 +179,7 @@ test('backup inclui dados de todos os grupos e a cópia inicial', async (t) => {
     g.players[U] = { coins: 10 };
   });
   const manager = new BackupManager({ store, directory: path.join(directory, 'backups') });
-  const result = await manager.create();
+  await manager.create();
   const files = await fs.readdir(path.join(directory, 'backups'));
   const snapshot = JSON.parse(await fs.readFile(path.join(directory, 'backups', files[0]), 'utf8'));
   assert.equal(snapshot.data.games[A].players[U].coins, 10);

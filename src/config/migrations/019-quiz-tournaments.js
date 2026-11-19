@@ -1,5 +1,5 @@
 'use strict';
-module.exports = { version: 17, name: 'quiz_categories_and_tournaments', up: `
+module.exports = { version: 19, name: 'quiz_categories_and_tournaments', up: `
   CREATE TABLE quiz_plus_sessions(chat_jid TEXT NOT NULL,user_jid TEXT NOT NULL,state TEXT,available_at INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(chat_jid,user_jid));
   CREATE TABLE quiz_tournaments(chat_jid TEXT PRIMARY KEY,state TEXT NOT NULL);
   CREATE TABLE quiz_plus_events(chat_jid TEXT NOT NULL,event_id TEXT NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(chat_jid,event_id));

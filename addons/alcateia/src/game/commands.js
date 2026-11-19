@@ -75,7 +75,7 @@ export function gameMenu(config) {
       '💎 Uma carteira para lobisomens e RP.',
     ] },
     { title: '🏰 CLÃS E LIDERANÇA', lines: [
-      `🌹 ${p}clan criar/entrar/perfil`, `⚔️ ${p}guerra — territórios, placar semanal e prêmio em WoK coin`,
+      `🌹 ${p}clan criar/entrar/perfil/sair`, `👑 ${p}clan expulsar/lider @membro — só o líder`, `⚔️ ${p}guerra — territórios, placar semanal e prêmio em WoK coin`,
       `👑 ${p}admin status — painel do jogo`,
       '🐾 Estratégia, honra e força da alcateia.',
     ] },
@@ -177,7 +177,7 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
     if (!isGameCommand(command, args)) return false;
     const started = now();
     try {
-      const target = ['ataque', 'acao', 'familia', 'transferir', 'usar'].includes(command) ? await combatTarget(ctx) : null;
+      const target = ['ataque', 'acao', 'familia', 'transferir', 'usar', 'clan'].includes(command) ? await combatTarget(ctx) : null;
       const actorJid = ctx.senderPhone || ctx.sender;
       const actor = { jid: actorJid, name: ctx.displayName,
         number: ctx.senderPhone?.endsWith('@s.whatsapp.net') ? ctx.senderPhone.split('@')[0] : null };
@@ -238,6 +238,18 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
         case 'event':
           await ctx.reply(eventText(result.reward));
           break;
+        case 'clan-update': {
+          const clan = line(result.clan.name);
+          const lines = result.action === 'sair'
+            ? [result.dissolved ? `🌹 Você saiu e o clã ${clan} foi desfeito: não restou nenhum membro.` : `🌹 Você saiu do clã ${clan}.`,
+              result.newLeader ? `👑 Novo líder: ${line(result.newLeaderName, 'membro mais antigo')}` : undefined,
+              '> ⏳ Você poderá criar ou entrar em outro clã em 24 h.']
+            : result.action === 'expulsar'
+              ? [`🚪 ${line(result.targetName, 'O membro')} foi removido do clã ${clan}.`, '> 🐺 Quem é removido pode entrar em outro clã na hora.']
+              : [`👑 ${line(result.targetName, 'O membro')} agora lidera o clã ${clan}.`];
+          await ctx.reply(frame('CLÃ DA ALCATEIA', lines.filter(Boolean)));
+          break;
+        }
         case 'war':
           await ctx.reply(warText(result, prefix));
           break;

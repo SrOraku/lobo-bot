@@ -1,5 +1,5 @@
 'use strict';
-module.exports = { version: 18, name: 'arcade_history_records_coop', up: `
+module.exports = { version: 20, name: 'arcade_history_records_coop', up: `
   CREATE TABLE phase1_arcade_results(
     chat_jid TEXT NOT NULL,event_id TEXT NOT NULL,user_jid TEXT NOT NULL,name TEXT NOT NULL,
     game TEXT NOT NULL,points INTEGER NOT NULL CHECK(points BETWEEN 0 AND 10000),

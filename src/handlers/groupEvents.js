@@ -22,9 +22,12 @@ async function processGroupParticipantsUpdate(sock, update) {
         if (require('../activations/manager').manager.isEnabled(id,'bemvindo')) {
           db.upsertUser(jid, number);
 
-          // Gold inicial
+          // WoK coin de boas-vindas: uma vez por pessoa neste grupo. Quem sai e
+          // volta (inclusive com outro identificador) não recebe de novo.
           const goldStart = parseInt(process.env.GOLD_START) || 500;
-          db.addGold(jid, goldStart);
+          const phone = typeof participant === 'object' && participant.phoneNumber ? cleanJid(participant.phoneNumber) : null;
+          const lid = typeof participant === 'object' && participant.lid ? cleanJid(participant.lid) : null;
+          db.grantEntryBonus(id, [jid, phone, lid], jid, goldStart);
 
           // Inicializar estratégia de lobos
           if (!db.getStrategy(jid)) {
@@ -42,7 +45,7 @@ async function processGroupParticipantsUpdate(sock, update) {
             await sock.sendMessage(id, {
               image: fs.readFileSync(welcomeImage), caption, mentions: [jid]
             });
-          } catch (error) {
+          } catch {
             logger.warn('Não foi possível enviar a imagem de boas-vindas; enviando texto.');
             await sock.sendMessage(id, { text: caption, mentions: [jid] });
           }
@@ -52,7 +55,7 @@ async function processGroupParticipantsUpdate(sock, update) {
         if (require('../activations/manager').manager.isEnabled(id,'despedida')) {
           try {
             await sock.sendMessage(id, {image: fs.readFileSync(goodbyeImage), caption: GOODBYE, mentions: [jid]});
-          } catch (error) {
+          } catch {
             logger.warn('Não foi possível enviar a imagem de despedida; enviando texto.');
             await sock.sendMessage(id, {text: GOODBYE, mentions: [jid]});
           }

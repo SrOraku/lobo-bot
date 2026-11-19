@@ -1,7 +1,7 @@
 'use strict';
 const config = require('../config');
 const { CATEGORIES, CATEGORY_ALIASES, buildCatalog } = require('../menus/catalog');
-const { IDENTITY, frameMenu, clean, uptime } = require('../menus/render');
+const { frameMenu, clean, uptime } = require('../menus/render');
 const { version } = require('../../package.json');
 const { block, command, mono, greeting, clock, center } = require('../ui/text');
 function getCatalog() {

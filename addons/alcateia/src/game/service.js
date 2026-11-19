@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { COOLDOWNS, LIMITS, OWNER_NUMBER } from './constants.js';
-import { GameError, assertGameOwner, isGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
+import { GameError, isGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
   integer, quantity, formatRemaining, validatePlayer } from './validation.js';
 import { registerPlayer, requirePlayer, ensurePlayer, addWolves, trainPlayer, setFormation, rankPlayers } from './players.js';
 import { SHOP_ITEMS, buyItem } from './shop.js';
-import { createClan, joinClan, clanProfile } from './clans.js';
+import { createClan, joinClan, clanProfile, leaveClan, kickMember, transferLeadership } from './clans.js';
 import { runEvent } from './events.js';
 import { resolveBattle } from './battle.js';
 import { consumeCommand } from './rate-limit.js';
@@ -97,7 +97,7 @@ export class GameService {
   }
 
   dispatch(game, request, now) {
-    const { command, actor, chatId } = request;
+    const { command, actor } = request;
     const args = request.args || [];
     const argText = request.argText || '';
     // Old invitations have no effect after duels were removed.
@@ -150,12 +150,25 @@ export class GameService {
         exactArgs(args, 1, '!comprar ID');
         return { type: 'purchase', player, ...buyItem(player, args[0], { now, rng: this.rng }) };
       case 'clan': {
-        const subcommand = args[0]?.toLowerCase();
+        const subcommand = args[0]?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         const name = argText.replace(/^\S+\s*/, '');
+        const nameOf = jid => (Object.hasOwn(game.players, jid) ? game.players[jid].name : null);
+        if (subcommand === 'sair') {
+          exactArgs(args, 1, '!clan sair');
+          const result = leaveClan(game, player, now);
+          return { type: 'clan-update', action: 'sair', ...result, newLeaderName: result.newLeader ? nameOf(result.newLeader) : null };
+        }
+        if (subcommand === 'expulsar' || subcommand === 'lider') {
+          if (!request.target?.jid || request.mentionCount > 1) throw new GameError(`Mencione exatamente um membro: !clan ${subcommand} @membro.`);
+          // Um membro banido do jogo ainda pode ser removido pelo líder.
+          const target = requirePlayer(game, canonicalPlayerJid(request.target.jid), { allowBanned: subcommand === 'expulsar' });
+          const result = subcommand === 'expulsar' ? kickMember(game, player, target, now) : transferLeadership(game, player, target, now);
+          return { type: 'clan-update', action: subcommand, ...result, targetName: target.name };
+        }
         if (subcommand === 'criar') createClan(game, player, name, now);
         else if (subcommand === 'entrar') joinClan(game, player, name, now);
         else if (subcommand === 'perfil') exactArgs(args, 1, '!clan perfil');
-        else throw new GameError('Use !clan criar nome, !clan entrar nome ou !clan perfil.');
+        else throw new GameError('Use !clan criar nome, !clan entrar nome, !clan perfil, !clan sair, !clan expulsar @membro ou !clan lider @membro.');
         const clan = clanProfile(game, player);
         return { type: 'clan', clan, rank: clan.ranking };
       }

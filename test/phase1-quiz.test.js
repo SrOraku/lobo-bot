@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const Database = require('better-sqlite3');
 const { runMigrations } = require('../src/config/migrations');
-const migration = require('../src/config/migrations/017-quiz-tournaments');
+const migration = require('../src/config/migrations/019-quiz-tournaments');
 const catalog = require('../src/games/quiz/catalog');
 const { createQuiz, weekKey, ROUND_MS, COOLDOWN_MS } = require('../src/games/quiz/service');
 const { createExpandedQuizHandler, renderResult, register } = require('../src/commands/quiz-expanded');

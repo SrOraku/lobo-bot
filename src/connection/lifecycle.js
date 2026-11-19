@@ -1,4 +1,11 @@
 'use strict';
+const { statusCode } = require('./diagnostics');
+function bounded(run, ms, code) {
+  let timer;
+  return Promise.race([Promise.resolve().then(run), new Promise((_, reject) => {
+    timer = setTimeout(() => reject(Object.assign(Error(code), { code })), ms);
+  })]).finally(() => clearTimeout(timer));
+}
 function hasSavedSession(creds) {
   // requestPairingCode creates a provisional me.id; only a signed account or
   // registered credentials indicate that pairing really completed.
@@ -23,8 +30,8 @@ function credentialWriter(save, onError) {
   }
   return { write, async flush() { await write(); if (failure) throw failure; } };
 }
-function createLifecycle({ reconnect, onState = () => {}, onError = () => {}, onFatal = () => {},
-  maxReconnect = 10, wait = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+function createLifecycle({ reconnect, onState = () => {}, onDisconnect = () => {}, onError = () => {}, onFatal = () => {},
+  maxReconnect = 10, operationTimeoutMs = 15000, initializationTimeoutMs = 60000, wait = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
   let current = null, attempts = 0, stopping = false;
   function attach(socket, { saveCreds, onOpen = async () => {}, beforeReconnect = async () => {} } = {}) {
     if (current?.active) throw Error('SOCKET_ALREADY_ACTIVE');
@@ -38,7 +45,7 @@ function createLifecycle({ reconnect, onState = () => {}, onError = () => {}, on
         for (const [name, listener] of listeners) remove.call(socket.ev, name, listener);
         listeners.length = 0;
       },
-      flush: writer.flush,
+      flush: () => bounded(writer.flush, operationTimeoutMs, 'SAVE_CREDS_TIMEOUT'),
       initialized: beforeReconnect,
     };
     current = session;
@@ -49,20 +56,22 @@ function createLifecycle({ reconnect, onState = () => {}, onError = () => {}, on
       if (update.connection === 'open' && !opened) {
         opened = true; attempts = 0;
         Promise.resolve().then(async () => {
-          await writer.flush();
+          await session.flush();
           if (session.isActive()) await onOpen();
         }).catch(error => onError(error, 'CONNECTION_OPEN_FAILED'));
       }
       if (update.connection !== 'close') return;
       session.detach();
-      const code = update.lastDisconnect?.error?.output?.statusCode || update.lastDisconnect?.error?.statusCode;
+      const code = statusCode(update.lastDisconnect?.error);
+      try { onDisconnect({ code }); } catch { /* A console failure must not prevent reconnection. */ }
       Promise.resolve().then(async () => {
-        await writer.flush();
-        try { await socket.end?.(); } catch { /* Socket already closed. */ }
+        await session.flush();
+        try { await bounded(() => socket.end?.(), operationTimeoutMs, 'SOCKET_CLOSE_TIMEOUT'); }
+        catch (error) { if (error.code === 'SOCKET_CLOSE_TIMEOUT') throw error; /* Socket may already be closed. */ }
         if (stopping) return;
         if (code === 401) { onFatal('LOGGED_OUT'); return; }
         if (attempts >= maxReconnect) { onFatal('RECONNECT_LIMIT'); return; }
-        await beforeReconnect();
+        await bounded(beforeReconnect, initializationTimeoutMs, 'PLUGIN_INITIALIZATION_TIMEOUT');
         if (stopping) return;
         attempts++;
         const delay = code === 515 ? 1000 : Math.min(30000, 3000 * 2 ** Math.min(attempts - 1, 4));
@@ -79,8 +88,8 @@ function createLifecycle({ reconnect, onState = () => {}, onError = () => {}, on
     if (!session) return;
     session.detach();
     await session.flush();
-    try { await session.socket.end?.(); } catch { /* Already disconnected; do not reconnect during shutdown. */ }
-    await session.initialized();
+    try { await bounded(() => session.socket.end?.(), operationTimeoutMs, 'SOCKET_CLOSE_TIMEOUT'); } catch { /* Shutdown must finish even when the old socket does not. */ }
+    await bounded(session.initialized, initializationTimeoutMs, 'PLUGIN_INITIALIZATION_TIMEOUT');
   }
   return { attach, stop };
 }

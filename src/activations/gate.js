@@ -1,5 +1,5 @@
 'use strict';
-const { allowed, commandSector } = require('./policy');
+const { commandSector } = require('./policy');
 function createGate({ store, resolveActor } = {}) {
   return async (sock, ctx, name, definition) => {
     if (!ctx.jid?.endsWith('@g.us')) return true;

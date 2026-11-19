@@ -7,9 +7,11 @@ function linesOf(value) {
     .flatMap(value => String(value).split(/\r?\n/));
 }
 
-/** Shared text-only presentation; this helper never interprets a command. */
-export function formatMenu({ title = 'MENU DA ALCATEIA', botName = BOT_NAME, botDescription = BOT_DESCRIPTION, ownerNumber = OWNER_NUMBER,
-  subtitle = [], sections = [], signature = '', prefix = '', tip = '💡 _Escolha um comando da matilha._' } = {}) {
+/** Shared text-only presentation; this helper never interprets a command.
+ * botName, botDescription, ownerNumber and signature are still accepted and ignored on purpose:
+ * the menu never prints the owner's number. */
+export function formatMenu({ title = 'MENU DA ALCATEIA',
+  subtitle = [], sections = [], prefix = '', tip = '💡 _Escolha um comando da matilha._' } = {}) {
   const output = [panelHeader(title), ...linesOf(subtitle).filter(Boolean).map(contentLine)];
   for (const section of sections) {
     if (section.title) output.push(sectionHeading(section.title));

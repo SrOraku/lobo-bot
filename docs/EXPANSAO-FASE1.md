@@ -6,7 +6,7 @@ Este documento descreve somente os sistemas encontrados e implementados nesta fa
 
 ## 1. Diagnóstico e referência
 
-A análise começou na `main` em **`a5cef10eedbe7593ba6a8b9732e57b9acc59050f`**, que já continha a Guerra de Alcateias da PR #13. Antes da expansão, as correções de download automático e de edição/reutilização do painel de ativações foram validadas e integradas pela **PR #14**, merge **`c3c38d610dbdc0023ca37ad40c42facfd1a8a61e`**. A expansão é desenvolvida na branch `feat/expansao-fase1`, em commits separados.
+A análise começou na `main` em **`a5cef10eedbe7593ba6a8b9732e57b9acc59050f`**, que já continha a Guerra de Alcateias da PR #13. Antes da expansão, as correções de download automático e de edição/reutilização do painel de ativações foram validadas e integradas pela **PR #14**, merge **`c3c38d610dbdc0023ca37ad40c42facfd1a8a61e`**. A integração foi atualizada para a `main` em `4eccdab375f8b460427a1ae3e31ffffe30b2e1c3`, preservando console, bônus de entrada único, agendamentos, clãs e sorteios das PRs #15–#18. As migrations 15/16 publicadas foram mantidas; as novas usam 17–21. A expansão é desenvolvida na branch `feat/expansao-fase1-integrada`, em commits separados.
 
 Já existiam: 100 Lobisomens clássico; Alcateia Estratégica; guerra semanal de sete territórios; Cidade RP e suas 64 profissões; famílias; carteira universal de WoK coin por jogador/chat; lojas e equipamentos; conquistas; quiz, forca, Akinator, aventura, Gartic e os outros minijogos registrados.
 
@@ -189,11 +189,11 @@ Todas as alterações são migrations **aditivas**, no mesmo SQLite já utilizad
 
 | Migration | Novas tabelas | Finalidade |
 | --- | --- | --- |
-| 15 — `saved_wolf_strategies` | `saved_wolf_strategies`, `wolf_strategy_operations` | Formações nomeadas e deduplicação das operações |
-| 16 — `universal_daily_weekly_missions` | `mission_events`, `mission_claims` | Acontecimentos reais e resgates únicos por período |
-| 17 — `quiz_categories_and_tournaments` | `quiz_plus_sessions`, `quiz_tournaments`, `quiz_plus_events`, `quiz_plus_results` | Quiz por categoria, inscrições, prazos, pontuação e classificação |
-| 18 — `arcade_history_records_coop` | `phase1_arcade_results`, `phase1_arcade_coop` | Resultados pessoais e sessões cooperativas |
-| 19 — `gartic_categories_and_seasons` | `phase1_gartic_results`, `phase1_gartic_actions` | Classificação por temporada e proteção contra repetição |
+| 17 — `saved_wolf_strategies` | `saved_wolf_strategies`, `wolf_strategy_operations` | Formações nomeadas e deduplicação das operações |
+| 18 — `universal_daily_weekly_missions` | `mission_events`, `mission_claims` | Acontecimentos reais e resgates únicos por período |
+| 19 — `quiz_categories_and_tournaments` | `quiz_plus_sessions`, `quiz_tournaments`, `quiz_plus_events`, `quiz_plus_results` | Quiz por categoria, inscrições, prazos, pontuação e classificação |
+| 20 — `arcade_history_records_coop` | `phase1_arcade_results`, `phase1_arcade_coop` | Resultados pessoais e sessões cooperativas |
+| 21 — `gartic_categories_and_seasons` | `phase1_gartic_results`, `phase1_gartic_actions` | Classificação por temporada e proteção contra repetição |
 
 As migrations não apagam nem renumeram perfis, clãs, famílias, inventários, lobos, profissões ou saldos antigos. As novas tabelas possuem chaves por chat e jogador quando aplicável, além de identificadores de operação/partida. O histórico de minijogos não substitui o placar anterior.
 
@@ -207,22 +207,24 @@ Verificações específicas já executadas durante o desenvolvimento:
 | --- | --- |
 | Formações salvas e simulação | 9 testes aprovados |
 | Missões e resgates | 11 testes aprovados |
-| Quiz por categoria e torneios | 14 testes aprovados |
-| Gartic e evolução geral do arcade | Validação final do conjunto em andamento |
+| Quiz por categoria e torneios | 15 testes aprovados |
+| Gartic | 10 testes aprovados |
+| Evolução do arcade | 12 testes aprovados |
+| Migração de banco legado preenchido | 1 teste aprovado |
 
 Os testes cobrem bancos temporários, reabertura do SQLite, isolamento dos chats, formação e nomes, simulação sem escrita, repetição de mensagens, limite de pontos, inscrições voluntárias, PN/LID, prazos, transações concorrentes e reversão integral quando a persistência da recompensa ou da missão falha. Uma falha de missão dentro de uma conclusão deve reverter também seu resultado e pontuação.
 
-**Validação consolidada da fase ainda pendente nesta versão do relatório:** `npm run check`, manifesto de release e CI do commit final. Os resultados finais devem ser registrados antes de apresentar a fase como integrada. Os números acima são evidências por componente, não a contagem da suíte completa.
+**Validação local consolidada:** `npm run check` passou no Node 24.22.1 com **1.097 testes, zero falhas**, além de lint de todo o projeto, sintaxe, plataforma e inicialização. O manifesto é regenerado e conferido antes da publicação. A auditoria mantém a exceção Zod já documentada pelo projeto; ela não foi ampliada. A integração na `main` depende também da aprovação das verificações do GitHub sobre o commit final; consulte os resultados da PR correspondente.
 
 Não houve teste desta expansão numa conversa real do WhatsApp. O transporte é simulado nos testes automatizados; regras, persistência e transações são executadas de verdade. Nenhuma conta, sessão, banco ou chave de produção foi utilizada como massa de teste.
 
 ## 5. Documentação e arquivos integrados
 
-- Estratégias: [docs/ESTRATEGIAS-SALVAS.md](ESTRATEGIAS-SALVAS.md), `src/wolves/strategies.js`, `src/commands/wolf-strategies.js` e migration 15.
-- Missões: [src/missions/README.md](../src/missions/README.md), catálogo/serviço/comando próprios e migration 16. Os produtores de acontecimentos nos jogos e no adaptador de moeda universal gravam o diário dentro de suas transações.
-- Quiz: [src/games/quiz/README.md](../src/games/quiz/README.md), catálogo/serviço próprios, wrapper de comando e migration 17.
-- Arcade: `src/games/engine.js`, `content.js`, `characters.js`, `service.js`, `history.js`, `forca-coop.js`, `adventure-expansion.js`, módulos de jogos e `src/commands/arcade-expanded.js`; migration 18.
-- Gartic: `src/games/gartic.js` e migration 19.
+- Estratégias: [docs/ESTRATEGIAS-SALVAS.md](ESTRATEGIAS-SALVAS.md), `src/wolves/strategies.js`, `src/commands/wolf-strategies.js` e migration 17.
+- Missões: [src/missions/README.md](../src/missions/README.md), catálogo/serviço/comando próprios e migration 18. Os produtores de acontecimentos nos jogos e no adaptador de moeda universal gravam o diário dentro de suas transações.
+- Quiz: [src/games/quiz/README.md](../src/games/quiz/README.md), catálogo/serviço próprios, wrapper de comando e migration 19.
+- Arcade: `src/games/engine.js`, `content.js`, `characters.js`, `service.js`, `history.js`, `forca-coop.js`, `adventure-expansion.js`, módulos de jogos e `src/commands/arcade-expanded.js`; migration 20.
+- Gartic: `src/games/gartic.js` e migration 21.
 - Integração: carregamento de migrations e registro dos comandos em `src/handlers/commands.js`. Os registros utilizam as categorias existentes para aparecer nos submenus, preservando o menu principal compacto, o prefixo e os aliases anteriores.
 
 ## 6. Pendências e fases seguintes

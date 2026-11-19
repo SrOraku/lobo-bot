@@ -1,6 +1,29 @@
 'use strict';
-module.exports=[{
-  files:['src/wolves/*.js','src/missions/*.js','src/games/*.js','src/games/quiz/*.js','src/commands/wolf-strategies.js','src/commands/missions.js','src/commands/quiz-expanded.js','src/commands/arcade-expanded.js','src/media/*.js','src/commands/local-media.js','src/commands/stickers.js','src/ui/*.js','src/security/groups/*.js','src/commands/security.js','src/commands/group-removal.js','src/connection/lifecycle.js','src/utils/activity-logger.js','src/commands/update.js','src/updater/supervisor.js','src/commands/wok-donation.js','src/security/wok-donation.js','src/progression/*.js','src/economy/*.js','src/automation/*.js','src/events/*.js','src/games/modules/*.js','src/games/registry.js','src/services/lastfm.js','src/services/transcription.js','src/updater/source.js','src/updater/lock.js','src/updater/recovery.js','src/updater/health.js','src/updater/integrity.js','src/services/universal-currency.js','src/handlers/autoDownload.js','src/integrations/bronxys/*.js','src/commands/bronxys-config.js','src/services/economy.js','src/core/keyed-queue.js','src/core/plugin-contract.js','src/middlewares/command-limits.js'],
-  languageOptions:{ecmaVersion:2022,sourceType:'commonjs',globals:{Blob:'readonly',require:'readonly',module:'readonly',process:'readonly',Buffer:'readonly',URL:'readonly',AbortController:'readonly',setTimeout:'readonly',clearTimeout:'readonly',setInterval:'readonly',clearInterval:'readonly',__dirname:'readonly',structuredClone:'readonly'}},
-  rules:{'no-undef':'error','no-unused-vars':'error','no-dupe-keys':'error','no-unreachable':'error','eqeqeq':['error','always',{null:'ignore'}]},
-}];
+// Regras para todo o código do projeto (bot, addon, plugins, scripts e testes).
+// Antes valiam só para uma lista de arquivos; o resto não era conferido.
+const NODE = {
+  console: 'readonly', process: 'readonly', Buffer: 'readonly', global: 'readonly',
+  URL: 'readonly', URLSearchParams: 'readonly', AbortController: 'readonly', AbortSignal: 'readonly',
+  setTimeout: 'readonly', clearTimeout: 'readonly', setInterval: 'readonly', clearInterval: 'readonly',
+  setImmediate: 'readonly', clearImmediate: 'readonly', queueMicrotask: 'readonly', structuredClone: 'readonly',
+  TextEncoder: 'readonly', TextDecoder: 'readonly', performance: 'readonly', crypto: 'readonly',
+  fetch: 'readonly', Response: 'readonly', Request: 'readonly', Headers: 'readonly', FormData: 'readonly',
+  Blob: 'readonly', File: 'readonly', WebAssembly: 'readonly', atob: 'readonly', btoa: 'readonly',
+};
+const COMMONJS = { require: 'readonly', module: 'writable', exports: 'writable', __dirname: 'readonly', __filename: 'readonly' };
+const rules = {
+  'no-undef': 'error',
+  // `_nome` marca um parâmetro que existe só para mostrar a assinatura; `{ tirar, ...resto }` é o jeito de omitir uma chave.
+  'no-unused-vars': ['error', { argsIgnorePattern: '^_', ignoreRestSiblings: true }],
+  'no-dupe-keys': 'error',
+  'no-unreachable': 'error',
+  eqeqeq: ['error', 'always', { null: 'ignore' }],
+};
+
+module.exports = [
+  { ignores: ['**/node_modules/**', 'data/**', 'logs/**', 'storage/**', 'sessions/**', 'updates/**', 'tmp/**', 'auth/**', 'backups/**'] },
+  { linterOptions: { reportUnusedDisableDirectives: 'error' } },
+  { files: ['**/*.js', '**/*.cjs'], languageOptions: { ecmaVersion: 2024, sourceType: 'commonjs', globals: { ...NODE, ...COMMONJS } }, rules },
+  // O addon da Alcateia é ESM ("type": "module" em addons/alcateia/package.json).
+  { files: ['addons/alcateia/**/*.js', '**/*.mjs'], languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals: NODE }, rules },
+];

@@ -38,4 +38,4 @@ Os eventos de treino e trabalho são produzidos pelo resultado bem-sucedido do s
 
 Não use eventos de mensagem recebida ou um barramento assíncrono para conceder progresso: isso poderia sobreviver a uma ação que falhou. Uma falha real no diário deve fazer a transação inteira voltar ao estado anterior.
 
-Migration aditiva: `016-universal-missions.js`, com tabelas `mission_events` e `mission_claims`. Não altera ou limpa as tabelas antigas. Para recuar o código, preserve essas tabelas; não é necessário apagá-las. Os testes usam somente bancos temporários e cobrem persistência, isolamento, identificadores repetidos, mapeamento PN/LID e falhas durante a transação.
+Migration aditiva: `018-universal-missions.js`, com tabelas `mission_events` e `mission_claims`. Não altera ou limpa as tabelas antigas. Para recuar o código, preserve essas tabelas; não é necessário apagá-las. Os testes usam somente bancos temporários e cobrem persistência, isolamento, identificadores repetidos, mapeamento PN/LID e falhas durante a transação.

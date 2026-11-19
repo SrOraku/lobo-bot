@@ -2,17 +2,9 @@
 const db = require('../utils/database');
 const response = require('../core/response');
 const { mono, command } = require('../ui/text');
-const { BOT_NAME, cleanJid, getNumber, OWNER, sleep } = require('../utils/helpers');
+const { cleanJid, getNumber, OWNER, sleep } = require('../utils/helpers');
 
 // Helper: verificar se é admin do grupo
-async function isGroupAdmin(sock, jid, senderJid) {
-  try {
-    const meta = await sock.groupMetadata(jid);
-    const p = meta.participants.find(x => cleanJid(x.id) === cleanJid(senderJid));
-    return p?.admin === 'admin' || p?.admin === 'superadmin';
-  } catch { return false; }
-}
-
 async function isBotAdmin(sock, jid) {
   try {
     const metadata=await sock.groupMetadata(jid);
@@ -216,7 +208,7 @@ const limparInatividade = requireGroupAdmin(async (sock, ctx) => {
 // MARCAR TODOS
 // ============================
 const marcarTodos = requireGroupAdmin(async (sock, ctx) => {
-  const { jid, msg, args } = ctx;
+  const { jid, args } = ctx;
   const text = args.join(' ') || 'Atenção matilha! 🐺';
   const meta = await sock.groupMetadata(jid).catch(() => null);
   if (!meta) return;

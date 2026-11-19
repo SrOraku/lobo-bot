@@ -215,7 +215,7 @@ test('a truncated raw response can recover only through bytes matching the expec
 });
 
 for (const [name, blob] of [
-  ['wrong SHA', sha => ({ sha: '0'.repeat(40), encoding: 'base64', content: 'e30=' })],
+  ['wrong SHA', () => ({ sha: '0'.repeat(40), encoding: 'base64', content: 'e30=' })],
   ['invalid encoding', sha => ({ sha, encoding: 'utf8', content: '{}' })],
   ['malformed base64', sha => ({ sha, encoding: 'base64', content: '!!!' })],
   ['oversized blob', sha => ({ sha, encoding: 'base64', content: 'e30=', size: 3 * 1024 * 1024 })],

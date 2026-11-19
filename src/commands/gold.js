@@ -8,7 +8,7 @@ const { SHOP_ITEMS, shopPage } = require('../economy/shop-catalog');
 // VER GOLD
 // ============================
 async function verGold(sock, ctx) {
-  const { jid, sender, msg, args } = ctx;
+  const { jid, sender, msg } = ctx;
   let target = sender;
 
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];

@@ -1,6 +1,6 @@
 'use strict';
 module.exports = {
-  version: 19,
+  version: 21,
   name: 'gartic_categories_and_seasons',
   up: `CREATE TABLE phase1_gartic_results(
     chat_jid TEXT NOT NULL,round_id TEXT NOT NULL,user_jid TEXT NOT NULL,name TEXT NOT NULL,

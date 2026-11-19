@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-  version: 15,
+  version: 17,
   name: 'saved_wolf_strategies',
   up: `
     CREATE TABLE saved_wolf_strategies (

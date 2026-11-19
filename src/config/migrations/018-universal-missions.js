@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-  version: 16,
+  version: 18,
   name: 'universal_daily_weekly_missions',
   up: `
     CREATE TABLE mission_events(

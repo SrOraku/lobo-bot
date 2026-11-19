@@ -67,7 +67,7 @@ async function resolveVideo(query, { ytdl, search }) {
   if (!found) throw new Error('NOT_FOUND');
   return found.url;
 }
-async function downloadMedia({ url, info, kind, destination, ytdl, signal }) {
+async function downloadMedia({ info, kind, destination, ytdl, signal }) {
   if (kind === 'video') {
     const formats = info.formats
       .filter(
