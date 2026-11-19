@@ -44,6 +44,10 @@ O número de dono deve ser o WhatsApp que envia os comandos, com DDI e somente d
 
 O WhatsApp também identifica participantes por LID, que não é um telefone. Os comandos usam o telefone confirmado na mensagem, nos metadados do grupo ou no mapeamento do WhatsApp. Um LID sem confirmação continua sem permissão de dono.
 
+`npm start` e `bash atualizar.sh` usam a mesma inicialização: licença, cadastro do dono (`BOT_OWNER` ou `data/bot-owner.json`) e supervisor. Se o `atualizar.sh` mostrar `Variável obrigatória ausente: BOT_OWNER` com o dono já cadastrado, a instalação ainda tem a versão antiga do `scripts/update-and-start.js`: inicie uma vez com `npm start`, que lê o cadastro e recebe a correção pelo `!atualizar bot`, ou atualize pelos comandos abaixo.
+
+A verificação de atualização faz 2 consultas à API do GitHub. Sem login, o GitHub aceita 60 por hora por IP, e hospedagens dividem o IP entre clientes. Quando o limite acaba, o console mostra `Atualização indisponível (GITHUB_RATE_LIMIT)` com a hora de liberação, e o bot inicia a versão local; a próxima inicialização tenta de novo.
+
 Para atualizar quando o comando `!atualizar bot` estiver bloqueado, pare o bot e use o terminal de sistema da hospedagem, na raiz de uma instalação clonada pelo Git:
 
 ```bash

@@ -8,7 +8,8 @@ const { githubSnapshot } = require('../src/updater/source');
 
 // Reproduce the release contract with the actual shipped files, not tiny
 // image substitutes. The old 2 MiB ceiling rejected both welcome/farewell JPEGs.
-function fixture(extra = []) {
+// `recursive: false` makes GitHub truncate the one-request tree, forcing the per-folder mode.
+function fixture(extra = [], { recursive = true } = {}) {
   const names = ['package.json', 'package-lock.json', 'src/index.js', 'src/bootstrap.js',
     'scripts/check-startup.js', 'src/assets/bem-vindo.jpg', 'src/assets/despedida.jpg', 'src/assets/menu-geral.mp4'];
   const blobs = new Map();
@@ -24,6 +25,14 @@ function fixture(extra = []) {
     calls.push({ url, binary });
     if (binary) return blobs.get(url.split('/').slice(6).join('/'));
     if (url.endsWith('/commits/main')) return { sha: 'a'.repeat(40), commit: { tree: { sha: root } } };
+    if (url.endsWith('/git/trees/' + root + '?recursive=1')) {
+      if (!recursive) return { truncated: true, tree: [] };
+      return { truncated: false, tree: entries.concat([
+        { path: 'src', sha: src, mode: '040000', type: 'tree' },
+        { path: 'scripts', sha: scripts, mode: '040000', type: 'tree' },
+        { path: 'src/assets', sha: assets, mode: '040000', type: 'tree' },
+      ]) };
+    }
     const files = prefix => entries.filter(e => e.path.startsWith(prefix) && !e.path.slice(prefix.length).includes('/')).map(e => ({ ...e, path: e.path.slice(prefix.length) }));
     if (url.endsWith('/git/trees/' + root)) return { tree: files('').concat([
       { path: 'src', sha: src, mode: '040000', type: 'tree' },
@@ -38,11 +47,14 @@ function fixture(extra = []) {
 }
 
 test('official welcome, farewell and menu media pass snapshot discovery and pinned hash verification', async () => {
+  const split = await githubSnapshot({ get: fixture([], { recursive: false }).get });
   const f = fixture();
   assert.ok(f.blobs.get('src/assets/bem-vindo.jpg').length > 2 * 1024 * 1024);
   assert.ok(f.blobs.get('src/assets/despedida.jpg').length > 2 * 1024 * 1024);
   const source = await githubSnapshot({ get: f.get });
   assert.equal(source.files.length, f.blobs.size);
+  const byPath = files => [...files].sort((a, b) => a.path.localeCompare(b.path));
+  assert.deepEqual(byPath(split.files), byPath(source.files), 'one request and per-folder mode find the same files');
   for (const file of source.files.filter(file => file.path.startsWith('src/assets/'))) {
     assert.deepEqual(await source.download(file), f.blobs.get(file.path));
     assert.ok(f.calls.at(-1).url.includes('/' + source.sha + '/' + file.path));
@@ -50,9 +62,11 @@ test('official welcome, farewell and menu media pass snapshot discovery and pinn
 });
 
 test('larger media allowance does not raise the limit for source code', async () => {
-  const f = fixture([{ path: 'src/large.js', size: 2 * 1024 * 1024 + 1, sha: 'f'.repeat(40), mode: '100644', type: 'blob' }]);
-  await assert.rejects(githubSnapshot({ get: f.get }), { code: 'DOWNLOAD_FILE_TOO_LARGE', updateFile: 'src/large.js' });
-  assert.equal(f.calls.some(c => c.binary), false);
+  for (const recursive of [true, false]) {
+    const f = fixture([{ path: 'src/large.js', size: 2 * 1024 * 1024 + 1, sha: 'f'.repeat(40), mode: '100644', type: 'blob' }], { recursive });
+    await assert.rejects(githubSnapshot({ get: f.get }), { code: 'DOWNLOAD_FILE_TOO_LARGE', updateFile: 'src/large.js' });
+    assert.equal(f.calls.some(c => c.binary), false);
+  }
 });
 
 test('approved images still have a bounded ceiling and fail before downloading or applying', async () => {

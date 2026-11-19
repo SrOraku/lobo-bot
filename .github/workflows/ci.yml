@@ -13,8 +13,14 @@ permissions:
 
 jobs:
   test:
+    # 22 é o mínimo suportado; 24 é o Node das hospedagens (Bronxys/Pterodactyl).
+    name: test (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22", "24"]
     env:
       CI: "true"
       NODE_ENV: test
@@ -24,7 +30,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: ${{ matrix.node }}
           cache: npm
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund

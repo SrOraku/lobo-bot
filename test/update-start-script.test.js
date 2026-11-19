@@ -40,3 +40,13 @@ for (const sameCommit of [false, true]) test(`fixed version startup ${sameCommit
  const snapshot=await require('../scripts/update-and-start').checkRelease({releaseRoot,snapshotSource:async()=>available});
  assert.equal(snapshot,sameCommit?null:available);
 });
+
+test('o aviso de atualização indisponível diz o motivo, inclusive o limite do GitHub com a hora de liberação', async () => {
+  const run = async extra => { const warnings = []; const f = options({ ...extra, log: { log() {}, warn: message => warnings.push(message) } }); const result = await boot(f.args); return { warnings, calls: f.calls, result }; };
+  const limited = await run({ check: async () => { throw Object.assign(new Error('Limite de consultas do GitHub atingido.'), { code: 'GITHUB_RATE_LIMIT', response: { status: 403 }, resetAt: Date.parse('2026-11-19T19:05:00Z') }); } });
+  assert.equal(limited.result.started, true);
+  assert.match(limited.warnings[0], /^⚠️ Atualização indisponível \(GITHUB_RATE_LIMIT\)\. O GitHub limitou as consultas deste servidor .*depois das 16:05 \(Brasília\)\. Iniciando a versão local preservada\./);
+  const offline = await run({ check: async () => { throw Object.assign(new Error('getaddrinfo'), { code: 'ENOTFOUND' }); } });
+  assert.match(offline.warnings[0], /\(ENOTFOUND\)\. Falha de rede/);
+  assert.deepEqual(offline.calls, ['recover', 'prepare', 'recover', 'start']);
+});

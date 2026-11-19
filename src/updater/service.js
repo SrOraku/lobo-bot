@@ -15,7 +15,7 @@ class UpdateError extends Error {
 function describeFailure(error, stage) {
   stage = error.updateStage || stage;
   const text = String(error.stderr || '') + ' ' + String(error.message || '');
-  const code = ['EALLOWREMOTE', 'EALLOWGIT', 'ENOSPC', 'EACCES', 'EPERM', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'ENOMEM'].find(c => text.includes(c)) ||
+  const code = ['EALLOWREMOTE', 'EALLOWGIT', 'ENOSPC', 'EACCES', 'EPERM', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ENOMEM'].find(c => text.includes(c)) ||
     (/^[A-Z][A-Z0-9_]{1,48}$/.test(String(error.code || '')) ? error.code : null);
   const status = error.response?.status;
   let reason = 'Não consegui concluir esta etapa.';
@@ -36,11 +36,12 @@ function describeFailure(error, stage) {
   else if (code === 'DOWNLOAD_INVALID_BLOB') reason = 'O GitHub não devolveu um arquivo válido na tentativa alternativa de download.';
   else if (code === 'DOWNLOAD_FILE_TOO_LARGE') reason = 'Um arquivo da atualização excede o limite seguro de download.';
   else if (['RELEASE_HASH_MISMATCH','INVALID_RELEASE_MANIFEST','MANIFEST_FILE_MISSING','MANIFEST_UNEXPECTED_FILE','MANIFEST_VERSION_MISMATCH'].includes(code)) reason = 'O manifesto publicado não corresponde aos arquivos da versão. A atualização foi cancelada antes da aplicação; aguarde uma publicação corrigida.';
+  else if (code === 'GITHUB_RATE_LIMIT') reason = 'O GitHub limitou as consultas deste servidor (limite por hora, dividido com outros clientes da hospedagem).' + (Number.isFinite(error.resetAt) ? ` Tente de novo depois das ${new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(error.resetAt)} (Brasília).` : ' Aguarde e tente novamente.');
   else if (status === 403 || status === 429) reason = 'O GitHub limitou ou recusou o acesso deste servidor. Aguarde e tente novamente.';
   else if (status === 404) reason = 'O GitHub não encontrou um arquivo ou referência necessário à atualização.';
   else if ([408,500,502,503,504].includes(status)) reason = 'O GitHub ou a conexão da hospedagem ficou temporariamente indisponível, mesmo após novas tentativas.';
   else if (code === 'DOWNLOAD_FAILED') reason = 'Não consegui baixar o arquivo pelo endereço raw nem pela API oficial do GitHub.';
-  else if (['ENOTFOUND','EAI_AGAIN','ETIMEDOUT','ECONNRESET','ECONNABORTED','ERR_NETWORK'].includes(code)) reason = 'Falha de rede ao acessar o GitHub ou o registro npm.';
+  else if (['ENOTFOUND','EAI_AGAIN','ETIMEDOUT','ECONNRESET','ECONNREFUSED','ECONNABORTED','ERR_NETWORK'].includes(code)) reason = 'Falha de rede ao acessar o GitHub ou o registro npm.';
   else if (stage === 'instalação de dependências') reason = 'O npm não conseguiu instalar as dependências. Consulte o erro npm no console da hospedagem.';
   else if (stage === 'verificação de inicialização') reason = 'A versão preparada falhou na verificação de inicialização; ela não foi aplicada.';
   return { stage, code: code || (status ? 'HTTP_' + status : 'UPDATE_FAILED'), reason,
