@@ -153,6 +153,7 @@ function loadAllCommands() {
   require('../commands/local-media').register(r,commands);
   require('../commands/wolf-strategies').register(r,commands);
   require('../commands/missions').register(r,commands);
+  require('../commands/quiz-expanded').register(r,commands);
   commandsLoaded=true;
 
 }
