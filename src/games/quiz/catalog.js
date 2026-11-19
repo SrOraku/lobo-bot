@@ -98,10 +98,12 @@ const rows = {
 const QUESTIONS = Object.freeze(Object.entries(rows).flatMap(([category, levels]) => Object.entries(levels).flatMap(([difficulty, entries]) => entries.map((entry, index) => Object.freeze({ id: `${category}-${difficulty}-${index + 1}`, category, difficulty, text: entry[0], choices: Object.freeze(entry[1]), answer: entry[2], explanation: entry[3] })))));
 const byId = new Map(QUESTIONS.map(question => [question.id, question]));
 function normalize(value) { return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
-function category(value) { const key = normalize(value); if (!CATEGORIES[key]) throw Error('Categoria inválida. Consulte quiz categorias.'); return key; }
-function difficulty(value = 'medio') { const key = normalize(value); if (!DIFFICULTIES[key]) throw Error('Dificuldade inválida: facil, medio ou dificil.'); return key; }
+function category(value) { const key = normalize(value); if (!Object.hasOwn(CATEGORIES, key)) throw Error('Categoria inválida. Consulte quiz categorias.'); return key; }
+function difficulty(value = 'medio') { const key = normalize(value); if (!Object.hasOwn(DIFFICULTIES, key)) throw Error('Dificuldade inválida: facil, medio ou dificil.'); return key; }
 function deck(cat, level, pick = require('node:crypto').randomInt) {
- const selected = QUESTIONS.filter(question => question.category === category(cat) && question.difficulty === difficulty(level)).map(question => question.id);
+ const categoryId = category(cat), difficultyId = difficulty(level);
+ const selected = QUESTIONS.filter(question => question.category === categoryId && question.difficulty === difficultyId).map(question => question.id);
+ if (selected.length < 5) throw Error('Esta categoria e dificuldade ainda não possuem cinco perguntas válidas.');
  for (let i = selected.length - 1; i > 0; i--) { const n = pick(i + 1); if (!Number.isInteger(n) || n < 0 || n > i) throw Error('Sorteio de perguntas inválido.'); [selected[i], selected[n]] = [selected[n], selected[i]]; }
  return selected.slice(0, 5);
 }

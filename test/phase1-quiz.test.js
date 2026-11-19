@@ -42,6 +42,24 @@ test('quiz catalog has sixty unique complete questions and five per category/dif
  assert.throws(() => catalog.deck('ciencia', 'medio', () => 99), /Sorteio/);
 });
 
+test('prototype property names are rejected before a solo or tournament can persist an unusable deck', t => {
+ const f = fixture(t);
+ const snapshot = () => JSON.stringify(f.db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all().map(row => [row.name, f.db.prepare('SELECT * FROM "' + row.name + '"').all()]));
+ const before = snapshot();
+ for (const value of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+  assert.throws(() => catalog.category(value), /Categoria/);
+  assert.throws(() => catalog.difficulty(value), /Dificuldade/);
+  assert.throws(() => catalog.deck(value, 'medio'), /Categoria/);
+  assert.throws(() => catalog.deck('ciencia', value), /Dificuldade/);
+  for (const args of [[value, 'medio'], ['ciencia', value]]) {
+   assert.throws(() => f.solo('iniciar', args), /inválida/);
+   assert.throws(() => f.tournament('criar', args), /inválida/);
+   assert.equal(snapshot(), before, 'A rejected category/difficulty must not create state, results or accepted event markers');
+  }
+ }
+ assert.equal(f.solo('iniciar', ['ciencia', 'medio']).state.deck.length, 5, 'A valid category remains usable after rejected input');
+});
+
 test('category quiz completes, credits existing arcade points once, emits real completion and leaves money intact', t => {
  const f = fixture(t); f.db.prepare('INSERT INTO users(jid,name,gold) VALUES(?,?,?)').run(A, 'Alfa', 500);
  const result = f.finishSolo(); assert.equal(result.type, 'solo-finished'); assert.equal(result.correct, 5); assert.equal(result.points, 100);
