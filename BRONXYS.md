@@ -1,5 +1,13 @@
 # API Bronxys — integração v1.5.0
 
+## Diagnóstico da conexão do WhatsApp
+
+O console diferencia erros de descriptografia de uma mensagem (`WHATSAPP_DECRYPT_FAILED`), sincronização de chaves (`WHATSAPP_KEY_SYNC_FAILED`), confirmação de recebimento (`WHATSAPP_ACK_FAILED`) e conexão (`WHATSAPP_TRANSPORT`). Antes, todos os erros da biblioteca eram exibidos como falha de transporte, inclusive quando a conexão continuava ativa. O código HTTP da desconexão aparece quando foi fornecido pelo WhatsApp; os registros não incluem chaves, conteúdo de mensagens ou dumps de sessão.
+
+Uma mensagem de descriptografia isolada não comprova que o bot desconectou. Em uma queda real, o console informa o encerramento imediatamente, antes de salvar a sessão e preparar a reconexão. Esperas de salvamento/encerramento do socket têm limite de 15 segundos; inicialização anterior dos plugins, de 60 segundos. Se uma dessas etapas ficar presa, o runtime informa um código específico e termina para o supervisor recuperar o processo, evitando permanecer silenciosamente sem reconectar. Uma falha de salvamento nunca libera um novo socket por cima da sessão pendente.
+
+Atualize com o bot parado usando `git pull --ff-only origin main` e inicie com `npm start`. Preserve `sessions/`, `data/`, `storage/` e `.env`. A correção não apaga credenciais nem exige novo pareamento. Para investigar uma nova falha, informe apenas o código específico e se o bot continua respondendo; o código genérico mostrado por versões antigas não permite recuperar a causa original.
+
 Integração modular própria baseada no catálogo CASES.js fornecido pelo usuário. O arquivo de exemplos não é executado nem copiado como um switch inteiro. Sessões, dados, moedas, grupos, jogos e identidade do bot não são alterados.
 
 ## Configuração privada
