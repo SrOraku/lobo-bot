@@ -1,6 +1,7 @@
 'use strict';
 const pino = require('pino');
 const { createConsoleStyle, colorEnabled } = require('../ui/console');
+const { libraryDiagnostic } = require('../connection/diagnostics');
 const clean = (value, size = 100) => String(value ?? '').replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ').slice(0, size);
 function createActivityLogger({ stdout = process.stdout, stderr = process.stderr, file, errorFile,
   level = 'info', commands = () => true, prefix = () => '!', color = () => colorEnabled(process.env, stdout) } = {}) {
@@ -36,9 +37,10 @@ function createActivityLogger({ stdout = process.stdout, stderr = process.stderr
   function baileysLogger() {
     return pino({ level: 'error' }, { write(line) {
       let value; try { value = JSON.parse(String(line)); } catch { return; }
-      const code = value.fullErrorNode?.attrs?.code || value.err?.output?.statusCode || value.error?.output?.statusCode;
-      if (String(code) === '515') return; // The lifecycle reports this expected restart.
-      logger.error({ component: 'whatsapp', code: code || value.err?.code || 'WHATSAPP_TRANSPORT' }, 'Falha no transporte do WhatsApp.');
+      const diagnostic = libraryDiagnostic(value);
+      if (!diagnostic) return;
+      const { message, ...details } = diagnostic;
+      logger.error({ component: 'whatsapp', ...details }, message);
     } });
   }
   return { logger, logCommand, logConnection, baileysLogger };

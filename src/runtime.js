@@ -71,6 +71,7 @@ const MAX_RECONNECT = Number.isInteger(configuredReconnect) ? Math.max(0, Math.m
 const lifecycle = createLifecycle({
   maxReconnect: MAX_RECONNECT,
   reconnect: () => startBot(),
+  onDisconnect: state => logConnection(`Conexão com o WhatsApp encerrada${state.code ? ' (código ' + state.code + ')' : ''}. Salvando a sessão antes de reconectar.`, state),
   onState: state => logConnection(state.code === 515
     ? 'WhatsApp solicitou reinício (515). Reconectando com as credenciais salvas.'
     : `Reconectando ao WhatsApp: tentativa ${state.attempt}/${MAX_RECONNECT} em ${state.delay / 1000}s.`, state),

@@ -117,7 +117,9 @@ function createConsoleStyle({ color = false, width = WIDTH } = {}) {
   }
 
   function errorLines(record) {
-    const code = clean(record.code || record.error?.code || record.err?.code).slice(0, 50);
+    const baseCode = clean(record.code || record.error?.code || record.err?.code).slice(0, 50);
+    const status = Number.isInteger(record.status) && record.status >= 400 && record.status <= 599 ? record.status : null;
+    const code = status ? `${status} / ${baseCode}` : baseCode;
     const message = clean(record.msg, 'Erro.').slice(0, 200);
     if (!code) return eventLines(record, '✖', 'red', message);
     // O código fica na mesma linha quando cabe; senão ganha uma linha própria, inteira.
