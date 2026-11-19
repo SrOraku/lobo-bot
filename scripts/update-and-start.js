@@ -14,7 +14,9 @@ async function boot({
   prepare=()=>{if(!require('../src/bootstrap').ensureDependencies())return false;require('dotenv').config({path:path.join(root,'.env')});return true;},
   check=checkRelease,
   update=snapshot=>new (require('../src/updater/service').UpdateService)({root,snapshot:async()=>snapshot}).update('bot'),
-  start=()=>require('../src/updater/supervisor').start(),
+  // Use the same license and saved-owner setup as npm start, before forking
+  // the WhatsApp runtime. Starting the supervisor directly skips both guards.
+  start=()=>require('../src/index'),
   log=console,
   nodeVersion=process.versions.node,
 }={}) {
@@ -37,7 +39,8 @@ async function boot({
     // These states cannot safely start a second runtime or partially restored code.
     if(['BUSY','STALE_LOCK','ROLLBACK_FAILED','LOCK_INVALID','LOCK_UNSAFE','LOCK_LOST'].includes(error.code))throw error;
     recover();
-    log.warn('⚠️ Atualização indisponível. Iniciando a versão local preservada. Consulte updates/last-error.json se existir.');
+    const diagnostic=require('../src/updater/service').describeFailure(error,'consulta ao GitHub');
+    log.warn(`⚠️ Atualização indisponível (${diagnostic.code}). ${diagnostic.reason} Iniciando a versão local preservada. Consulte updates/last-error.json se existir.`);
   }
   await start();
   return {updated,started:true};

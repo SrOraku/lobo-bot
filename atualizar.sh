@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Atualiza pelo serviço oficial e inicia o supervisor, sem apagar dados.
+# Atualiza e passa pela licença/cadastro do dono antes de iniciar o supervisor.
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 if (( $# != 0 )); then

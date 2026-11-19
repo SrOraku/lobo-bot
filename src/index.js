@@ -42,7 +42,7 @@ if (isRender || configuredPort) {
 // A validação da licença acontece no processo supervisor, antes de iniciar o runtime WhatsApp.
 require('dotenv').config();
 const licenseGuard = require('./licensing/licenseGuard');
-(async () => {
+module.exports = (async () => {
   let phase = 'LICENÇA';
   try {
     const license = await licenseGuard.authorizeStartup();
