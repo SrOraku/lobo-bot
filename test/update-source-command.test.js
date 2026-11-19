@@ -128,7 +128,9 @@ test('managed paths exclude runtime state, personal directories, traversal and s
   for (const name of ['package.json', 'package-lock.json', '.env.example', 'src/index.js', 'addons/alcateia/src/game/service.js', 'scripts/check-startup.js', 'src/assets/menu-geral.mp4']) assert.equal(managedPath(name), true, name);
 });
 
-function sourceFixture({ corrupt = false, truncated = false } = {}) {
+// `recursive: false` simula uma árvore grande demais para uma resposta só (o GitHub corta a
+// lista recursiva) e força o modo antigo, pasta por pasta.
+function sourceFixture({ corrupt = false, truncated = false, recursive = true } = {}) {
   const calls = [], bodies = new Map();
   const file = (name, contents) => {
     const data = Buffer.from(contents); const sha = createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex');
@@ -141,6 +143,12 @@ function sourceFixture({ corrupt = false, truncated = false } = {}) {
     calls.push(url);
     if (binary) { const name = url.split('/').slice(6).join('/'); return corrupt ? Buffer.from('corrupt') : bodies.get(name); }
     if (url.endsWith('/commits/main')) return { sha: 'a'.repeat(40), commit: { tree: { sha: 'b'.repeat(40) } } };
+    if (url.endsWith(`/git/trees/${'b'.repeat(40)}?recursive=1`)) {
+      if (truncated || !recursive) return { truncated: true, tree: [pkg, lock] };
+      const dir = (name, sha) => ({ path: name, type: 'tree', mode: '040000', sha: sha.repeat(40) });
+      return { truncated: false, tree: [pkg, lock, dir('src', 'c'), index, boot, dir('src/assets', 'f'), menuGif, dir('scripts', 'd'), check,
+        dir('.ssh', 'e'), { path: '.ssh/id_rsa', type: 'blob', mode: '100644', sha: '9'.repeat(40), size: 10 }] };
+    }
     if (url.endsWith(`/git/trees/${'b'.repeat(40)}`)) return { truncated, tree: [pkg, lock,
       { path: 'src', type: 'tree', mode: '040000', sha: 'c'.repeat(40) },
       { path: 'scripts', type: 'tree', mode: '040000', sha: 'd'.repeat(40) },
@@ -168,17 +176,18 @@ test('large approved Menu.gif is downloadable while oversized source files remai
   const gif = snapshot.files.find(item => item.path === 'src/assets/Menu.gif');
   assert.ok(gif);
   assert.equal((await snapshot.download(gif)).length, 3 * 1024 * 1024);
-  const oversized = sourceFixture();
-  const originalGet = oversized.get;
-  oversized.get = async (url, binary) => {
-    if (url.includes('/git/trees/') && url.includes('c'.repeat(40))) {
+  for (const recursive of [true, false]) {
+    const oversized = sourceFixture({ recursive });
+    const originalGet = oversized.get;
+    oversized.get = async (url, binary) => {
       const result = await originalGet(url, binary);
-      result.tree.push({ path: 'large.js', type: 'blob', mode: '100644', sha: '1'.repeat(40), size: 3 * 1024 * 1024 });
+      const large = { type: 'blob', mode: '100644', sha: '1'.repeat(40), size: 3 * 1024 * 1024 };
+      if (url.endsWith('?recursive=1') && !result.truncated) result.tree.push({ ...large, path: 'src/large.js' });
+      else if (url.includes('/git/trees/') && url.includes('c'.repeat(40))) result.tree.push({ ...large, path: 'large.js' });
       return result;
-    }
-    return originalGet(url, binary);
-  };
-  await assert.rejects(githubSnapshot({ get: oversized.get }), /excede o limite/);
+    };
+    await assert.rejects(githubSnapshot({ get: oversized.get }), /excede o limite/);
+  }
 });
 
 test('GitHub integrity failure or incomplete tree stops the update', async () => {
@@ -339,4 +348,53 @@ test('help and status explain automatic supervision instead of requiring repeate
   const f = commandFixture(); const handler = createUpdateHandler({ service: f.service, config, restart: { canRestart: () => true } });
   await handler(f.sock, f.ctx); assert.match(f.replies[0], /Reinício automático ativo/); assert.ok(!f.replies[0].includes('reinicie o bot pelo painel'));
   f.ctx.args = ['status']; await handler(f.sock, f.ctx); assert.match(f.replies.at(-1).replace(/[`*_]/g, ''), /Supervisor automático: ativo/);
+});
+
+test('a verificação de atualização gasta 2 consultas à API, não uma por pasta', async () => {
+  const f = sourceFixture();
+  const snapshot = await githubSnapshot({ get: f.get });
+  assert.deepEqual(f.calls, [
+    `https://api.github.com/repos/SrOraku/lobo-bot/commits/main`,
+    `https://api.github.com/repos/SrOraku/lobo-bot/git/trees/${'b'.repeat(40)}?recursive=1`,
+  ]);
+  assert.deepEqual(snapshot.files.map(item => item.path).sort(), ['package-lock.json', 'package.json', 'scripts/check-startup.js', 'src/assets/Menu.gif', 'src/bootstrap.js', 'src/index.js']);
+  assert.ok(!snapshot.files.some(item => item.path.startsWith('.ssh')), 'pastas fora da lista continuam fora');
+});
+
+test('árvore cortada pelo GitHub volta ao modo pasta por pasta com o mesmo resultado', async () => {
+  const whole = await githubSnapshot({ get: sourceFixture().get });
+  const f = sourceFixture({ recursive: false });
+  const split = await githubSnapshot({ get: f.get });
+  assert.deepEqual(split.files, whole.files);
+  assert.ok(f.calls.length > 3, 'consultou as pastas');
+});
+
+test('a consulta única aplica as mesmas regras de pasta do modo antigo', async () => {
+  for (const [entry, message] of [
+    [{ path: 'src/pasta ruim', type: 'tree', mode: '040000', sha: '7'.repeat(40) }, /Diretório inválido/],
+    [{ path: 'src/link', type: 'tree', mode: '120000', sha: '7'.repeat(40) }, /Diretório inválido/],
+    [{ path: 'src/a b/x.js', type: 'blob', mode: '100644', sha: '7'.repeat(40), size: 1 }, /Estrutura de diretórios inválida/],
+    [{ path: `src/${Array(13).fill('d').join('/')}/x.js`, type: 'blob', mode: '100644', sha: '7'.repeat(40), size: 1 }, /Estrutura de diretórios inválida/],
+    [{ path: 'src/atalho.js', type: 'blob', mode: '120000', sha: '7'.repeat(40), size: 1 }, /arquivo não suportado/],
+  ]) {
+    const f = sourceFixture();
+    const get = async (url, binary) => { const result = await f.get(url, binary); if (url.endsWith('?recursive=1')) result.tree.push(entry); return result; };
+    await assert.rejects(githubSnapshot({ get }), message, entry.path);
+  }
+});
+
+test('limite de consultas do GitHub vira GITHUB_RATE_LIMIT, sem repetir e com a hora de liberação', async () => {
+  const { retryRequest } = require('../src/updater/source');
+  let tries = 0;
+  const limited = Object.assign(new Error('Limite de consultas do GitHub atingido.'), { code: 'GITHUB_RATE_LIMIT', response: { status: 403 }, resetAt: 1_800_000_000_000 });
+  await assert.rejects(retryRequest(async () => { tries++; throw limited; }, async () => {}), { code: 'GITHUB_RATE_LIMIT' });
+  assert.equal(tries, 1, 'repetir só gastaria mais consultas');
+  // request() converte a resposta do GitHub (403 + x-ratelimit-remaining: 0).
+  const axios = require('axios'), original = axios.get;
+  axios.get = async () => { throw Object.assign(new Error('Request failed with status code 403'), { response: { status: 403, headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1800000000' } } }); };
+  try {
+    await assert.rejects(githubSnapshot(), error => error.code === 'GITHUB_RATE_LIMIT' && error.resetAt === 1_800_000_000_000 && error.response.status === 403);
+    axios.get = async () => { throw Object.assign(new Error('Request failed with status code 403'), { response: { status: 403, headers: {} } }); };
+    await assert.rejects(githubSnapshot(), error => error.code === undefined && error.response.status === 403, '403 sem limite continua um 403 comum');
+  } finally { axios.get = original; }
 });

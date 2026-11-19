@@ -36,6 +36,7 @@ function describeFailure(error, stage) {
   else if (code === 'DOWNLOAD_INVALID_BLOB') reason = 'O GitHub não devolveu um arquivo válido na tentativa alternativa de download.';
   else if (code === 'DOWNLOAD_FILE_TOO_LARGE') reason = 'Um arquivo da atualização excede o limite seguro de download.';
   else if (['RELEASE_HASH_MISMATCH','INVALID_RELEASE_MANIFEST','MANIFEST_FILE_MISSING','MANIFEST_UNEXPECTED_FILE','MANIFEST_VERSION_MISMATCH'].includes(code)) reason = 'O manifesto publicado não corresponde aos arquivos da versão. A atualização foi cancelada antes da aplicação; aguarde uma publicação corrigida.';
+  else if (code === 'GITHUB_RATE_LIMIT') reason = 'O GitHub limitou as consultas deste servidor (limite por hora, dividido com outros clientes da hospedagem).' + (Number.isFinite(error.resetAt) ? ` Tente de novo depois das ${new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(error.resetAt)} (Brasília).` : ' Aguarde e tente novamente.');
   else if (status === 403 || status === 429) reason = 'O GitHub limitou ou recusou o acesso deste servidor. Aguarde e tente novamente.';
   else if (status === 404) reason = 'O GitHub não encontrou um arquivo ou referência necessário à atualização.';
   else if ([408,500,502,503,504].includes(status)) reason = 'O GitHub ou a conexão da hospedagem ficou temporariamente indisponível, mesmo após novas tentativas.';

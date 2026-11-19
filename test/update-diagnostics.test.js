@@ -31,3 +31,10 @@ test('download diagnostics identify managed file and hash errors without leaking
   assert.equal(describeFailure({ code: 'DOWNLOAD_FAILED', response: { status: 503 } }, 'download').httpStatus, 503);
   assert.match(describeFailure({ code: 'DOWNLOAD_FAILED', response: { status: 503 } }, 'download').reason, /temporariamente/);
 });
+
+test('limite do GitHub explica o motivo e a hora de liberação no !atualizar', () => {
+  const { describeFailure } = require('../src/updater/service');
+  const d = describeFailure(Object.assign(new Error('Limite de consultas do GitHub atingido.'), { code: 'GITHUB_RATE_LIMIT', response: { status: 403 }, resetAt: Date.parse('2026-11-19T19:05:00Z') }), 'verificação');
+  assert.equal(d.code, 'GITHUB_RATE_LIMIT'); assert.equal(d.httpStatus, 403);
+  assert.match(d.reason, /limitou as consultas deste servidor.*depois das 16:05 \(Brasília\)/);
+});

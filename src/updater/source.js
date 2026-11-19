@@ -21,13 +21,27 @@ function managedPath(name) {
     || /^addons\/alcateia\/.+\.(?:js|json|md|txt)$/.test(name);
 }
 
-async function request(url, binary = false) {
-  const response = await require('axios').get(url, {
-    timeout: 30_000, maxContentLength: binary && url.includes('/src/assets/Menu.gif') ? MAX_MENU_GIF_SIZE : url.includes('/git/blobs/') ? 90 * 1024 * 1024 : 4 * 1024 * 1024,
-    responseType: binary ? 'arraybuffer' : 'json',
-    headers: { 'User-Agent': 'Lobo-bot-updater', Accept: 'application/vnd.github+json' },
+// Sem login, a API do GitHub aceita 60 consultas por hora por IP, e hospedagens dividem
+// o mesmo IP entre vários clientes. Quando o limite acaba, o GitHub responde 403/429 com
+// x-ratelimit-remaining: 0; o erro ganha um código próprio e a hora de liberação.
+function rateLimitError(error) {
+  const status = error?.response?.status, headers = error?.response?.headers || {};
+  if (![403, 429].includes(status) || String(headers['x-ratelimit-remaining']) !== '0') return error;
+  const reset = Number(headers['x-ratelimit-reset']);
+  return Object.assign(new Error('Limite de consultas do GitHub atingido.'), {
+    code: 'GITHUB_RATE_LIMIT', response: { status }, ...(Number.isSafeInteger(reset) && reset > 0 ? { resetAt: reset * 1000 } : {}),
   });
-  return response.data;
+}
+
+async function request(url, binary = false) {
+  try {
+    const response = await require('axios').get(url, {
+      timeout: 30_000, maxContentLength: binary && url.includes('/src/assets/Menu.gif') ? MAX_MENU_GIF_SIZE : url.includes('/git/blobs/') ? 90 * 1024 * 1024 : 4 * 1024 * 1024,
+      responseType: binary ? 'arraybuffer' : 'json',
+      headers: { 'User-Agent': 'Lobo-bot-updater', Accept: 'application/vnd.github+json' },
+    });
+    return response.data;
+  } catch (error) { throw rateLimitError(error); }
 }
 
 function downloadError(message, code, file, original) {
@@ -41,6 +55,7 @@ async function retryRequest(run, wait) {
   for (let attempt = 0; ; attempt++) {
     try { return await run(); }
     catch (error) {
+      if (error.code === 'GITHUB_RATE_LIMIT') throw error; // Só libera depois de resetAt; repetir gastaria mais consultas.
       const status = error.response?.status;
       const transient = [408, 429, 500, 502, 503, 504].includes(status) ||
         ['ENOTFOUND', 'EAI_AGAIN', 'ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'ERR_NETWORK'].includes(error.code);
@@ -56,8 +71,6 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
   const sha = commit?.sha;
   const tree = commit?.commit?.tree?.sha;
   if (![sha, tree].every(v => /^[a-f0-9]{40}$/.test(v || ''))) throw new Error('Referência inválida do repositório.');
-  const root = await fetch(`${API}/git/trees/${tree}`);
-  if (!Array.isArray(root.tree) || root.truncated) throw new Error('Árvore incompleta do repositório.');
   const files = [];
   const add = (item, prefix = '', resolvedName = null) => {
     const name = resolvedName || prefix + item.path;
@@ -68,6 +81,28 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
     if (!Number.isSafeInteger(item.size) || item.size < 0 || item.size > maxSizeFor(name)) throw new Error('Arquivo da atualização excede o limite.');
     files.push({ path: name, sha: item.sha, mode: item.mode });
   };
+  const validDirectory = item => item.mode === '040000' && /^[a-f0-9]{40}$/.test(item.sha || '');
+  const validName = name => /^[A-Za-z0-9._-]+$/.test(name || '');
+  // Uma consulta traz a árvore inteira (antes eram ~50, uma por pasta, perto do limite
+  // de 60 por hora). As regras do modo pasta por pasta valem para cada caminho.
+  const whole = await fetch(`${API}/git/trees/${tree}?recursive=1`);
+  if (Array.isArray(whole?.tree) && whole.truncated === false) {
+    for (const item of whole.tree) {
+      const name = String(item.path || ''), parts = name.split('/');
+      if (parts.length === 1) { if (item.type !== 'tree' && ROOT_FILES.has(name)) add(item, '', name); continue; }
+      if (!ROOT_DIRS.includes(parts[0])) continue;
+      const folders = item.type === 'tree' ? parts.slice(1) : parts.slice(1, -1);
+      if (folders.length > 12 || (item.type === 'tree' && !validDirectory(item)) || !folders.every(validName)) {
+        throw new Error(item.type === 'tree' ? 'Diretório inválido na atualização.' : 'Estrutura de diretórios inválida na atualização.');
+      }
+      if (item.type !== 'tree') add(item, '', name);
+      if (files.length > 500) throw new Error('Manifesto de atualização inválido.');
+    }
+    return finish();
+  }
+  // Árvore grande demais para uma resposta: o GitHub corta a lista e o modo antigo assume.
+  const root = await fetch(`${API}/git/trees/${tree}`);
+  if (!Array.isArray(root.tree) || root.truncated) throw new Error('Árvore incompleta do repositório.');
   for (const item of root.tree) if (ROOT_FILES.has(item.path)) add(item);
   for (const name of ROOT_DIRS) {
     const directory = root.tree.find(e => e.path === name && e.type === 'tree' && e.mode === '040000');
@@ -107,6 +142,9 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
     };
     await walk(directory.sha, `${name}/`);
   }
+  return finish();
+
+  function finish() {
   if (files.length > 500 || new Set(files.map(f => f.path)).size !== files.length) throw new Error('Manifesto de atualização inválido.');
   for (const name of ['package.json', 'package-lock.json', 'src/index.js', 'src/bootstrap.js', 'scripts/check-startup.js']) {
     if (!files.some(f => f.path === name)) throw new Error('A atualização não contém todos os arquivos necessários.');
@@ -139,6 +177,7 @@ async function githubSnapshot({ get = request, wait = ms => new Promise(resolve 
       throw downloadError('Não foi possível baixar o arquivo pelas origens oficiais do GitHub.', code, file, error.response ? error : rawFailure);
     }
   } };
+  }
 }
 
 module.exports = { REPOSITORY, ROOT_FILES, ROOT_DIRS, managedPath, githubSnapshot, retryRequest };
