@@ -154,6 +154,7 @@ function loadAllCommands() {
   require('../commands/wolf-strategies').register(r,commands);
   require('../commands/missions').register(r,commands);
   require('../commands/quiz-expanded').register(r,commands);
+  require('../commands/arcade-expanded').register(r,commands);
   commandsLoaded=true;
 
 }
