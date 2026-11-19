@@ -38,6 +38,10 @@ Downloads, pesquisas, IA e efeitos do catálogo fornecido foram integrados. Cons
 
 A versão oficial é definida em [package.json](package.json) e exibida dinamicamente por `!ping`. Consulte [a modernização e seus limites](MODERNIZACAO.md).
 
+## Expansão dos jogos — Fase 1
+
+Formações nomeadas dos 100 lobos, simulação pela fórmula existente, missões diárias/semanais, quiz por categoria e torneios, forca cooperativa, nova campanha de aventura, evolução do Gartic e históricos pessoais. Consulte o [guia e relatório técnico da Fase 1](docs/EXPANSAO-FASE1.md) para comandos, limites, migrations, validação e atualização segura. O relatório distingue os componentes já testados da validação consolidada da fase e das funcionalidades previstas para as próximas fases.
+
 Novos sistemas: `!donos`, capa de foto/GIF por `!fotomenu`, emissão autorizada de moedas por `!doarwok` e controle de informações de grupo por `!adm perm`. Consulte [comandos, limites e funcionamento](MENUS.md). O antirroubo depende de privilégios e eventos do WhatsApp; não garante impedir tomada de grupos.
 
 ## Atualização automática — v1.2.0
