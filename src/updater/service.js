@@ -194,10 +194,10 @@ class UpdateService {
       this.needsRestart = true;
       return result;
     } catch (error) {
-      if (error instanceof UpdateError) throw error;
       const diagnostic = describeFailure(error, phase);
       this.logger.error?.(diagnostic, 'Falha na atualização do bot.');
       await atomicWrite(path.join(this.directory, 'last-error.json'), JSON.stringify({ ...diagnostic, at: new Date().toISOString() }), 0o600).catch(() => {});
+      if (error instanceof UpdateError) throw error;
       throw new UpdateError(`Etapa: ${diagnostic.stage}. Código: ${diagnostic.code}.${diagnostic.file ? ` Arquivo: ${diagnostic.file}.` : ''} ${diagnostic.reason} Os arquivos anteriores foram preservados.`, diagnostic.code);
     } finally {
       if (stage) await fs.rm(stage, { recursive: true, force: true }).catch(() => {});
