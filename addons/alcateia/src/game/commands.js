@@ -9,7 +9,7 @@ import { warText } from './war-messages.js';
 
 const COMMANDS = new Set([
   'start', 'perfil', 'treino', 'formacao', 'ataque', 'rank', 'loja', 'comprar',
-  'clan', 'evento', 'admin', 'guerra',
+  'clan', 'evento', 'admin', 'guerra', 'expedicao', 'oficina',
 ]);
 const BOOST_NAMES = { attack: 'Ataque', defense: 'Defesa', counter: 'Contra-ataque' };
 const ADMIN_ACTIONS = {
@@ -72,6 +72,7 @@ export function gameMenu(config) {
     ] },
     { title: '💰 TESOURO WOK COIN', lines: [
       `🛍️ ${p}loja [página] — curas, itens e boosts`, `💳 ${p}comprar ID — adquirir item`, `🌕 ${p}evento — recompensa lunar`,
+      `🏕️ ${p}expedicao — faróis cooperativos`, `🧰 ${p}oficina — fabricar suprimentos`,
       '💎 Uma carteira para lobisomens e RP.',
     ] },
     { title: '🏰 CLÃS E LIDERANÇA', lines: [
@@ -93,7 +94,7 @@ function shopText(result, config) {
     ownerNumber: config.ownerNumber, prefix: config.prefix,
     subtitle: '💰 Tesouros e vantagens de batalha', signature: '',
     sections: [{ title: '🛍️ ARSENAL LUNAR', lines: items.map(item => {
-    const effect = item.type === 'training' ? `${item.value || 1} crédito(s) de treino extra` :
+    const effect = item.type === 'relic' ? 'Relíquia permanente de expedição' : item.type === 'training' ? `${item.value || 1} crédito(s) de treino extra` :
       item.type === 'healing' ? `Recupera até ${item.value} HP da Alcateia, máximo 100` :
         item.type === 'ritual' ? `Ataque +20%, defesa +20% e contra-ataque +30% por ${shopDuration(item.duration)}` :
           `${BOOST_NAMES[item.type] || line(item.type)} +${Math.round(item.value * 100)}% por ${shopDuration(item.duration || 3_600_000)}`;
@@ -188,6 +189,9 @@ export function createGameCommandHandler({ service, backupManager, logger = cons
       const prefix = ctx.config.prefix;
 
       switch (result.type) {
+        case 'field-report':
+          await ctx.reply(frame(result.title, result.lines));
+          break;
         case 'registered':
           await ctx.reply(frame('BEM-VINDO À ALCATEIA', [
             '🐺 Registro concluído, lobo.', '💎 HP: 100', '🐺 Lobisomens: 20/100',

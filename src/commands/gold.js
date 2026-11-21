@@ -126,6 +126,7 @@ async function loja(sock, ctx) {
       `│ ▸ ${command(prefix + 'comprarescudo')} — _Escudo econômico_`,
       `│ ▸ ${command(prefix + 'boosts')} — _Boosts ativos e catálogo_`,
       `│ ▸ ${command(prefix + 'lojaalcateia')} — _Suprimentos e recuperação da Alcateia_`,
+      `│ ▸ ${command(prefix + 'oficina')} — _Fabrique suprimentos para a expedição_`,
       `│ ▸ ${command(prefix + 'rploja equipamentos')} — _Ferramentas e equipamentos RP_`,
       `│ ▸ ${command(prefix + 'rploja')} — _Comida, presentes, moradias e veículos RP_`,
       `*Comprar:* ${command(prefix + 'comprar [ID]')}\n*Títulos adquiridos:* ${command(prefix + 'titulos')}`,

@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { COOLDOWNS, LIMITS, OWNER_NUMBER } from './constants.js';
 import { GameError, isGameOwner, assertBalance, brazilianNumber, canonicalPlayerJid,
   integer, quantity, formatRemaining, validatePlayer } from './validation.js';
@@ -11,7 +11,15 @@ import { consumeCommand } from './rate-limit.js';
 import { isRPCommand } from '../rp/commands.js';
 import { dispatchRP } from '../rp/service.js';
 import { credit, debit } from './wallet.js';
+import { workshop } from '../rp/workshop.js';
+import { expedition } from './expedition.js';
 import { warCommand } from './war.js';
+
+const RECORDED = new Set(['comprar', 'rpcomprar', 'usar', 'transferir', 'trabalhar', 'acao', 'treino', 'evento', 'ataque', 'descansar']);
+function recordsAction(command, sub) {
+  return RECORDED.has(command) || (command === 'oficina' && sub === 'fabricar')
+    || (command === 'expedicao' && ['criar', 'entrar', 'sair', 'iniciar', 'escolher'].includes(sub));
+}
 
 function exactArgs(args, count, usage) {
   if (args.length !== count) throw new GameError(`Use ${usage}.`);
@@ -68,7 +76,17 @@ export class GameService {
     try {
       const jid = canonicalPlayerJid(request.actor?.jid);
       const now = integer(request.now ?? this.now(), { label: 'Data' });
-      return await this.store.transactionGame(game => {
+      return await this.store.transactionGame((game, receipts) => {
+        const event = request.eventId;
+        const recorded = event != null && recordsAction(request.command, String(request.args?.[0] || '').toLowerCase());
+        if (recorded && (typeof event !== 'string' || !event.trim() || event.length > 240)) {
+          throw new GameError('Identificador da mensagem inválido.');
+        }
+        // Standalone JSON has no SQLite adapter. Its receipts share the same atomic save as the action.
+        const key = recorded && !receipts && createHash('sha256').update(JSON.stringify([request.chatId, jid, event])).digest('hex');
+        if (recorded && (receipts ? receipts.seen(jid, event) : Object.hasOwn(game.actionReceipts || {}, key))) {
+          return { type: 'error', code: 'DUPLICATE_ACTION', message: 'Esta mensagem já foi processada.' };
+        }
         const allowance = consumeCommand(game, jid, now);
         if (!allowance.allowed) return { type: 'rate-limit', ...allowance };
         // Keep the accepted anti-spam timestamp even if the action is rejected,
@@ -82,6 +100,10 @@ export class GameService {
           const missionKind = response.type === 'training' ? 'training' : response.type === 'rp-work' ? 'rp_work' : null;
           if (missionKind && typeof request.eventId === 'string' && request.eventId) {
             response.missionEvents = [{ chat: request.chatId, user: jid, event: request.eventId, kind: missionKind, at: now }];
+          }
+          if (recorded) {
+            if (receipts) receipts.save(jid, event, request.command, now);
+            else (action.actionReceipts ??= {})[key] = now;
           }
           for (const [key, value] of Object.entries(action)) game[key] = value;
           return response;
@@ -172,6 +194,8 @@ export class GameService {
         const clan = clanProfile(game, player);
         return { type: 'clan', clan, rank: clan.ranking };
       }
+      case 'oficina': return workshop(player, args, now);
+      case 'expedicao': return expedition(game, player, request, now, this.rng);
       case 'guerra':
         return warCommand(game, player, request, { now, rng: this.rng });
       case 'evento':

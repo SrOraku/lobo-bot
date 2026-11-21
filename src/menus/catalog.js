@@ -58,6 +58,8 @@ const ADDON = {
   lojaalcateia: ['alcateia', '', 'Loja de boosts • WoK coin'],
   compraralcateia: ['alcateia', 'ID', 'Comprar cura, boost ou treino'],
   clan: ['alcateia', 'criar Nome | entrar Nome | perfil | sair | expulsar @ | lider @', 'Clãs e liderança'],
+  expedicao: ['alcateia', 'criar | entrar | status | escolher', 'Faróis da Matilha • exploração cooperativa para 2 a 5'],
+  oficina: ['rp', 'receitas | fabricar ID', 'Transformar insumos da cidade em suprimentos de expedição'],
   guerra: ['alcateia', 'atacar N | defender N | placar | regras', 'Guerra semanal de alcateias por territórios; prêmio em WoK coin'],
   evento: ['alcateia', '', 'Evento lunar diário'],
   admin: [

@@ -18,6 +18,8 @@ const SHOP_ITEMS = Object.freeze([
   { id: 14, name: '🌌 Título "Explorador Noturno"', price: 2500, description: 'Título permanente para levar suas jornadas ao perfil', category: 'titulos', type: 'title', titleId: 'explorador-noturno', title: 'Explorador Noturno' },
   { id: 15, name: '📜 Título "Sábio da Matilha"', price: 3500, description: 'Título permanente inspirado nos contadores de histórias do refúgio', category: 'titulos', type: 'title', titleId: 'sabio-matilha', title: 'Sábio da Matilha' },
   { id: 16, name: '🌘 Título "Lenda do Eclipse"', price: 8000, description: 'Título permanente de prestígio; efeito visual no perfil', category: 'titulos', type: 'title', titleId: 'lenda-eclipse', title: 'Lenda do Eclipse' },
+  { id: 17, name: '🛷 Trenó dos Batedores', price: 45, description: 'Recupera até 15 lobos caídos da formação clássica', category: 'protecao', type: 'rescue', capacity: 15 },
+  { id: 18, name: '📯 Trompa do Reencontro', price: 95, description: 'Reúne metade dos lobos caídos, arredondando para cima', category: 'protecao', type: 'rally' },
 ].map(Object.freeze));
 
 const CATEGORIES = Object.freeze({ todos: 'Todos os itens', premium: 'Passes Premium', xp: 'Vigílias de XP', protecao: 'Refúgio e combate clássico', titulos: 'Títulos da jornada' });
