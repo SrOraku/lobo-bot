@@ -39,6 +39,7 @@ function loadAllCommands() {
   r({name:'curarlobos',aliases:['curar'],      description:'Curar lobos (200💰)',category:'lobo',   usage:'!curarlobos',                            example:'!curarlobos',                 handler:wolf.curarLobos});
   r({name:'resetarlobos',                      description:'Resetar lobos',      category:'lobo',   usage:'!resetarlobos [@usuário]',               example:'!resetarlobos',               handler:wolf.resetarLobos, minLevel:LEVELS.BOT_ADMIN});
   r({name:'infolobos',aliases:['lobosinfo'],   description:'Guia do jogo',       category:'lobo',   usage:'!infolobos',                             example:'!infolobos',                  handler:wolf.infoJogo});
+  r({name:'lua',     aliases:['faselua','faseluar','lunafase'], description:'Fase lunar atual e efeitos na batalha', category:'lobo', usage:'!lua', example:'!lua', handler:wolf.fasesDaLua});
 
   // Gold
   r({name:'gold',aliases:['wok','wokcoin','saldo','carteira'],description:'Ver saldo de WoK coin',           category:'gold',   usage:'!gold [@usuário]',                       example:'!gold',                       handler:gold.verGold});

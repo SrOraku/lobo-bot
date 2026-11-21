@@ -75,10 +75,18 @@ function createEconomy(api, { now = Date.now, scope = () => require('../isolatio
             throw Error('O Premium acumulado pode chegar a no máximo 365 dias.');
           api.setPremium(jid,1,new Date(end).toISOString());message='👑 Premium válido até '+new Date(end).toISOString();
         } else if(item.type==='heal') { if(!api.getStrategy(jid)) api.upsertStrategy(jid,34,33,33);api.updateWolvesAlive(jid,100);message='🐺 Todos os lobos foram curados.';
+        } else if(item.type==='heal-partial') {
+          if(!api.getStrategy(jid)) api.upsertStrategy(jid,34,33,33);
+          const strat=api.getStrategy(jid);
+          if(strat.wolves_alive>=100) throw Error('Seus lobos já estão com saúde máxima.');
+          const healed=Math.min(strat.wolves_alive+(item.amount||15),100);
+          api.updateWolvesAlive(jid,healed);
+          message=`🩺 ${healed-strat.wolves_alive} lobos curados (${healed}/100).`;
         } else if(item.type==='strategy') { const atk=20+Math.floor(Math.random()*60),def=Math.floor(Math.random()*(80-atk));api.upsertStrategy(jid,atk,def,100-atk-def);message='🔮 Estratégia sorteada e salva.';
         } else if(item.type==='effect') {
           const end = effect(jid,item.effect,item.duration,item.multiplier || 1);
-          message=(item.effect === 'xp' ? '⚡ XP por mensagem 3×' : '🛡️ Escudo do combate clássico') + ' ativo até ' + new Date(end).toISOString();
+          const label = item.effectLabel || (item.effect === 'xp' ? '⚡ XP por mensagem 3×' : '🛡️ Escudo do combate clássico');
+          message=label + ' ativo até ' + new Date(end).toISOString();
         } else if(item.type==='title') {
           if (db.prepare('SELECT 1 FROM user_titles WHERE chat_jid=? AND user_jid=? AND title_id=?').get(scope(),jid,item.titleId))
             throw Error('Você já possui esse título. Use titulo usar ' + item.titleId + ' para equipá-lo.');

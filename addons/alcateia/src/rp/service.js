@@ -54,7 +54,7 @@ export function dispatchRP(game, request, { now, rng }) {
       category = args[0].normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
       if (category === 'todos') category = '';
       else if (!Object.hasOwn(RP_SHOP_CATEGORIES, category)) {
-        throw new GameError('Categoria inválida. Use comidas, bebidas, saude, presentes, moradias, veiculos ou equipamentos.');
+        throw new GameError('Categoria inválida. Use comidas, bebidas, saude, presentes, moradias, veiculos, equipamentos ou acessorios.');
       }
       page = args[1] || 1;
     } else if (args.length > 1) throw new GameError('Use !rploja [categoria] [página].');

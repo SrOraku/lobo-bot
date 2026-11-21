@@ -2,6 +2,7 @@
 const db = require('../utils/database');
 const { validateStrategy, calculateBattle, cleanJid, getNumber, sleep } = require('../utils/helpers');
 const { mono, progress, command, numericText, card, block, flavor } = require('../ui/text');
+const { moonEffects, applyBattleEffects } = require('../wolves/moon-phase');
 
 const wolfHud = alive => `🐺 *Lobos vivos:* ${mono(`${alive}/100`)}\n${progress(alive, 100)}`;
 
@@ -210,15 +211,39 @@ async function atacar(sock, ctx) {
   await sleep(2000);
 
   // Read fresh strategies after the announcement; mutate all results atomically.
-  let result, goldPrize=0;
+  let result, goldPrize=0, totemActivated=false;
   db.db.transaction(()=>{
   db.db.prepare('INSERT INTO users(jid,name) VALUES (?,?) ON CONFLICT(jid) DO NOTHING').run(defender,defName);
   atkStrat=db.getStrategy(sender);defStrat=db.getStrategy(defender);
-  if(require('../services/economy').economy().activeEffect(defender,'shield')) throw Error('O defensor está protegido por escudo.');
-  result = calculateBattle(
+  const econSvc = require('../services/economy').economy();
+  if(econSvc.activeEffect(defender,'shield')) throw Error('O defensor está protegido por escudo.');
+
+  // Fases da lua e itens de batalha
+  const moon = moonEffects();
+  const atkPowerRow = econSvc.activeEffect(sender, 'battle_power');
+  const defArmorRow = econSvc.activeEffect(defender, 'battle_armor');
+  const atkPower = atkPowerRow ? (atkPowerRow.multiplier || 1.0) : 1.0;
+  const defArmor = defArmorRow ? (defArmorRow.multiplier || 0.7) : 1.0;
+
+  const baseResult = calculateBattle(
     { strategy: atkStrat, wolves: atkStrat.wolves_alive },
     { strategy: defStrat, wolves: defStrat.wolves_alive }
   );
+  result = applyBattleEffects(baseResult, {
+    attackerWolves: atkStrat.wolves_alive,
+    defenderWolves: defStrat.wolves_alive,
+    moon, atkPower, defArmor,
+  });
+
+  // Totem da Ressurreição: se atacante chegar a 0 lobos, restaura 25 (1 uso)
+  if (result.atkWolvesAfter <= 0) {
+    const totemRow = db.db.prepare('SELECT expires_at FROM user_effects WHERE chat_jid=? AND user_jid=? AND type=? AND expires_at>?').get(battleChat, sender, 'battle_totem', Date.now());
+    if (totemRow) {
+      db.db.prepare('DELETE FROM user_effects WHERE chat_jid=? AND user_jid=? AND type=?').run(battleChat, sender, 'battle_totem');
+      result = { ...result, atkWolvesAfter: 25 };
+      totemActivated = true;
+    }
+  }
 
   // Atualizar banco
   db.updateWolvesAlive(sender, result.atkWolvesAfter);
@@ -261,11 +286,14 @@ async function atacar(sock, ctx) {
     ? `🛡️ *Defesa vitoriosa de @${getNumber(defender)}!*\n💰 *Prêmio:* ${mono(`+${goldPrize} WoK coin`)}`
     : `⚖️ *Empate!* _As duas matilhas se igualaram._`;
 
+  const moonLabel = moonEffects().battleLabel;
+  const battleExtras = [...(moonLabel ? [moonLabel] : []), ...(totemActivated ? ['🏺 Totem da Ressurreição ativado! Matilha restaurada com 25 lobos.'] : [])];
+
   await sock.sendMessage(jid, {
     text: card('⚔️ RESULTADO DA BATALHA', [
       `🗡️ *@${getNumber(sender)}*\n${wolfHud(result.atkWolvesAfter)}\n*Perdas:* ${mono(`-${result.defDamage}`)} lobos`,
       `🛡️ *@${getNumber(defender)}*\n${wolfHud(result.defWolvesAfter)}\n*Perdas:* ${mono(`-${result.atkDamage}`)} lobos`,
-      block('RESULTADO', [winnerText, flavor(result.winner === 'attacker' ? 'win' : 'loss')]),
+      block('RESULTADO', [winnerText, flavor(result.winner === 'attacker' ? 'win' : 'loss'), ...battleExtras]),
     ], { tip: '_Uuuuuuwooooo! 🐺🌕_' }),
     mentions: [sender, defender]
   });
@@ -410,4 +438,31 @@ async function infoJogo(sock, ctx) {
   }, { quoted: msg });
 }
 
-module.exports = { verEstrategia, mudarEstrategia, atacar, meusLobos, rankLobos, curarLobos, resetarLobos, infoJogo };
+// ============================
+// FASE DA LUA
+// ============================
+async function fasesDaLua(sock, ctx) {
+  const { jid, msg } = ctx;
+  const moon = moonEffects();
+  const effects = [];
+  if (moon.attackMult !== 1.0) effects.push(`🗡️ Ataque ${moon.attackMult > 1 ? '+' : ''}${Math.round((moon.attackMult - 1) * 100)}%`);
+  if (moon.counterMult !== 1.0) effects.push(`🔄 Contra-ataque +${Math.round((moon.counterMult - 1) * 100)}%`);
+  if (moon.xpMult !== 1.0) effects.push(`⭐ XP de batalha +${Math.round((moon.xpMult - 1) * 100)}%`);
+  if (!effects.length) effects.push('⚖️ Neutro — nenhum bônus de batalha ativo.');
+
+  await sock.sendMessage(jid, {
+    text: card(`${moon.emoji} FASE LUNAR`, [
+      `${moon.emoji} *${moon.name}*\n_Ciclo: ${Math.round(moon.fraction * 100)}% completo._`,
+      block('EFEITO ATIVO NAS BATALHAS', effects),
+      block('EXPLICAÇÃO', [moon.description]),
+      block('TODAS AS FASES', [
+        '🌑 Lua Nova — XP de batalha +20%',
+        '🌒 Quarto Crescente — ataque recebido −10%',
+        '🌕 Lua Cheia — dano de ataque +20%',
+        '🌘 Quarto Minguante — contra-ataque +15%',
+      ]),
+    ], { tip: `_A fase muda automaticamente. Use ${command('!atacar')} para sentir o efeito. 🐺_` })
+  }, { quoted: msg });
+}
+
+module.exports = { verEstrategia, mudarEstrategia, atacar, meusLobos, rankLobos, curarLobos, resetarLobos, infoJogo, fasesDaLua };
