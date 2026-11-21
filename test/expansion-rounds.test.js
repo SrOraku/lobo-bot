@@ -7,3 +7,19 @@ test('Gartic sends secret privately, rewards a single first answer and supports 
 test('Gartic concurrent starts cannot create two active rounds',async t=>{const x=setup(t),g=createGartic(x.api,{pick:()=>0,schedule:()=>({unref(){}}),cancel(){}});t.after(()=>g.stop());const sock={sendMessage:async()=>{}},ctx={jid:CHAT,sender:ARTIST,args:['iniciar']};const results=await Promise.allSettled([g.command(sock,ctx),g.command(sock,ctx)]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.filter(r=>r.status==='rejected').length,1);});
 test('Gartic private delivery failure does not create a round and timeout ends it',async t=>{const x=setup(t);let timeout;const g=createGartic(x.api,{now:()=>1000,pick:()=>0,schedule:fn=>{timeout=fn;return {unref(){}};},cancel(){}});t.after(()=>g.stop());await assert.rejects(g.command({sendMessage:async()=>{throw Error('delivery');}},{jid:CHAT,sender:ARTIST,args:['iniciar']}));assert.equal(g.read(CHAT),null);await g.command({sendMessage:async()=>{}},{jid:CHAT,sender:ARTIST,args:['iniciar']});timeout();assert.equal(g.read(CHAT).active,false);});
 test('surprise first correct answer receives one reward and persistent daily history',t=>{const x=setup(t);const s=createSurprise(x.api,{now:()=>Date.parse('2026-01-01T15:00:00Z'),pick:()=>0});x.run(()=>{assert.match(s.run(CHAT,GUESSER,'','status'),/🐺🌕/);assert.match(s.run(CHAT,GUESSER,'lobisomem','win'),/Primeiro acerto/);assert.equal(x.api.getUser(GUESSER).gold,550);assert.throws(()=>s.run(CHAT,ARTIST,'lobisomem','other'),/terminou/);assert.equal(x.db.prepare('SELECT winner,reward FROM daily_challenge_history').get().winner,GUESSER);});});
+
+test('Gartic encerra a rodada sem anunciar em um grupo pausado', async t => {
+  const { api } = setup(t);
+  let expire, enabled = true;
+  const g = createGartic(api, {
+    groupEnabled: () => enabled,
+    schedule(fn) { expire = fn; return { unref() {} }; },
+  });
+  t.after(() => g.stop());
+  const sent = [], sock = { sendMessage: async jid => sent.push(jid) };
+  await g.command(sock, { jid: CHAT, sender: ARTIST, args: ['iniciar'] });
+  enabled = false;
+  expire();
+  assert.equal(g.read(CHAT).active, false);
+  assert.deepEqual(sent, [ARTIST]);
+});

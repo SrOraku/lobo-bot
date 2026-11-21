@@ -19,6 +19,15 @@ function loadAllCommands() {
 
   r({name:'ativacoes',activationControl:true,aliases:['ativações'],description:'Painel de setores e permissões do grupo',category:'adm',usage:'!ativacoes [setor modo]',handler:require('../commands/activations').activations,groupOnly:true});
 
+  for (const [name, mode, description] of [
+    ['boton', 'on', 'Ligar o bot neste grupo'],
+    ['botoff', 'off', 'Pausar o bot neste grupo'],
+  ]) {
+    r({ name, description, category: 'dono', minLevel: LEVELS.OWNER, groupOnly: true,
+      activationControl: true, concurrency: 'chat',
+      handler: require('../commands/activations').createActivationHandler({ botMode: mode }) });
+  }
+
   r({name:'atalhos',description:'Versões curtas dos comandos, sem trocar os originais',category:'info',handler:require('../commands/shortcuts').shortcuts});
 
   // Menu

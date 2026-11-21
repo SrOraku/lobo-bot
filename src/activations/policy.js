@@ -31,9 +31,17 @@ function change(current, { action, target, value, owner }) {
   return next;
 }
 function allowed(policy, key, actor) {
+  if (!policy.bot) return false;
   if (actor.owner) return true;
-  if (!policy.bot || key === 'dono') return false;
+  if (key === 'dono') return false;
   return key !== 'adm' || !!actor.admin || (actor.securityLevel||0)>=2;
+}
+
+// The recovery commands must be recognized before processing an ordinary message.
+function isGroupSwitch(name, args = []) {
+  if (name === 'boton' || name === 'botoff') return true;
+  return ['ativacoes', 'ativações', 'ati'].includes(name) && args.length === 2 &&
+    args[0].toLowerCase() === 'bot' && ['on', 'off', 'ativar', 'desativar'].includes(args[1].toLowerCase());
 }
 
 function commandSector(name, args = [], definition) {
@@ -52,4 +60,4 @@ function commandSector(name, args = [], definition) {
   }
   return definition ? categoryOf(definition) : ADDON[name]?.[0] || 'util';
 }
-module.exports = { SECTORS, MODES, defaults, sector, change, allowed, commandSector };
+module.exports = { SECTORS, MODES, defaults, sector, change, allowed, commandSector, isGroupSwitch };

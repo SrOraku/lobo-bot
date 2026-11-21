@@ -52,11 +52,11 @@ function createPolicyStore(db) {
     for (const [id, value] of next) cache.set(id, value);
   }
   preload();
-  function get(jid) {
+  function cached(jid) {
     if (!cache.has(jid)) cache.set(jid, load(jid));
     const value = cache.get(jid);
     if (value instanceof Error) throw value;
-    return structuredClone(value);
+    return value;
   }
   const transaction = db.transaction((jid, actor, fn) => {
     const before = load(jid),
@@ -89,7 +89,8 @@ function createPolicyStore(db) {
     return next;
   });
   return {
-    get,
+    get: jid => structuredClone(cached(jid)),
+    isBotEnabled: jid => !!cached(jid).bot,
     invalidate(jid){cache.delete(jid);},
     history(jid, limit = 10) {
       return db.prepare('SELECT feature,previous_state,new_state,actor,created_at FROM activation_audit WHERE group_jid=? ORDER BY id DESC LIMIT ?').all(jid, Math.max(1, Math.min(50, Number(limit) || 10)));

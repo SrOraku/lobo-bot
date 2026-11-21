@@ -7,6 +7,8 @@
 ## Uso
 
 - `!ativacoes` ou `!ativacoes status`: painel gerado do registro, nome do grupo e estado de cada recurso.
+- `!botoff` pausa o bot no grupo atual. Conversas, comandos comuns, filtros, boas-vindas e ganhos por mensagem ficam suspensos.
+- `!boton` religa o bot com as ativações que o grupo já usava. Os dois comandos são exclusivos dos donos cadastrados e aparecem em `!menu dono`. A escolha permanece depois de reiniciar. Os comandos anteriores `!ativacoes bot on` e `!ativacoes bot off` usam a mesma configuração.
 - `!ativar RECURSO` / `!desativar RECURSO`: altera somente aquele grupo.
 - `!ativar tudo`: recursos marcados como seguros; não liga expulsões nem filtros de moderação em massa.
 - `!desativar tudo`: desliga opcionais, preservando o acesso ao painel e a proteção obrigatória contra abuso de comandos.
