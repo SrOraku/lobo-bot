@@ -54,12 +54,18 @@ const ITEMS = [
   { id: 'kitoficina', name: 'Maleta de ferramentas', type: 'equipment', price: 850, categories: ['Serviços', 'Construção', 'Transporte'], effects: {}, description: 'Equipe para ganhar até +20 WoK coin e +2 XP em Serviços, Construção ou Transporte.' },
   { id: 'kitcampo', name: 'Kit do campo', type: 'equipment', price: 700, categories: ['Rural'], effects: {}, description: 'Equipe para ganhar até +20 WoK coin e +2 XP no trabalho Rural.' },
   { id: 'instrumento', name: 'Instrumento de artista', type: 'equipment', price: 900, categories: ['Artes'], effects: {}, description: 'Equipe para ganhar até +20 WoK coin e +2 XP no trabalho de Artes.' },
+  { id: 'prisma', name: 'Prisma de neblina', type: 'material', price: 12, effects: {}, description: 'Lente lapidada para montar um lampião na !oficina.' },
+  { id: 'resina', name: 'Resina de âmbar', type: 'material', price: 8, effects: {}, description: 'Combustível de luz dourada para a receita de lampião.' },
+  { id: 'fibra', name: 'Fibra de salgueiro', type: 'material', price: 8, effects: {}, description: 'Trançada, vira tala de campo ou embalagem da ração.' },
+  { id: 'lampiao', name: 'Lampião das brumas', type: 'field', price: 38, effects: {}, description: 'Na expedição ilumina a rota de sinal e acrescenta 2 luz. Consome uma unidade.' },
+  { id: 'tala', name: 'Tala de salgueiro', type: 'field', price: 40, effects: {}, description: 'Na expedição recupera 2 de vigor ao montar acampamento. Consome uma unidade.' },
+  { id: 'racampo', name: 'Ração do faroleiro', type: 'field', price: 42, effects: {}, description: 'Na expedição repõe 2 provisões durante a travessia. Consome uma unidade.' },
 ];
 
 export const RP_ITEMS = Object.freeze(ITEMS.map(item => Object.freeze({ ...item, effects: Object.freeze(item.effects), ...(item.categories ? { categories: Object.freeze(item.categories) } : {}) })));
 export const RP_SHOP_CATEGORIES = Object.freeze(Object.fromEntries(Object.entries({
   comidas: ['food'], bebidas: ['drink'], saude: ['medicine'], presentes: ['gift', 'ring'],
-  moradias: ['home'], veiculos: ['vehicle'], equipamentos: ['equipment'],
+  moradias: ['home'], veiculos: ['vehicle'], equipamentos: ['equipment'], oficina: ['material', 'field'],
 }).map(([name, types]) => [name, Object.freeze(types)])));
 export const REST_COOLDOWN_MS = 30 * 60_000;
 
@@ -139,6 +145,8 @@ export function useRPItem(player, id, { now = Date.now(), target = null } = {}) 
   const rp = ready(player, now);
   const count = Object.hasOwn(rp.inventory, item.id) ? integer(rp.inventory[item.id], { label: 'Estoque' }) : 0;
   if (!count) throw new GameError('Você não possui esse item no inventário.');
+  if (item.type === 'material') throw new GameError('Use !oficina receitas para transformar este material.');
+  if (item.type === 'field') throw new GameError('Use este suprimento na sua vez em !expedicao escolher. Consulte !expedicao status.');
   if (item.type === 'ring') throw new GameError('Use a aliança no pedido de casamento do RP.');
   if (['home', 'vehicle'].includes(item.type)) throw new GameError('Essa propriedade já é usada automaticamente após a compra.');
   if (item.type === 'equipment') {

@@ -5,7 +5,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 const DIRECT_COMMANDS = Object.freeze([
-  'start', 'treino', 'formacao', 'ataque', 'rank', 'clan', 'guerra', 'evento', 'admin',
+  'start', 'treino', 'formacao', 'ataque', 'rank', 'clan', 'guerra', 'expedicao', 'oficina', 'evento', 'admin',
   'rp', 'profissoes', 'profissao', 'trabalhar', 'acao', 'carteira', 'transferir',
   'rploja', 'rpcomprar', 'usar', 'inventario', 'familia', 'descansar',
 ]);

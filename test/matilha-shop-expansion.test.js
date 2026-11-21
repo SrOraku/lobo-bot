@@ -31,7 +31,7 @@ function fixture(t, gold = 100_000) {
 }
 
 test('catálogo amplia a loja sem trocar IDs, preços e efeitos dos seis itens originais', () => {
-  assert.equal(SHOP_ITEMS.length, 16);
+  assert.deepEqual(SHOP_ITEMS.map(i => i.id), Array.from({ length: 18 }, (_, i) => i + 1));
   assert.deepEqual(SHOP_ITEMS.slice(0, 6).map(item => [item.id, item.price, item.type]), [
     [1, 2000, 'premium'], [2, 200, 'heal'], [3, 100, 'strategy'],
     [4, 500, 'effect'], [5, 300, 'effect'], [6, 5000, 'title'],
@@ -47,7 +47,7 @@ test('catálogo amplia a loja sem trocar IDs, preços e efeitos dos seis itens o
 
 test('cada novo item realmente concede Premium, efeito ou título e registra o preço do catálogo', t => {
   const f = fixture(t);
-  for (const item of SHOP_ITEMS.filter(item => item.id >= 7)) {
+  for (const item of SHOP_ITEMS.filter(item => item.id >= 7 && item.id <= 16)) {
     const before = f.api.getUser(JID).gold;
     const result = f.buy(item.id);
     assert.equal(f.api.getUser(JID).gold, before - item.price, item.name);
@@ -208,4 +208,20 @@ test('menu usa o prefixo da instalação e indica lojas RP e Alcateia sem remove
   assert.ok(sent.at(-1).includes('Lenda do Eclipse'));
   await loaded.exports.loja(sock, { jid: CHAT, msg: {}, args: ['99'] });
   assert.ok(sent.at(-1).includes('Página inválida'));
+});
+
+test('resgate clássico respeita sobreviventes, formação, carteira e reenvio', t => {
+  const f = fixture(t, 200);
+  assert.throws(() => f.buy(17), /completa/);
+  assert.equal(f.api.getUser(JID).gold, 200);
+  f.api.upsertStrategy(JID, 48, 32, 20);
+  f.api.updateWolvesAlive(JID, 22);
+  f.buy(17); f.buy(18);
+  assert.equal(f.api.getStrategy(JID).wolves_alive, 69);
+  assert.equal(f.api.getStrategy(JID).attack, 48);
+  assert.equal(f.api.getUser(JID).gold, 60);
+  assert.throws(() => f.buy(17), /processada/);
+  f.api.updateWolvesAlive(JID, 98);
+  f.buy(17, 'resgate-final');
+  assert.equal(f.api.getStrategy(JID).wolves_alive, 100);
 });
