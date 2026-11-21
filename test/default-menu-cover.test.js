@@ -73,7 +73,7 @@ test('the actual menu command sends the bundled animation and retains menu categ
   assert.equal(messages[0].payload.gifPlayback, true);
   assert.equal(messages[0].payload.mimetype, 'video/mp4');
   assert.match(messages[0].payload.caption.replace(/\*/g, '').replace(/\s+/g, ' '), /MENU PRINCIPAL DA MATILHA/);
-  assert.match(messages[0].payload.caption, /\*!!menu\* `jogos`/);
+  assert.match(messages[0].payload.caption, /\*!!menu jogos\*/);
   assert.equal(messages[0].options.quoted, msg);
 
   await menu(sock, { ...ctx, args: ['jogos'] });

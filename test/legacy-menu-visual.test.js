@@ -155,7 +155,7 @@ test('principal usa moldura oficial sem espaços nas bordas', async () => {
   const text = await render([], '!');
   assert.ok(text.startsWith('╭'));
   assert.ok(text.split('\n').filter(line => /^[╭╰├]/u.test(line)).every(line => width(line) <= 26));
-  assert.ok(text.includes('     ▸ 🎮 *!menu* `jogos`'));
+  assert.ok(text.includes('     ▸ 🎮 *!menu jogos*'));
   assert.ok(!text.includes(IDENTITY.developer));
   assert.ok(text.includes(BOTTOM));
     assert.ok(text.split('\n').at(-1).startsWith('> '));
