@@ -16,6 +16,7 @@ function fixture(user, mapping = null) {
   const executed = [], errors = [], interactions = [];
   const mocks = {
     dotenv: { config() {} },
+    '../activations/store': { getStore: () => ({ isBotEnabled: () => true }) },
     '../utils/owners': { ownerNumbers: () => [BUYER, CREATOR.number] },
     '../utils/helpers': {
       PREFIX: '!', BOT_NAME: 'Lobo', logger: { error: (...args) => errors.push(args) },

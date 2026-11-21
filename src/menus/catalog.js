@@ -133,7 +133,7 @@ function buildCatalog(commands, pluginCommands = {}) {
       source: 'core',
       status: 'registrado',
       permission:
-        c.name === 'atualizar'
+        c.name === 'atualizar' || c.minLevel === 3 && c.activationControl
           ? 'dono (identidade verificada)'
           : c.activationControl ? 'dono/admin do grupo; controle delegado' : ['usuário', 'admin do grupo', 'admin do bot', 'dono'][c.minLevel || 0],
     }));

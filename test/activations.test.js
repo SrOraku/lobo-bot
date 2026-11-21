@@ -84,7 +84,7 @@ test('persistência SQLite, isolamento entre grupos e transação sem sobrescrit
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
-test('gate bloqueia membros, preserva manutenção do dono e não afeta privado', async () => {
+test('pausa silencia comandos comuns de membros e donos e mantém a rota de retomada', async () => {
   const { createGate } = require('../src/activations/gate');
   const p = change(defaults(), { action: 'set', target: 'bot', value: 'off', ...owner });
   const sent = [];
@@ -96,10 +96,11 @@ test('gate bloqueia membros, preserva manutenção do dono e não afeta privado'
   );
   assert.equal(await gate(sock, { jid: 'p@s.whatsapp.net' }, 'ytmp3', { name: 'ytmp3' }), true);
   const ownGate = createGate({ store: { get: () => p }, resolveActor: async () => owner });
-  assert.ok(
-    await ownGate(sock, { jid: 'group@g.us', msg: {}, args: [] }, 'ytmp3', { name: 'ytmp3' }),
-  );
-  assert.equal(sent.length, 1);
+  for (const name of ['ytmp3', 'menu', 'ativacoes'])
+    assert.equal(await ownGate(sock, { jid: 'group@g.us', msg: {}, args: [] }, name, { name }), false);
+  assert.equal(await ownGate(sock, { jid: 'group@g.us', args: [] }, 'boton'), true);
+  assert.equal(await ownGate(sock, { jid: 'group@g.us', args: ['bot', 'on'] }, 'ativacoes'), true);
+  assert.deepEqual(sent, []);
 });
 test('painel valida cargo, não aceita flags forjadas e responde no privado', async () => {
   const { createActivationHandler } = require('../src/commands/activations');

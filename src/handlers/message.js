@@ -36,6 +36,24 @@ async function processMessage(sock, msg) {
     body = body.trim();
     if (msg.key.fromMe && !body.startsWith(PREFIX) && !/^\d+$/.test(body)) return;
 
+    const parts = body.startsWith(PREFIX) ? body.slice(PREFIX.length).trim().split(/\s+/) : [];
+    const command = parts.shift()?.toLowerCase();
+    const dispatch = (user) => {
+      const { groupNames } = require('../utils/group-names');
+      const groupName = isGroup ? groupNames.nameOf(jid) || db.getGroup(jid)?.name || null : null;
+      if (isGroup && !groupName) groupNames.lookup(sock, jid);
+      return execute(command, sock, { jid, sender, senderNumber, pushName, groupName, isGroup,
+        args: parts, body, command, msg, msgType, user, BOT_NAME, PREFIX });
+    };
+    const groupSwitch = isGroup && command && require('../activations/policy').isGroupSwitch(command, parts);
+    if (isGroup && !require('../activations/store').getStore().isBotEnabled(jid)) {
+      if (groupSwitch) {
+        const user = db.getUser(sender);
+        if (!user?.banned && !user?.muted) await dispatch(user);
+      }
+      return;
+    }
+
     if(await require('../automation/anti-pv').createAntiPV(db).handle(sock,msg,{jid,sender,isGroup}))return;
     await require('../services/universal-currency').linkMessageWallet(db,sock,msg,{jid,sender,isGroup});
     db.upsertUser(sender, pushName);
@@ -54,6 +72,7 @@ async function processMessage(sock, msg) {
     if (isGroup) {
       const blocked = await handleProtection(sock, msg, { jid, sender, body, isGroup });
       if (blocked) return;
+      if (groupSwitch) return await dispatch(user);
     }
 
     if (isGroup && /^\d+$/.test(body) && await require('../activations/interaction').interaction().handle(sock,
@@ -68,16 +87,7 @@ async function processMessage(sock, msg) {
     }
     if (!body.startsWith(PREFIX)) return;
 
-    const parts   = body.slice(PREFIX.length).trim().split(/\s+/);
-    const command = parts.shift().toLowerCase();
-
-    // Nome do grupo para o console: cache em memória, depois o banco; se ainda for
-    // desconhecido, uma consulta em segundo plano resolve para as próximas linhas.
-    const { groupNames } = require('../utils/group-names');
-    const groupName = isGroup ? groupNames.nameOf(jid) || db.getGroup(jid)?.name || null : null;
-    if (isGroup && !groupName) groupNames.lookup(sock, jid);
-    const ctx = { jid, sender, senderNumber, pushName, groupName, isGroup, args: parts, body, command, msg, msgType, user, BOT_NAME, PREFIX };
-    await execute(command, sock, ctx);
+    await dispatch(user);
     try {
       const progress=require('../progression/service').progression();
       progress.touch(jid,sender);

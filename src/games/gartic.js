@@ -29,7 +29,8 @@ function progressiveHint(state, timestamp) {
   return [...word].map((letter, index) => letter === '-' || indexes.has(index) ? letter : '＿').join(' ');
 }
 
-function createGartic(api, { now = Date.now, pick = crypto.randomInt, schedule = setTimeout, cancel = clearTimeout } = {}) {
+function createGartic(api, { now = Date.now, pick = crypto.randomInt, schedule = setTimeout, cancel = clearTimeout,
+  groupEnabled = () => true } = {}) {
   const db = api.db, timers = new Map();
   const queue = new (require('../core/keyed-queue').KeyedQueue)({ maxKeys: 500, maxPending: 10 });
   const read = chat => {
@@ -51,6 +52,8 @@ function createGartic(api, { now = Date.now, pick = crypto.randomInt, schedule =
       const current = read(chat);
       if (current?.id !== state.id || !current.active) return;
       save(chat, { ...current, active: false });
+      try { if (!groupEnabled(chat)) return; }
+      catch { return; } // Sem acesso à configuração, não publique o aviso no grupo.
       sock.sendMessage(chat, { text: card('🎨 TEMPO ENCERRADO', [`*Palavra:* ${mono(current.word)}`], {
         tip: current.round < current.total ? `_Continue com_ ${commandText(require('../config').get('PREFIX') + 'gartic proxima')}` : '_Sessão concluída.',
       }) }).catch(() => {});
@@ -183,5 +186,7 @@ function createGartic(api, { now = Date.now, pick = crypto.randomInt, schedule =
   };
 }
 let instance;
-function gartic() { return instance || (instance = createGartic(require('../utils/database'))); }
+function gartic() { return instance || (instance = createGartic(require('../utils/database'), {
+  groupEnabled: chat => require('../activations/store').getStore().isBotEnabled(chat),
+})); }
 module.exports = { createGartic, gartic, CATEGORIES, seasonKey, progressiveHint };
