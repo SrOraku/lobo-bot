@@ -38,6 +38,8 @@ jobs:
         run: npm run lint
       - name: Check JavaScript syntax
         run: npm run check:syntax
+      - name: Check CI security policy
+        run: node --test .github/workflow.test.cjs
       - name: Run tests
         run: npm test
       - name: Check startup
