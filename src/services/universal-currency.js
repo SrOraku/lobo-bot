@@ -89,7 +89,11 @@ function attachUniversalStore(store,api) {
           game.universalModifiers[player.jid]={day:require('../config/expansion').dateParts(Date.now()).day,...Object.fromEntries(effects.map(e=>[e.type,e.multiplier]))};
           player.economicShieldUntil=effects.find(e=>e.type==='economicShield')?.expires_at || 0;
         }
-        const result=callback(game);
+        const receipts = {
+          seen: (actor, event) => Boolean(db.prepare('SELECT 1 FROM alcateia_action_receipts WHERE chat_jid=? AND actor_jid=? AND event_id=?').get(chat, actor, event)),
+          save: (actor, event, command, at) => db.prepare('INSERT INTO alcateia_action_receipts VALUES(?,?,?,?,?)').run(chat, actor, event, command, at),
+        };
+        const result=callback(game, receipts);
         if(result&&typeof result.then==='function')throw Error('Transação do jogo deve ser síncrona.');
         if(Array.isArray(result?.missionEvents)) {
           for(const event of result.missionEvents)require('../missions/service').recordGameEvent(db,{...event,chat});
