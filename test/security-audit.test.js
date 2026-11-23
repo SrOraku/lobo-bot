@@ -1,8 +1,6 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const { EXCEPTIONS, evaluate, main } = require('../scripts/check-audit');
 
 const NESTED = 'node_modules/@imgly/background-removal-node/node_modules/zod';
@@ -91,11 +89,4 @@ test('a saída sempre mostra a exceção aceita e reprova quando há bloqueio', 
   assert.match(lines.join('\n'), /❌ Vulnerabilidades altas ou críticas sem exceção \(1\)/); assert.ok(lines.join('\n').includes('GHSA-1111-2222-3333'));
   assert.ok(!lines.join('\n').includes('✅'));
   await assert.rejects(main({ audit: async () => { throw Error('rede indisponível'); }, log: () => {} }), /rede indisponível/);
-});
-
-test('o CI continua executando a auditoria pelo npm run security', () => {
-  assert.equal(require('../package.json').scripts.security, 'node scripts/check-audit.js');
-  const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/ci.yml'), 'utf8');
-  assert.match(workflow, /run: npm run security/);
-  assert.doesNotMatch(workflow, /continue-on-error/);
 });

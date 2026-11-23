@@ -56,6 +56,8 @@ function fixture(prefix = '$$') {
     './autoReply': { handleAutoReply: async () => steps.push('reply') },
     './xp': { handleXP: async () => steps.push('xp') },
     '../activations/message-rules': rules,
+    '../activations/policy': require('../src/activations/policy'),
+    '../activations/store': { getStore: () => ({ isBotEnabled: () => state.active }) },
     '../automation/anti-pv': { createAntiPV: () => ({ handle: async () => false }) },
     '../services/universal-currency': { linkMessageWallet: async () => {} },
     '../games/gartic': { gartic: () => ({ guess: async () => null }) },

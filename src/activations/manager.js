@@ -24,13 +24,10 @@ function createManager(store, {security} = {}) {
     if (!jid?.endsWith('@g.us')) return true;
     const f = registry.feature(name);
     if (!f) return false;
-    if (f.source === 'sector') return true;
     const p = repository().get(jid);
-    return f.source === 'sector'
-      ? p.bot && p.sectors[f.id] !== 'off'
-      : Object.hasOwn(p.features, f.id)
-        ? !!p.features[f.id]
-        : f.default;
+    if (!(p.bot ?? true)) return false;
+    if (f.source === 'sector') return true;
+    return Object.hasOwn(p.features, f.id) ? !!p.features[f.id] : f.default;
   }
   async function set(jid, names, enabled, { actor, botAdmin = false, options = {} } = {}) {
     groupId(jid);

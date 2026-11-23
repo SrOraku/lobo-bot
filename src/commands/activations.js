@@ -11,6 +11,7 @@ function createActivationHandler({
   store,
   resolveActor,
   forcedAction,
+  botMode,
   featureId,
   interaction,
 } = {}) {
@@ -32,6 +33,14 @@ function createActivationHandler({
     const args = (ctx.args || []).map(String),
       group = clean(actor.groupName || ctx.jid);
     try {
+      if (botMode) {
+        if (args.length) throw Error('Use somente ' + p + ctx.command + '.');
+        repository.update(ctx.jid, actor.phone || actor.jid, current =>
+          change(current, { action: 'set', target: 'bot', value: botMode, owner: actor.owner }));
+        return reply(botMode === 'on'
+          ? '🐺 Bot ligado neste grupo.'
+          : '🐺 Bot pausado neste grupo. Para religar, use ' + command(p + 'boton') + '.');
+      }
       if (!forcedAction && !featureId && args[0]?.toLowerCase() === 'historico') {
         if (args.length !== 1) throw Error('Use apenas historico.');
         const rows = repository.history(ctx.jid);

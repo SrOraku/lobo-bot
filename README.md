@@ -26,6 +26,20 @@
 
 🌹𝕹ã𝖔 𝖒𝖊𝖝𝖆 𝖈𝖔𝖒 𝖚𝖒 𝖑𝖔𝖇𝖔 𝖆𝖘𝖘𝖎𝖒 𝖓ã𝖔 𝖕𝖊𝖗𝖆 𝖓𝖔𝖘𝖘𝖆 𝖎𝖗á🐺
 
+## Faróis da Matilha 🌹🐺
+
+Duas a cinco pessoas restauram um farol em um grupo. Use `!expedicao criar estrategista` e compartilhe o ID mostrado. Cada colega entra com `!expedicao entrar ID guardiao`. Também há os papéis explorador e curandeiro. O líder usa `!expedicao iniciar`. Os papéis podem se repetir. Um grupo mantém uma equipe por vez.
+
+São 3 a 5 etapas sorteadas entre seis locais. Na sua vez, veja `!expedicao explorar` para comparar o resultado exato das três escolhas com sua profissão de campo e relíquias. `!expedicao status` mostra o código da etapa. Use `!expedicao escolher CODIGO sinalizar`, `atravessar` ou `acampar`. Ao sinalizar, a equipe ganha luz e perde vigor. A travessia gasta provisões. Acampar recupera vigor e provisões. O local indica qual decisão custa vigor extra. O objetivo é terminar a última etapa com luz suficiente e pelo menos 1 de vigor.
+
+* **Cidade RP.** Em `!rploja oficina` há prisma, resina, fibra e suprimentos prontos. `!oficina receitas` mostra insumos e o custo de energia já ajustado à profissão. Para fabricar um lampião, use `!rpcomprar prisma`, `!rpcomprar resina` e `!oficina fabricar lampiao`. Na sua vez, `!expedicao escolher CODIGO sinalizar lampiao` consome o lampião e rende 2 de luz adicional. A tala serve no acampamento e a ração reforça a travessia.
+* **Alcateia Estratégica.** Em `!lojaalcateia 2` o astrolábio acrescenta luz ao sinal, o trenó poupa provisões ao atravessar e a tenda melhora o acampamento. `!compraralcateia 13`, `14` ou `15` compra a relíquia permanente da respectiva ação. `!expedicao inventario` mostra suas relíquias, consumíveis e recorde.
+* **Lobos clássicos.** Em `!loja protecao`, `!comprar 17` recupera até 15 lobos por 45 WoK coin. `!comprar 18` reúne metade dos ausentes, arredondada para cima, por 95. Ambas as opções preservam a formação e só cobram se houver lobos para recuperar.
+* **Equipe e recompensa.** Após 5 minutos outro integrante pode assumir a vez. A chamada expira em 30 minutos e a partida em 2 horas. `!expedicao sair` libera a vaga. A vitória rende 40 WoK coin mais 10 por turno pessoal, com teto de 80 e intervalo de 24 horas por participante e conversa. É preciso ter jogado pelo menos uma vez e ainda estar na equipe.
+* **Conferência dos dados.** Na pasta do bot, `npm run verificar:dados` abre o SQLite existente para leitura. Para verificar uma cópia, use `npm run verificar:dados -- /caminho/backup.sqlite`. O relatório mostra totais e verifica integridade SQLite, referências, migrações, carteiras, partições e estoques RP. Uma divergência resulta em código de saída 1. O verificador não grava correções automáticas. Use um backup consistente do SQLite para verificar outra máquina.
+* **Atualização.** Com o bot parado, faça backup dos seus dados, sessão e configuração. Em checkout Git na branch principal, use `git pull --ff-only origin main` e `npm start`. A migração 22 acrescenta os recibos de mensagens para compras e ações de jogo. O progresso novo usa o estado existente de cada chat. Para recuperar a instalação, restaure em conjunto o código e o backup correspondente com o bot parado.
+
+
 ## Inicialização com atualização
 
 No painel Bronxys, você pode usar **`bash atualizar.sh`** como comando de inicialização, na raiz que contém package.json. Ele verifica a versão oficial, usa staging/validação/backup do atualizador existente e inicia o supervisor com a sessão e os dados atuais. Se já estiver atualizado, inicia diretamente; se a rede falhar antes da aplicação, inicia a versão local preservada. Travas de processos comprovadamente encerrados são recuperadas automaticamente. Se houver aplicação interrompida, o backup é validado e restaurado antes de iniciar. Uma atualização ativa, trava inválida ou falha de restauração continua impedindo iniciar por segurança. `npm start` continua disponível para iniciar sem a verificação remota.

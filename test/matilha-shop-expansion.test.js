@@ -31,7 +31,7 @@ function fixture(t, gold = 100_000) {
 }
 
 test('catálogo amplia a loja sem trocar IDs, preços e efeitos dos seis itens originais', () => {
-  assert.equal(SHOP_ITEMS.length, 21);
+  assert.deepEqual(SHOP_ITEMS.map(i => i.id), Array.from({ length: 23 }, (_, i) => i + 1));
   assert.deepEqual(SHOP_ITEMS.slice(0, 6).map(item => [item.id, item.price, item.type]), [
     [1, 2000, 'premium'], [2, 200, 'heal'], [3, 100, 'strategy'],
     [4, 500, 'effect'], [5, 300, 'effect'], [6, 5000, 'title'],
@@ -49,7 +49,8 @@ test('cada novo item realmente concede Premium, efeito ou título e registra o p
   const f = fixture(t);
   f.api.upsertStrategy(JID, 34, 33, 33);
   f.api.updateWolvesAlive(JID, 50);
-  for (const item of SHOP_ITEMS.filter(item => item.id >= 7)) {
+  // 17 e 18 (resgate clássico) têm teste próprio porque dependem dos lobos ausentes.
+  for (const item of SHOP_ITEMS.filter(item => item.id >= 7 && item.type !== 'rescue' && item.type !== 'rally')) {
     const before = f.api.getUser(JID).gold;
     const result = f.buy(item.id);
     assert.equal(f.api.getUser(JID).gold, before - item.price, item.name);
@@ -183,7 +184,7 @@ test('paginação e categorias tornam todos os IDs compráveis encontráveis', (
   const all = [1, 2, 3, 4].flatMap(page => shopPage([String(page)]).items.map(item => item.id));
   assert.deepEqual(all, SHOP_ITEMS.map(item => item.id));
   assert.deepEqual(shopPage([]).items.map(item => item.id), [1, 2, 3, 4, 5, 6]);
-  assert.deepEqual(shopPage(['títulos']).items.map(item => item.id), [6, 13, 14, 15, 16, 21]);
+  assert.deepEqual(shopPage(['títulos']).items.map(item => item.id), [6, 13, 14, 15, 16, 23]);
   assert.deepEqual(shopPage(['premium']).items.map(item => item.id), [1, 7, 8]);
   for (const args of [['0'], ['5'], ['xp', '2'], ['bogus'], ['1', '2'], ['xp', 'x']]) assert.throws(() => shopPage(args));
 });
@@ -210,4 +211,20 @@ test('menu usa o prefixo da instalação e indica lojas RP e Alcateia sem remove
   assert.ok(sent.at(-1).includes('Lenda do Eclipse'));
   await loaded.exports.loja(sock, { jid: CHAT, msg: {}, args: ['99'] });
   assert.ok(sent.at(-1).includes('Página inválida'));
+});
+
+test('resgate clássico respeita sobreviventes, formação, carteira e reenvio', t => {
+  const f = fixture(t, 200);
+  assert.throws(() => f.buy(17), /completa/);
+  assert.equal(f.api.getUser(JID).gold, 200);
+  f.api.upsertStrategy(JID, 48, 32, 20);
+  f.api.updateWolvesAlive(JID, 22);
+  f.buy(17); f.buy(18);
+  assert.equal(f.api.getStrategy(JID).wolves_alive, 69);
+  assert.equal(f.api.getStrategy(JID).attack, 48);
+  assert.equal(f.api.getUser(JID).gold, 60);
+  assert.throws(() => f.buy(17), /processada/);
+  f.api.updateWolvesAlive(JID, 98);
+  f.buy(17, 'resgate-final');
+  assert.equal(f.api.getStrategy(JID).wolves_alive, 100);
 });

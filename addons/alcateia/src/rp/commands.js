@@ -93,7 +93,7 @@ export function rpMenu(config = {}) {
       `👛 ${p}carteira — saldo compartilhado`, `💸 ${p}transferir @jogador quantidade`,
       `🛍️ ${p}rploja [categoria] [página] — catálogo`, `💳 ${p}rpcomprar ITEM [quantidade]`,
       `🎒 ${p}inventario [página] — seus pertences`, `💎 ${p}usar ITEM [@destinatário para presentes]`,
-      `🧰 ${p}rploja equipamentos — ferramentas de profissão`, `🏠 ${p}descansar — recuperar forças na sua moradia`,
+      `🌲 ${p}oficina receitas — suprimentos para a expedição`, `🧰 ${p}rploja equipamentos — ferramentas de profissão`, `🏠 ${p}descansar — recuperar forças na sua moradia`,
     ] },
     { title: '🏰 DINASTIA E FAMÍLIA', lines: [
       `🌹 ${p}familia criar Nome`, `📖 ${p}familia perfil`, `🐺 ${p}familia convidar @jogador parentesco`,

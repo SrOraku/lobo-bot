@@ -1,6 +1,6 @@
 'use strict';
 module.exports = {
-  version: 22,
+  version: 23,
   name: 'living_forest',
   up: `
     CREATE TABLE forest_state(

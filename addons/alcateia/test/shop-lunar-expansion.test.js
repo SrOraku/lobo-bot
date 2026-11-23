@@ -13,7 +13,7 @@ const FIRST = '5511999999999@s.whatsapp.net', SECOND = '5521999999999@s.whatsapp
 function player(overrides = {}) { return Object.assign(createPlayer({ jid: FIRST, name: 'Guardião' }, 0), { coins: 5_000 }, overrides); }
 
 test('catálogo lunar preserva os quatro itens originais e oferece oito novas escolhas funcionais', () => {
-  assert.equal(SHOP_ITEMS.length, 12);
+  assert.deepEqual(SHOP_ITEMS.slice(0, 12).map(item => item.id), Array.from({ length: 12 }, (_, i) => String(i + 1)));
   assert.equal(new Set(SHOP_ITEMS.map(item => item.id)).size, SHOP_ITEMS.length);
   assert.deepEqual(SHOP_ITEMS.slice(0, 4).map(({ id, price, type, value, duration }) => ({ id, price, type, value, duration })), [
     { id: '1', price: 100, type: 'attack', value: 0.2, duration: HOUR },

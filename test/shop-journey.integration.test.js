@@ -187,6 +187,11 @@ test('the actual plugin exposes category pages and rest with a custom prefix whi
     await plugin.commands[command](sock, ctx);
     return String(sent.at(-1)).replace(/[*`_]/g, '');
   };
+  const recipes = await run('oficina', ['receitas']);
+  assert.match(recipes, /!!oficina fabricar/);
+  const guide = await run('expedicao', []);
+  assert.match(guide, /!!expedicao criar/);
+  assert.match(await run('rploja', ['oficina']), /Lampião/);
   const equipment = await run('rploja', ['equipamentos']);
   assert.match(equipment, /notebook/);
   assert.match(equipment, /!!rpcomprar/);
@@ -204,4 +209,97 @@ test('the actual plugin exposes category pages and rest with a custom prefix whi
   assert.equal(persisted.rp.energy, 40);
   assert.equal(persisted.rp.health, 65);
   assert.equal(persisted.coins, player.coins);
+});
+
+test('a repeated purchase after restart and overlapping purchases are charged once per chat and actor', async t => {
+  const f = await walletFixture(t);
+  const eventId = 'same-wa-message';
+  const receipts = await Promise.all([f.execute('rpcomprar prisma', { eventId }), f.execute('rpcomprar prisma', { eventId })]);
+  assert.equal(receipts[0].type, 'rp-purchase');
+  assert.equal(receipts[1].code, 'DUPLICATE_ACTION');
+  const reopened = new Database(f.sqliteFile);
+  t.after(() => reopened.close());
+  const fresh = attachUniversalStore(new f.real.Store(f.file), apiFor(reopened));
+  const request = { command: 'rpcomprar', args: ['fibra'], eventId, actor: { jid: PLAYER }, chatId: CHAT, now: NOW + 40_000 };
+  const buy = (chat, actor) => new f.real.GameService({ store: fresh.scoped(chat) }).execute({ ...request, chatId: chat, actor: { jid: actor } });
+  assert.equal((await buy(CHAT, PLAYER)).code, 'DUPLICATE_ACTION');
+  assert.equal(balance(reopened, CHAT, PLAYER), 9988);
+  assert.equal((await buy(OTHER_CHAT, OTHER)).type, 'rp-purchase');
+  assert.equal((await buy(CHAT, OTHER)).type, 'rp-purchase');
+  const data = require('../scripts/check-game-data').checkFile(f.sqliteFile);
+  assert.equal(data.ok, true, JSON.stringify(data));
+  assert.equal(data.chats, 2);
+});
+
+test('wallet, field relic, inventory and replay receipt roll back on state write failure', async t => {
+  const f = await walletFixture(t);
+  f.raw.exec("CREATE TRIGGER no_state BEFORE UPDATE ON universal_game_states BEGIN SELECT RAISE(ABORT,'simulated failure'); END;");
+  await assert.rejects(f.execute('comprar 13', { eventId: 'relic' }), /simulated failure/);
+  assert.equal(f.raw.prepare('SELECT COUNT(*) n FROM alcateia_action_receipts').get().n, 0);
+  assert.equal(balance(f.raw, CHAT, PLAYER), 10000);
+  f.raw.exec('DROP TRIGGER no_state');
+  assert.equal((await f.execute('comprar 13', { eventId: 'relic' })).type, 'purchase');
+  assert.match((await f.execute('comprar 13', { eventId: 'relic-2' })).message, /já possui/);
+  assert.deepEqual((await f.read()).fieldRelics, ['astrolabio']);
+  assert.equal(balance(f.raw, CHAT, PLAYER), 9760);
+});
+
+test('lantern crafted in the city and an Alcateia relic affect a persistent multiplayer expedition and its actual rewards', async t => {
+  const f = await walletFixture(t);
+  let sequence = 0;
+  const play = async (command, jid = PLAYER) => {
+    const result = await f.execute(command, { actor: { jid, name: jid === PLAYER ? 'Viajante' : 'Sentinela' }, eventId: 'field-' + ++sequence });
+    assert.notEqual(result.type, 'error', result.message);
+    return result;
+  };
+  await play('rpcomprar prisma'); await play('rpcomprar resina');
+  await play('oficina fabricar lampiao');
+  await play('comprar 13');
+  const created = await play('expedicao criar estrategista');
+  const id = created.lines[0].split(' ')[1];
+  await play('expedicao entrar ' + id + ' guardiao', OTHER);
+  await play('expedicao iniciar');
+  const token = n => id + '-' + n;
+  const move = (n, choice) => 'expedicao escolher ' + token(n) + ' ' + choice;
+  const premature = await f.execute(move(1, 'acampar'), { actor: { jid: OTHER } });
+  assert.equal(premature.type, 'error');
+  assert.match(premature.message, /vez/);
+  assert.equal((await play(move(1, 'sinalizar lampiao'))).lines.some(l => l.includes('Luz 7/7')), true);
+  assert.equal((await f.read()).rp.inventory.lampiao, undefined);
+  assert.match((await f.execute(move(1, 'sinalizar lampiao'))).message, /outra etapa/);
+  const reopened = new Database(f.sqliteFile); t.after(() => reopened.close());
+  const fresh = attachUniversalStore(new f.real.Store(f.file), apiFor(reopened));
+  const service = new f.real.GameService({ store: fresh.scoped(CHAT) });
+  const act = (n, jid, choice, eventId) => service.execute({ command: 'expedicao', actor: { jid }, chatId: CHAT, now: NOW + n * 60_000,
+    eventId, args: ['escolher', token(n), choice] });
+  assert.equal((await act(2, OTHER, 'acampar', 'turn-b')).type, 'field-report');
+  const final = await act(3, PLAYER, 'atravessar', 'turn-c');
+  assert.match(final.lines[0], /farol acendeu/);
+  assert.equal(balance(reopened, CHAT, PLAYER), 10000 - 12 - 8 - 240 + 60);
+  assert.equal(balance(reopened, CHAT, OTHER), 100 + 50);
+  assert.equal((await act(3, PLAYER, 'atravessar', 'turn-c')).code, 'DUPLICATE_ACTION');
+  assert.equal((await fresh.scoped(CHAT).transactionGame(g => g.players[PLAYER])).fieldJournal.victories, 1);
+  const other = await fresh.scoped(OTHER_CHAT).transactionGame(g => g);
+  assert.equal(other.expedition, undefined);
+  assert.equal(other.players[PLAYER].fieldJournal, undefined);
+});
+
+test('offline data check rejects inconsistent inventories and aliases without editing or creating a database', async t => {
+  const f = await walletFixture(t);
+  await f.execute('carteira');
+  const check = require('../scripts/check-game-data').checkFile;
+  assert.equal(check(f.sqliteFile).ok, true);
+  f.raw.prepare("UPDATE universal_game_states SET state=json_set(state,?,-1) WHERE chat_jid=?")
+    .run('$.players."' + PLAYER + '".rp.inventory.prisma', CHAT);
+  f.raw.prepare('INSERT INTO universal_wallet_aliases VALUES(?,?,?)').run(CHAT, 'orphan', 'absent');
+  const before = fs.readFileSync(f.sqliteFile);
+  const report = check(f.sqliteFile);
+  assert.equal(report.ok, false);
+  assert.ok(report.problems.includes('Estoque RP inválido.'));
+  assert.ok(report.problems.includes('Há uma identidade sem carteira correspondente.'));
+  assert.ok(!JSON.stringify(report).includes(PLAYER));
+  assert.deepEqual(fs.readFileSync(f.sqliteFile), before);
+  const missing = path.join(f.root, 'missing.sqlite');
+  assert.throws(() => check(missing));
+  assert.equal(fs.existsSync(missing), false);
 });

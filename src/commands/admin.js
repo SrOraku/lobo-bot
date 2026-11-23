@@ -68,6 +68,7 @@ const broadcast = requireOwner(async (sock, ctx) => {
   let sent = 0;
   for (const g of groups) {
     try {
+      if (!require('../activations/store').getStore().isBotEnabled(g.jid)) continue;
       await sock.sendMessage(g.jid, {
         text: card('📢 COMUNICADO DA MATILHA', [message], { formatNumbers: false })
       });

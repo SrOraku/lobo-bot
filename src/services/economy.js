@@ -82,6 +82,14 @@ function createEconomy(api, { now = Date.now, scope = () => require('../isolatio
           const healed=Math.min(strat.wolves_alive+(item.amount||15),100);
           api.updateWolvesAlive(jid,healed);
           message=`🩺 ${healed-strat.wolves_alive} lobos curados (${healed}/100).`;
+        } else if (item.type === 'rescue' || item.type === 'rally') {
+          const alive = api.getStrategy(jid)?.wolves_alive ?? 100;
+          if (!Number.isSafeInteger(alive) || alive < 0 || alive > 100) throw Error('Total de lobos inválido.');
+          if (alive === 100) throw Error('A matilha já está completa.');
+          const missing = 100 - alive;
+          const saved = item.type === 'rally' ? Math.ceil(missing / 2) : Math.min(item.capacity, missing);
+          api.updateWolvesAlive(jid, alive + saved);
+          message = `🐾 ${saved} lobos voltaram à formação. Matilha: ${alive + saved}/100.`;
         } else if(item.type==='strategy') { const atk=20+Math.floor(Math.random()*60),def=Math.floor(Math.random()*(80-atk));api.upsertStrategy(jid,atk,def,100-atk-def);message='🔮 Estratégia sorteada e salva.';
         } else if(item.type==='effect') {
           const end = effect(jid,item.effect,item.duration,item.multiplier || 1);

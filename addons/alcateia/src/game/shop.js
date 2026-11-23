@@ -30,6 +30,12 @@ export const SHOP_ITEMS = Object.freeze([
     category: 'Combate', description: 'Reúna a formação: +20% de ataque e defesa, +30% de contra-ataque por 90 min; preserva bônus superiores ativos.' }),
   Object.freeze({ id: '12', name: 'Expedição de Treino 🏕️', price: 500, type: 'training', value: 3, duration: 0,
     category: 'Treino', description: 'Reserve a trilha dos instrutores: 3 créditos de treino extra, usados pelo comando treino.' }),
+  Object.freeze({ id: '13', name: 'Astrolábio da Aurora', type: 'relic', tool: 'astrolabio', price: 240, duration: 0,
+    description: 'Relíquia permanente. Ao sinalizar no farol, encontre uma estrela-guia: +1 luz.' }),
+  Object.freeze({ id: '14', name: 'Trenó de raízes', type: 'relic', tool: 'treno', price: 200, duration: 0,
+    description: 'Relíquia permanente. Ao atravessar, poupe 1 provisão da equipe.' }),
+  Object.freeze({ id: '15', name: 'Tenda dos ecos', type: 'relic', tool: 'tenda', price: 220, duration: 0,
+    description: 'Relíquia permanente. Ao acampar, restaure mais 1 de vigor da equipe.' }),
 ]);
 
 function prepareBoosts(player, specs, duration, now, preserveSuperior = false) {
@@ -61,7 +67,10 @@ export function buyItem(player, itemId, { now = Date.now() } = {}) {
   integer(now, { min: 0, max: Number.MAX_SAFE_INTEGER - Math.max(HOUR, item.duration), label: 'Data' });
   assertBalance(player, item.price);
   let prepared, extraTraining, healthRecovered = 0;
-  if (item.type === 'training') {
+  if (item.type === 'relic') {
+    if (player.fieldRelics !== undefined && !Array.isArray(player.fieldRelics)) throw new GameError('Registro de relíquias inválido.');
+    if (player.fieldRelics?.includes(item.tool)) throw new GameError('Você já possui esta relíquia.');
+  } else if (item.type === 'training') {
     if (player.wolves >= LIMITS.wolves) throw new GameError('Você já possui 100 lobisomens e não precisa de treino extra.');
     const current = integer(player.extraTraining ?? 0, { min: 0, max: Number.MAX_SAFE_INTEGER - item.value, label: 'Treinos extras' });
     extraTraining = current + item.value;
@@ -76,6 +85,7 @@ export function buyItem(player, itemId, { now = Date.now() } = {}) {
   }
   // Todas as validações terminam antes de debitar ou aplicar os efeitos.
   debit(player, item.price);
+  if (item.type === 'relic') (player.fieldRelics ??= []).push(item.tool);
   if (extraTraining !== undefined) player.extraTraining = extraTraining;
   if (healthRecovered) player.hp = Math.min(LIMITS.hp, player.hp + healthRecovered);
   if (prepared) player.boosts = prepared.next;
