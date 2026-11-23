@@ -7,6 +7,7 @@ const { block, command, mono, greeting, clock, center } = require('../ui/text');
 const CATEGORY_DESC = {
   jogos: 'Minijogos & torneios',
   alcateia: 'Batalhas & território',
+  floresta: 'Ecossistema vivo do grupo',
   midia: 'Músicas & downloads',
   adm: 'Moderação & ordem',
   seguranca: 'Proteção avançada',
@@ -75,7 +76,7 @@ function createMenu({
       ];
       if (category === 'jogos')
         sections.push(
-          `🐺 100 Lobisomens — estratégia, batalhas e guerras\n↳ ${p}menu alcateia\n🏙️ Cidade RP — profissões, família e riqueza\n↳ ${p}menu rp`,
+          `🐺 100 Lobisomens — estratégia, batalhas e guerras\n↳ ${p}menu alcateia\n🌲 Floresta Viva — ecossistema vivo do grupo\n↳ ${p}menu floresta\n🏙️ Cidade RP — profissões, família e riqueza\n↳ ${p}menu rp`,
         );
       if (category === 'alcateia') {
         sections = [
@@ -84,6 +85,10 @@ function createMenu({
           `💰 WoK coin é a moeda única de todos os sistemas.\n👑 Administração dos jogos: ${p}menu dono\n🌕 Fase lunar atual e efeitos: ${p}lua`,
         ];
       }
+      if (category === 'floresta')
+        sections.push(
+          `🌲 _Um ecossistema que vive sozinho: presas, vegetação, lobos selvagens e caçadores mudam a cada hora._\n💧 _As conversas do grupo são a chuva que rega a floresta._\n${p}floresta • 🦌✨ _Equilíbrio duradouro atrai o Cervo Branco._`,
+        );
       if (category === 'rp') sections.push(`💰 Compras e transferências: ${p}menu economia\n🐺 Lobisomens e batalhas: ${p}menu alcateia`);
       if (category === 'economia')
         sections.push(
