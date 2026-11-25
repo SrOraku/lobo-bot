@@ -34,7 +34,7 @@ function loadAllCommands() {
   r({name:'menu',    aliases:['ajuda','help'], description:'Menu principal',     category:'geral',  usage:'!menu [categoria]', example:'!menu gold', handler:menu.menu});
 
   for (const category of Object.keys(require('../menus/catalog').CATEGORIES)) {
-    if (['rp','alcateia','gartic','conquistas','floresta'].includes(category)) continue; // rotas próprias (plugin ou painel)
+    if (['rp','alcateia','gartic','conquistas','floresta','linhagem'].includes(category)) continue; // rotas próprias (plugin ou painel)
     if (require('../core/commandRegistry').registry.has(category)) continue;
     r({name:category, menuShortcut:true, category:'geral', description:'Abrir menu '+category, handler:(sock,ctx)=>menu.menu(sock,{...ctx,args:[category]})});
   }
@@ -170,6 +170,7 @@ function loadAllCommands() {
   require('../commands/quiz-expanded').register(r,commands);
   require('../commands/arcade-expanded').register(r,commands);
   require('../commands/forest').register(r);
+  require('../commands/lineage').register(r);
   commandsLoaded=true;
 
 }

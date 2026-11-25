@@ -8,6 +8,7 @@ const CATEGORY_DESC = {
   jogos: 'Minijogos & torneios',
   alcateia: 'Batalhas & território',
   floresta: 'Ecossistema vivo do grupo',
+  linhagem: 'Filhotes com DNA real',
   midia: 'Músicas & downloads',
   adm: 'Moderação & ordem',
   seguranca: 'Proteção avançada',
@@ -88,6 +89,10 @@ function createMenu({
       if (category === 'floresta')
         sections.push(
           `🌲 _Um ecossistema que vive sozinho: presas, vegetação, lobos selvagens e caçadores mudam a cada hora._\n💧 _As conversas do grupo são a chuva que rega a floresta._\n${p}floresta • 🦌✨ _Equilíbrio duradouro atrai o Cervo Branco._`,
+        );
+      if (category === 'linhagem')
+        sections.push(
+          `🧬 _Cada lobo nasce com DNA: genes dominantes e recessivos herdados dos pais._\n🍼 _Dois lobos cinzentos podem ter um filhote branco se ambos guardarem o gene escondido._\n🌲 _Companheiros adultos ajudam nas ações da_ ${p}floresta.`,
         );
       if (category === 'rp') sections.push(`💰 Compras e transferências: ${p}menu economia\n🐺 Lobisomens e batalhas: ${p}menu alcateia`);
       if (category === 'economia')

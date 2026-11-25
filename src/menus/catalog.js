@@ -3,6 +3,7 @@ const CATEGORIES = Object.freeze({
   jogos: '🎮 JOGOS',
   alcateia: '🐺 100 LOBISOMENS',
   floresta: '🌲 FLORESTA VIVA',
+  linhagem: '🧬 LINHAGEM',
   midia: '🎬 MÍDIA & DOWNLOADS',
   adm: '🛡️ ADMINISTRAÇÃO',
   seguranca: '🛡️ LOBO SECURITY',

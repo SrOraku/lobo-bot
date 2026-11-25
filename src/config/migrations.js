@@ -267,10 +267,14 @@ function runMigrations(db) {
   let ran = 0;
   for (const m of migrations) {
     if (applied.has(m.version)) continue;
-    db.transaction(() => {
+    // IMMEDIATE takes the write lock first, so concurrent processes re-check after waiting.
+    const applies = db.transaction(() => {
+      if (db.prepare('SELECT 1 FROM schema_migrations WHERE version=?').get(m.version)) return false;
       db.exec(m.up);
       db.prepare(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`).run(m.version, m.name);
-    })();
+      return true;
+    }).immediate();
+    if (!applies) continue;
     ran++;
     console.log(`  🌹 Migration v${m.version} "${m.name}" aplicada`);
   }

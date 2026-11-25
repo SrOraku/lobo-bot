@@ -34,6 +34,7 @@ function page(event, p) {
   case 'lenda': return `🦌✨ O Cervo Branco surgiu entre as árvores! Use ${command(p + 'avistar')}.`;
   case 'lenda_partiu': return '🌫️ O Cervo Branco partiu sem ser visto.';
   case 'avistamento': return `👁️ ${actor || 'Um lobo'} avistou o Cervo Branco — a lenda foi escrita.`;
+  case 'soltura': return `🐺 ${actor || 'Um lobo'} foi devolvido à floresta e se juntou aos lobos selvagens.`;
   default: return '🍃 Algo mudou na floresta.';
   }
 }
@@ -86,6 +87,7 @@ function createForestHandlers({ api, service, prefix = () => require('../config'
     }[kind]);
     sections.push(`💰 +${mono(result.coins)} WoK coin • ⭐ +${mono(result.xp)} XP • 🏅 Karma ${mono((result.karma > 0 ? '+' : '') + result.karma)}`);
     if (result.moonBonus) sections.push('🌕 _A Lua Cheia guiou seus passos — +20% na caçada._');
+    if (result.companion) sections.push(`🐾 _*${result.companion.name}* (${result.companion.size}) ajudou nos ${result.companion.label}: +${Math.round(result.companion.bonus * 100)}%._`);
     if (result.capped) sections.push(`🧺 _Teto diário da floresta atingido (${DAILY_COIN_CAP} WoK coin); sua ajuda segue valendo karma._`);
     sections.push(`${emoji} *${label}:* ${mono(percent(result.before[key]))} → ${mono(percent(result.after[key]))}\n${result.status.emoji} *Saúde da floresta:* ${mono(result.health + '/100')}`);
     sections.push(...fresh(result.events, p));

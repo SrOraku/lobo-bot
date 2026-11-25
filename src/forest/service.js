@@ -5,10 +5,11 @@ const context = require('../isolation/context');
 const model = require('./model');
 const { moonPhase } = require('../wolves/moon-phase');
 const { periods } = require('../missions/service');
+const { canonicalPlayer } = require('../services/player-identity');
+const { companionPerk } = require('../lineage/service');
 
 const DAILY_COIN_CAP = 150;
 const CHRONICLE_LIMIT = 40;
-const USER = /^\d{5,20}@(?:s\.whatsapp\.net|lid)$/;
 
 function error(code, message, extra = {}) { return Object.assign(new Error(message), { code, ...extra }); }
 function rawDatabase(db) { return db?.[Symbol.for('lobo.rawDatabase')] || db; }
@@ -33,8 +34,9 @@ function createForest(api, { now = Date.now, random = () => randomInt(1_000_000)
     return at;
   };
   function identity(chat, original) {
-    if (typeof original !== 'string' || !USER.test(original)) throw error('FOREST_IDENTITY', 'Não consegui identificar seu perfil. Tente novamente em instantes.');
-    return db.prepare('SELECT wallet_jid FROM universal_wallet_aliases WHERE chat_jid=? AND user_jid=?').get(chat, original)?.wallet_jid || original;
+    const player = canonicalPlayer(db, chat, original);
+    if (!player) throw error('FOREST_IDENTITY', 'Não consegui identificar seu perfil. Tente novamente em instantes.');
+    return player;
   }
   function write(chat, events) {
     if (!events.length) return;
@@ -115,10 +117,12 @@ function createForest(api, { now = Date.now, random = () => randomInt(1_000_000)
       if (ready > at) throw error('FOREST_COOLDOWN', 'Suas patas ainda descansam.', { remaining: ready - at, kind });
       const loaded = load(id), before = loaded.state;
       const prize = model.reward(kind, before, at, random());
+      const helper = prize.scarcity ? null : companionPerk(db, id, user, kind, at);
+      const offered = helper ? Math.round(prize.coins * (1 + helper.bonus)) : prize.coins;
       const applied = model.applyAction(before, kind, at);
       const day = periods(at).day;
       const earned = db.prepare("SELECT COALESCE(sum(coins),0) AS coins FROM forest_actions WHERE chat_jid=? AND user_jid=? AND day_key=? AND kind<>'avistar'").get(id, user, day).coins;
-      const coins = Math.max(0, Math.min(prize.coins, DAILY_COIN_CAP - earned));
+      const coins = Math.max(0, Math.min(offered, DAILY_COIN_CAP - earned));
       const label = cleanName(name);
       db.prepare('INSERT INTO forest_actions(chat_jid,event_id,user_jid,name,kind,coins,xp,karma,day_key,at) VALUES(?,?,?,?,?,?,?,?,?,?)')
         .run(id, event, user, label, kind, coins, prize.xp, prize.karma, day, at);
@@ -127,7 +131,7 @@ function createForest(api, { now = Date.now, random = () => randomInt(1_000_000)
       const events = applied.events.map(item => ({ ...item, actor: label }));
       write(id, events);
       const score = model.health(applied.state);
-      return { kind, coins, xp: prize.xp, karma: prize.karma, capped: coins < prize.coins, scarcity: Boolean(prize.scarcity), moonBonus: Boolean(prize.moonBonus),
+      return { kind, coins, xp: prize.xp, karma: prize.karma, capped: coins < offered, scarcity: Boolean(prize.scarcity), moonBonus: Boolean(prize.moonBonus), companion: helper,
         before, after: applied.state, health: score, status: model.status(score), events: [...loaded.events, ...events],
         dailyLeft: DAILY_COIN_CAP - earned - coins, cooldown: model.ACTIONS[kind].cooldown };
     })());
@@ -153,6 +157,18 @@ function createForest(api, { now = Date.now, random = () => randomInt(1_000_000)
     })());
   }
 
+  // A released companion joins the wild wolves of an existing forest.
+  function welcome(chat, name) {
+    const id = context.chatId(chat);
+    return db.transaction(() => {
+      if (!db.prepare('SELECT 1 FROM forest_state WHERE chat_jid=?').get(id)) return false;
+      const loaded = load(id);
+      save(id, { ...loaded.state, w: Math.min(1, Math.round((loaded.state.w + 0.02) * 1000) / 1000) });
+      write(id, [{ kind: 'soltura', at: loaded.at, actor: cleanName(name) }]);
+      return true;
+    })();
+  }
+
   function chronicle(chat, limit = 10) {
     const id = context.chatId(chat);
     return db.transaction(() => {
@@ -168,7 +184,7 @@ function createForest(api, { now = Date.now, random = () => randomInt(1_000_000)
       FROM forest_actions a WHERE chat_jid=? GROUP BY user_jid ORDER BY karma DESC, actions DESC LIMIT ?`).all(id, limit);
   }
 
-  return { snapshot, forecast, trails, act, sight, chronicle, guardians };
+  return { snapshot, forecast, trails, act, sight, welcome, chronicle, guardians };
 }
 
 module.exports = { createForest, rain, DAILY_COIN_CAP, CHRONICLE_LIMIT };
