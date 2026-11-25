@@ -20,9 +20,15 @@ const SHOP_ITEMS = Object.freeze([
   { id: 16, name: '🌘 Título "Lenda do Eclipse"', price: 8000, description: 'Título permanente de prestígio; efeito visual no perfil', category: 'titulos', type: 'title', titleId: 'lenda-eclipse', title: 'Lenda do Eclipse' },
   { id: 17, name: '🛷 Trenó dos Batedores', price: 45, description: 'Recupera até 15 lobos caídos da formação clássica', category: 'protecao', type: 'rescue', capacity: 15 },
   { id: 18, name: '📯 Trompa do Reencontro', price: 95, description: 'Reúne metade dos lobos caídos, arredondando para cima', category: 'protecao', type: 'rally' },
+  // ── Itens de batalha táticos ──────────────────────────────────────────────
+  { id: 19, name: '🩺 Soro dos Lobos', price: 120, description: 'Restaura imediatamente 15 lobos da matilha (máx. 100)', category: 'batalha', type: 'heal-partial', amount: 15 },
+  { id: 20, name: '💠 Cristal do Poder (2h)', price: 280, description: 'Seus ataques causam +25% de dano por 2 horas', category: 'batalha', type: 'effect', effect: 'battle_power', multiplier: 1.25, duration: 2 * HOUR, effectLabel: '💠 Cristal do Poder ativo — dano de ataque +25%' },
+  { id: 21, name: '🛡️ Escudo da Batalha (12h)', price: 350, description: 'Reduz em 30% o dano recebido em batalhas por 12 horas', category: 'batalha', type: 'effect', effect: 'battle_armor', multiplier: 0.7, duration: 12 * HOUR, effectLabel: '🛡️ Escudo da Batalha ativo — dano recebido −30%' },
+  { id: 22, name: '🏺 Totem da Ressurreição', price: 500, description: 'Passivo (30 dias): quando lobos chegam a 0 em batalha, restaura 25 lobos (1 uso)', category: 'batalha', type: 'effect', effect: 'battle_totem', multiplier: 1, duration: 30 * DAY, effectLabel: '🏺 Totem da Ressurreição ativo — 1 vida extra' },
+  { id: 23, name: '⚔️ Título "Guerreiro Lunar"', price: 3000, description: 'Título permanente para guerreiros que dominam as batalhas da lua', category: 'titulos', type: 'title', titleId: 'guerreiro-lunar', title: 'Guerreiro Lunar' },
 ].map(Object.freeze));
 
-const CATEGORIES = Object.freeze({ todos: 'Todos os itens', premium: 'Passes Premium', xp: 'Vigílias de XP', protecao: 'Refúgio e combate clássico', titulos: 'Títulos da jornada' });
+const CATEGORIES = Object.freeze({ todos: 'Todos os itens', premium: 'Passes Premium', xp: 'Vigílias de XP', protecao: 'Refúgio e combate clássico', batalha: 'Itens de batalha', titulos: 'Títulos da jornada' });
 const PAGE_SIZE = 6;
 
 function getShopItem(value) {
@@ -38,7 +44,7 @@ function shopPage(args = []) {
   } else if (args.length) {
     category = String(args[0]).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
     if (category === 'geral') category = 'todos';
-    if (!Object.hasOwn(CATEGORIES, category)) throw Error('Categorias: premium, xp, protecao e titulos.');
+    if (!Object.hasOwn(CATEGORIES, category)) throw Error('Categorias: premium, xp, protecao, batalha e titulos.');
     if (args[1] !== undefined) {
       if (!/^\d+$/.test(args[1])) throw Error('Informe uma página inteira positiva.');
       page = Number(args[1]);

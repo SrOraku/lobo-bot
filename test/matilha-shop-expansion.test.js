@@ -31,7 +31,7 @@ function fixture(t, gold = 100_000) {
 }
 
 test('catálogo amplia a loja sem trocar IDs, preços e efeitos dos seis itens originais', () => {
-  assert.deepEqual(SHOP_ITEMS.map(i => i.id), Array.from({ length: 18 }, (_, i) => i + 1));
+  assert.deepEqual(SHOP_ITEMS.map(i => i.id), Array.from({ length: 23 }, (_, i) => i + 1));
   assert.deepEqual(SHOP_ITEMS.slice(0, 6).map(item => [item.id, item.price, item.type]), [
     [1, 2000, 'premium'], [2, 200, 'heal'], [3, 100, 'strategy'],
     [4, 500, 'effect'], [5, 300, 'effect'], [6, 5000, 'title'],
@@ -47,7 +47,10 @@ test('catálogo amplia a loja sem trocar IDs, preços e efeitos dos seis itens o
 
 test('cada novo item realmente concede Premium, efeito ou título e registra o preço do catálogo', t => {
   const f = fixture(t);
-  for (const item of SHOP_ITEMS.filter(item => item.id >= 7 && item.id <= 16)) {
+  f.api.upsertStrategy(JID, 34, 33, 33);
+  f.api.updateWolvesAlive(JID, 50);
+  // 17 e 18 (resgate clássico) têm teste próprio porque dependem dos lobos ausentes.
+  for (const item of SHOP_ITEMS.filter(item => item.id >= 7 && item.type !== 'rescue' && item.type !== 'rally')) {
     const before = f.api.getUser(JID).gold;
     const result = f.buy(item.id);
     assert.equal(f.api.getUser(JID).gold, before - item.price, item.name);
@@ -56,7 +59,7 @@ test('cada novo item realmente concede Premium, efeito ou título e registra o p
     if (item.type === 'effect') assert.ok(f.service().activeEffect(JID, item.effect));
     if (item.type === 'title') assert.ok(f.service().titles(JID).some(title => title.title_id === item.titleId && title.equipped));
   }
-  assert.equal(f.db.prepare('SELECT count(*) n FROM gold_transactions').get().n, 10);
+  assert.equal(f.db.prepare('SELECT count(*) n FROM gold_transactions').get().n, 15);
 });
 
 test('vigílias acumulam duração sem reduzir XP e sobrevivem à recriação do serviço', t => {
@@ -178,12 +181,12 @@ test('compras originais de cura e estratégia continuam funcionais', t => {
 });
 
 test('paginação e categorias tornam todos os IDs compráveis encontráveis', () => {
-  const all = [1, 2, 3].flatMap(page => shopPage([String(page)]).items.map(item => item.id));
+  const all = [1, 2, 3, 4].flatMap(page => shopPage([String(page)]).items.map(item => item.id));
   assert.deepEqual(all, SHOP_ITEMS.map(item => item.id));
   assert.deepEqual(shopPage([]).items.map(item => item.id), [1, 2, 3, 4, 5, 6]);
-  assert.deepEqual(shopPage(['títulos']).items.map(item => item.id), [6, 13, 14, 15, 16]);
+  assert.deepEqual(shopPage(['títulos']).items.map(item => item.id), [6, 13, 14, 15, 16, 23]);
   assert.deepEqual(shopPage(['premium']).items.map(item => item.id), [1, 7, 8]);
-  for (const args of [['0'], ['4'], ['xp', '2'], ['bogus'], ['1', '2'], ['xp', 'x']]) assert.throws(() => shopPage(args));
+  for (const args of [['0'], ['5'], ['xp', '2'], ['bogus'], ['1', '2'], ['xp', 'x']]) assert.throws(() => shopPage(args));
 });
 
 test('menu usa o prefixo da instalação e indica lojas RP e Alcateia sem remover os itens antigos', async () => {

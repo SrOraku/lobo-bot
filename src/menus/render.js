@@ -24,6 +24,12 @@ function frameMenu(title, sections, { identity = false } = {}) {
 function frameNotice(title, sections) {
   return card(title, sections);
 }
-function connectionNotice() { return frameNotice('✅ CONEXÃO ESTABELECIDA', ['🐺 Matilha pronta para batalha!', '_Uuuuuuwooooo! 🐺🌕_']); }
+function connectionNotice() {
+  return frameNotice('✅ CONEXÃO ESTABELECIDA', [
+    '🐺 *Matilha em campo — a caçada começa!*',
+    '🌕 _A lua ilumina o caminho da alcateia._',
+    '⚔️ _Todos os sistemas prontos. Uuuuwooooo!_ 🐺',
+  ]);
+}
 
 module.exports = { IDENTITY, clean, uptime, frameMenu, frameNotice, connectionNotice };

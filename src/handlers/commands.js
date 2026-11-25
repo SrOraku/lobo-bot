@@ -34,7 +34,7 @@ function loadAllCommands() {
   r({name:'menu',    aliases:['ajuda','help'], description:'Menu principal',     category:'geral',  usage:'!menu [categoria]', example:'!menu gold', handler:menu.menu});
 
   for (const category of Object.keys(require('../menus/catalog').CATEGORIES)) {
-    if (['rp','alcateia','gartic','conquistas'].includes(category)) continue; // rotas existentes do plugin
+    if (['rp','alcateia','gartic','conquistas','floresta'].includes(category)) continue; // rotas próprias (plugin ou painel)
     if (require('../core/commandRegistry').registry.has(category)) continue;
     r({name:category, menuShortcut:true, category:'geral', description:'Abrir menu '+category, handler:(sock,ctx)=>menu.menu(sock,{...ctx,args:[category]})});
   }
@@ -48,6 +48,7 @@ function loadAllCommands() {
   r({name:'curarlobos',aliases:['curar'],      description:'Curar lobos (200💰)',category:'lobo',   usage:'!curarlobos',                            example:'!curarlobos',                 handler:wolf.curarLobos});
   r({name:'resetarlobos',                      description:'Resetar lobos',      category:'lobo',   usage:'!resetarlobos [@usuário]',               example:'!resetarlobos',               handler:wolf.resetarLobos, minLevel:LEVELS.BOT_ADMIN});
   r({name:'infolobos',aliases:['lobosinfo'],   description:'Guia do jogo',       category:'lobo',   usage:'!infolobos',                             example:'!infolobos',                  handler:wolf.infoJogo});
+  r({name:'lua',     aliases:['faselua','faseluar','lunafase'], description:'Fase lunar atual e efeitos na batalha', category:'lobo', usage:'!lua', example:'!lua', handler:wolf.fasesDaLua});
 
   // Gold
   r({name:'gold',aliases:['wok','wokcoin','saldo','carteira'],description:'Ver saldo de WoK coin',           category:'gold',   usage:'!gold [@usuário]',                       example:'!gold',                       handler:gold.verGold});
@@ -168,6 +169,7 @@ function loadAllCommands() {
   require('../commands/missions').register(r,commands);
   require('../commands/quiz-expanded').register(r,commands);
   require('../commands/arcade-expanded').register(r,commands);
+  require('../commands/forest').register(r);
   commandsLoaded=true;
 
 }

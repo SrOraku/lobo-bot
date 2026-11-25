@@ -54,6 +54,15 @@ const ITEMS = [
   { id: 'kitoficina', name: 'Maleta de ferramentas', type: 'equipment', price: 850, categories: ['Serviços', 'Construção', 'Transporte'], effects: {}, description: 'Equipe para ganhar até +20 WoK coin e +2 XP em Serviços, Construção ou Transporte.' },
   { id: 'kitcampo', name: 'Kit do campo', type: 'equipment', price: 700, categories: ['Rural'], effects: {}, description: 'Equipe para ganhar até +20 WoK coin e +2 XP no trabalho Rural.' },
   { id: 'instrumento', name: 'Instrumento de artista', type: 'equipment', price: 900, categories: ['Artes'], effects: {}, description: 'Equipe para ganhar até +20 WoK coin e +2 XP no trabalho de Artes.' },
+  // ── Loja do Estrategista (equipamentos e acessórios táticos) ──────────────
+  { id: 'manual_tatico', name: 'Manual Tático da Matilha', type: 'equipment', price: 1_200, categories: ['Saúde','Justiça','Segurança','Educação','Tecnologia','Serviços','Construção','Transporte','Rural','Artes','Política'], effects: {}, description: 'Equipe para ganhar até +25 WoK coin e +3 XP em qualquer expediente.' },
+  { id: 'traje_combate', name: 'Traje de Combate RP', type: 'equipment', price: 1_500, categories: ['Segurança','Justiça'], effects: {}, description: 'Equipe para ganhar até +40 WoK coin e +3 XP nos expedientes de Segurança ou Justiça.' },
+  { id: 'kit_sobrevivencia', name: 'Kit de Sobrevivência', type: 'equipment', price: 1_000, categories: ['Rural','Segurança','Construção'], effects: {}, description: 'Equipe para ganhar até +30 WoK coin e +2 XP em Rural, Segurança ou Construção.' },
+  { id: 'mochila_aventura', name: 'Mochila do Aventureiro', type: 'equipment', price: 850, categories: ['Transporte'], effects: {}, description: 'Equipe para ganhar até +25 WoK coin e +2 XP no expediente de Transporte.' },
+  { id: 'amuleto_lunar', name: 'Amuleto Lunar', type: 'accessory', price: 350, effects: { reputation: 1 }, description: 'Acessório do cenário. Concede +1 de reputação RP ao ser equipado.' },
+  { id: 'colar_matilha', name: 'Colar da Matilha', type: 'accessory', price: 450, effects: { energy: 5 }, description: 'Acessório do cenário. Concede +5 de energia RP ao ser equipado.' },
+  { id: 'flauta_chamado', name: 'Flauta do Chamado', type: 'gift', price: 180, effects: { reputation: 7 }, description: 'Presenteie outro personagem com uma melodia da matilha (+7 de reputação RP).' },
+  { id: 'escudo_familia', name: 'Escudo da Família', type: 'gift', price: 300, effects: { reputation: 12 }, description: 'Símbolo de proteção para presentear um familiar RP (+12 de reputação RP).' },
   { id: 'prisma', name: 'Prisma de neblina', type: 'material', price: 12, effects: {}, description: 'Lente lapidada para montar um lampião na !oficina.' },
   { id: 'resina', name: 'Resina de âmbar', type: 'material', price: 8, effects: {}, description: 'Combustível de luz dourada para a receita de lampião.' },
   { id: 'fibra', name: 'Fibra de salgueiro', type: 'material', price: 8, effects: {}, description: 'Trançada, vira tala de campo ou embalagem da ração.' },
@@ -65,7 +74,7 @@ const ITEMS = [
 export const RP_ITEMS = Object.freeze(ITEMS.map(item => Object.freeze({ ...item, effects: Object.freeze(item.effects), ...(item.categories ? { categories: Object.freeze(item.categories) } : {}) })));
 export const RP_SHOP_CATEGORIES = Object.freeze(Object.fromEntries(Object.entries({
   comidas: ['food'], bebidas: ['drink'], saude: ['medicine'], presentes: ['gift', 'ring'],
-  moradias: ['home'], veiculos: ['vehicle'], equipamentos: ['equipment'], oficina: ['material', 'field'],
+  moradias: ['home'], veiculos: ['vehicle'], equipamentos: ['equipment'], acessorios: ['accessory'], oficina: ['material', 'field'],
 }).map(([name, types]) => [name, Object.freeze(types)])));
 export const REST_COOLDOWN_MS = 30 * 60_000;
 

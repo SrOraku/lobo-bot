@@ -16,6 +16,7 @@ async function handleXP(sock, msg, { jid, sender }) {
       const last = db.db.prepare('SELECT expires_at FROM persistent_cooldowns WHERE chat_jid=? AND user_jid=? AND action=?').get(chat,sender,'xp');
       if(last?.expires_at > timestamp) return false;
       db.db.prepare('INSERT INTO persistent_cooldowns VALUES (?,?,?,?) ON CONFLICT(chat_jid,user_jid,action) DO UPDATE SET expires_at=excluded.expires_at').run(chat,sender,'xp',timestamp+(config.getNumber('XP_COOLDOWN_SEC') || 30)*1000);
+      try { require('../forest/service').rain(db.db, chat); } catch { /* A chuva da floresta nunca interrompe o XP. */ }
 
 
     // Ganhou gold por mensagem (1 gold a cada 10 msgs)
